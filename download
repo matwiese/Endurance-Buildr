@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Endurance Map Tool | Agile Periodization</title>
+    <meta
+      name="description"
+      content="A simple Agile Periodization endurance map for speed, pace, thresholds, domains, zones, and practical conditioning methods."
+    />
+    <link rel="icon" href="assets/agile-periodization-logo.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand">
+        <img src="assets/agile-periodization-logo.png" alt="Agile Periodization" />
+        <div>
+          <p class="eyebrow">Agile Periodization</p>
+          <h1>Endurance Map</h1>
+        </div>
+      </div>
+      <div class="header-actions" aria-label="Tool actions">
+        <button class="ghost-button" type="button" id="sampleButton" title="Load workbook sample">
+          <span aria-hidden="true">◎</span>
+          Sample
+        </button>
+        <button class="ghost-button" type="button" id="shareButton" title="Copy a link with these inputs">
+          <span aria-hidden="true">⛓</span>
+          Link
+        </button>
+        <button class="ghost-button" type="button" id="printButton" title="Print or save as PDF">
+          <span aria-hidden="true">▣</span>
+          Print
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="tool-shell" aria-label="Endurance map calculator">
+        <aside class="input-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Inputs</p>
+            <h2>Athlete anchors</h2>
+          </div>
+
+          <form id="inputForm" novalidate>
+            <div class="input-grid">
+              <label class="field">
+                <span>MSS</span>
+                <input id="mss" name="mss" type="number" inputmode="decimal" min="0" step="0.1" />
+                <small>max sprint speed, km/h</small>
+              </label>
+              <label class="field">
+                <span>MAS</span>
+                <input id="mas" name="mas" type="number" inputmode="decimal" min="0" step="0.1" />
+                <small>vVO2max, km/h</small>
+              </label>
+              <label class="field">
+                <span>CV</span>
+                <input id="cv" name="cv" type="number" inputmode="decimal" min="0" step="0.1" />
+                <small>critical velocity, km/h</small>
+              </label>
+              <label class="field">
+                <span>LT1 / VT1</span>
+                <input id="lt1" name="lt1" type="number" inputmode="decimal" min="0" step="0.1" />
+                <small>aerobic threshold, km/h</small>
+              </label>
+              <label class="field">
+                <span>Map floor</span>
+                <input id="floor" name="floor" type="number" inputmode="decimal" min="0" step="0.1" />
+                <small>lowest speed shown, km/h</small>
+              </label>
+              <label class="field">
+                <span>Rows</span>
+                <select id="rows" name="rows">
+                  <option value="16">16</option>
+                  <option value="24">24</option>
+                  <option value="40">40</option>
+                </select>
+                <small>ladder detail</small>
+              </label>
+            </div>
+
+            <div class="input-grid input-grid-compact">
+              <label class="field">
+                <span>HRmax</span>
+                <input id="hrMax" name="hrMax" type="number" inputmode="numeric" min="0" step="1" />
+                <small>bpm</small>
+              </label>
+              <label class="field">
+                <span>HRrest</span>
+                <input id="hrRest" name="hrRest" type="number" inputmode="numeric" min="0" step="1" />
+                <small>bpm</small>
+              </label>
+              <fieldset class="field segmented" aria-label="Pace unit">
+                <legend>Pace</legend>
+                <label>
+                  <input type="radio" name="paceUnit" value="km" />
+                  <span>min/km</span>
+                </label>
+                <label>
+                  <input type="radio" name="paceUnit" value="mile" />
+                  <span>min/mile</span>
+                </label>
+              </fieldset>
+            </div>
+
+            <div class="form-actions">
+              <button class="primary-button" type="button" id="copyButton">
+                <span aria-hidden="true">□</span>
+                Copy table
+              </button>
+              <button class="secondary-button" type="button" id="resetButton">
+                <span aria-hidden="true">↺</span>
+                Reset
+              </button>
+            </div>
+          </form>
+
+          <div class="validation" id="validation" aria-live="polite"></div>
+        </aside>
+
+        <section class="output-panel">
+          <div class="map-heading">
+            <div>
+              <p class="eyebrow">Map, not territory</p>
+              <h2 id="summaryTitle">Speed, thresholds, and training paces</h2>
+            </div>
+            <div class="summary-pill" id="summaryPill">CV/MAS ratio</div>
+          </div>
+
+          <div class="map-stage">
+            <div class="domain-map" id="domainMap" aria-label="Intensity domain map"></div>
+            <div class="map-axis" id="mapAxis" aria-hidden="true"></div>
+          </div>
+
+          <div class="threshold-grid" id="thresholdGrid"></div>
+        </section>
+      </section>
+
+      <section class="table-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Output</p>
+            <h2>Coach table</h2>
+          </div>
+          <div class="tabs" role="tablist" aria-label="Output table">
+            <button class="tab is-active" type="button" data-view="zones" role="tab" aria-selected="true">
+              Zones
+            </button>
+            <button class="tab" type="button" data-view="domains" role="tab" aria-selected="false">
+              Domains
+            </button>
+            <button class="tab" type="button" data-view="thresholds" role="tab" aria-selected="false">
+              Thresholds
+            </button>
+            <button class="tab" type="button" data-view="ladder" role="tab" aria-selected="false">
+              Ladder
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap" id="tableWrap"></div>
+      </section>
+
+      <section class="notes-section">
+        <div class="note-block">
+          <p class="eyebrow">Coach note</p>
+          <h2>Use this as a starting point</h2>
+          <p>
+            The map gives you useful anchors: LT1 for the easy-to-steady boundary, CV for the
+            sustainable floor, MAS for the aerobic ceiling, and MSS for the sprint ceiling. The
+            athlete still lives in the territory. Heat, fatigue, terrain, skill, motivation, and the
+            week that actually happened can move the line.
+          </p>
+        </div>
+        <div class="note-block">
+          <p class="eyebrow">Practical rhythm</p>
+          <h2>Dose with physiology. Shape with context.</h2>
+          <p>
+            Paces and zones set the dose. Terrain, constraints, recovery, and the sport problem set
+            the shape. Good enough to start, clear enough to update, and simple enough to use when
+            the spreadsheet is not coming to the track with you.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
