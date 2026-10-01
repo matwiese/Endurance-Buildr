@@ -2,7 +2,7 @@
 
 Betriebsbereiter Prototyp des Athletenmanagements: echte Anmeldung, Benutzer- und Rechteverwaltung, SQLite-Datenbank und Dokumentenablage **auf Ihrem Laptop (Laufwerk C:)**. Es läuft nichts in der Cloud, es braucht keine Installation und keine Fremdpakete.
 
-> **Stand:** Phase 3 von 5 – Fundament, Benutzer & Rechte, Athlet:innen-Akten, Performance. Die weiteren Phasen kommen als eigene, jeweils lauffähige Stände dazu (siehe unten). Ihre Daten bleiben beim Update erhalten.
+> **Stand:** Phase 4 von 5 – Fundament, Benutzer & Rechte, Akten, Performance, Medizin/Psychologie/Schule. Die weiteren Phasen kommen als eigene, jeweils lauffähige Stände dazu (siehe unten). Ihre Daten bleiben beim Update erhalten.
 
 ## Starten (Windows)
 
@@ -43,7 +43,7 @@ C:\LSA-Athletenmanagement\daten\
 | **1 – Fundament** | Datenspeicher auf C:, Anmeldung, **Personen anlegen**, Rollen + **Einzelrechte**, Athletenbereich, Zugriffsprotokoll, Backup, Testansicht „als Person X“ | **fertig** |
 | **2 – Athlet:innen-Akten** | **Akten anlegen**, Stammdaten, Lebenszyklus/Austritt, Betreuungsteam, **Dokumente & Notizen je Bereich**, Einwilligungen, Athletenzugang, Löschung | **fertig** |
 | **3 – Performance** | Tages-Check, Trainingserfassung (planen/erfassen), Messwerte mit Validierung, Entwicklungsplan + Wirkungskontrolle, Entscheidungsprotokoll, Termine, **Hinweise & Eskalation**, Rollen-Cockpits | **fertig** |
-| 4 – Medizin, Psychologie, Schule | Belastungsstatus, Verletzungsregister, Beratungsbereich, Prüfungen, Wochenbesprechung | folgt |
+| **4 – Medizin, Psychologie, Schule** | Belastungsstatus (Ampel), Verletzungsregister mit Return-to-Performance, Athletinnengesundheit, geschützter Beratungsbereich mit Freigabe-Hinweisen, Gesprächswünsche, Schule/Prüfungen mit Konfliktprüfung, Wochenbesprechung | **fertig** |
 | 5 – Governance | Datenqualität, Kennzahlen, Datenschutz & Audit, Safeguarding, Demodaten, Export | folgt |
 
 Was Sie je Phase testen können: [docs/TESTPLAN.md](docs/TESTPLAN.md).

@@ -117,3 +117,36 @@ Zu jeder Phase gibt es eine kurze Durchlauf-Liste. Haken setzen, was funktionier
 ### E. Termine & Cockpits
 - [ ] *Termine*: Wettkampf für die eigene Sportart anlegen. Trainer:innen anderer Sportarten sehen ihn nicht; „alle Sportarten“ dürfen nur Personen mit Vollzugriff wählen.
 - [ ] Cockpits: Trainer (Gruppe heute), Koordination (fällige Wirkungskontrollen, Pläne mit Lücken), Sportwissenschaft (Belastung), Athlet:in (Woche, Ziele, Ansprechpersonen).
+
+## Phase 4 – Medizin, Psychologie, Schule, Wochenbesprechung
+
+**Vorbereitung:** Personen mit den Rollen *Sportmedizin*, *Physiotherapie*, *Sportpsychologie*, *Dual Career* (jeweils „Alle Athlet:innen“), dazu Trainer, Koordination und eine Athlet:in mit Zugang.
+
+### A. Belastungsstatus und Verletzungsregister
+- [ ] Als Sportmedizin: Akte → *Gesundheit* → Status **Orange** mit „Erlaubt“, „Nicht erlaubt“ und Kontrolltermin speichern. Ohne „Nicht erlaubt“ oder Kontrolltermin kommt eine Fehlermeldung.
+- [ ] Verletzung erfassen (Region, Art, Diagnose …) – optional gleich den Belastungsstatus mitsetzen.
+- [ ] Als Trainer: Cockpit zeigt die **Ampel**, Erlaubtes/Verbotenes und den Kontrolltermin – **keine Diagnose** (auch nicht im Reiter *Gesundheit*).
+- [ ] Als Physiotherapie: sieht Diagnose und Reha-Stufen, aber **keine Medikation/Labor**; kann „Nächste Stufe“ klicken, aber den Status nicht ändern.
+- [ ] *Verletzungsregister*: Liste aller Fälle, Ausfalltage; für Trainer, Koordination, Psychologie nicht erreichbar.
+- [ ] „Abschließen“ setzt die Reha auf Stufe 6 (Belastungsstatus bleibt bewusst unverändert – Hinweis erscheint).
+- [ ] Athlet:in sieht in „Meine Akte → Gesundheit“ den eigenen Status und die eigenen Fälle (ohne Medikation).
+- [ ] Athletinnengesundheit: ohne erteilte Einwilligung („Daten & Einwilligungen“) keine Notiz möglich; nach Widerruf ist die Notiz ausgeblendet.
+
+### B. Psychologie (geschützter Bereich)
+- [ ] Sportpsychologin legt eine Gesprächsnotiz an – Trainer, Koordination, Sportmedizin sehen sie **nicht**.
+- [ ] „Hinweis freigeben“ geht nur mit gesetztem Haken „Athlet:in hat zugestimmt“; danach sieht der Trainer im Cockpit **nur den Hinweistext**.
+- [ ] Hinweis „zurückziehen“ → verschwindet beim Trainer.
+- [ ] Athlet:in: „Gespräch anfragen“ → bei Sportpsychologie erscheint die Anfrage (Cockpit) und ein vertraulicher Hinweis; sonst sieht sie niemand.
+
+### C. Schule / Dual Career
+- [ ] Dual Career trägt eine Prüfung ein, die 1–2 Tage um einen Wettkampf liegt → Hinweis „Spitzen liegen eng beieinander“; erscheint auch im Cockpit.
+- [ ] Fehlstunden und Notentrend ändern → Trainer sieht nur Prüfungs- und Sporttermine (Stufe „Planung“), keine Noten.
+- [ ] Sportmedizin und Physiotherapie haben keinen Zugriff auf Schule.
+
+### D. Wochenbesprechung
+- [ ] *Wochenbesprechung*: Agenda mit Veränderungen, Einschränkungen, Belastung der Woche, Schul- und Reisetermine, offenen Maßnahmen, Verantwortlichen.
+- [ ] „Fälle mit Entscheidungsbedarf“ → „Beschluss“ → Entscheidung protokollieren → erscheint in der Akte unter *Entscheidungen*.
+- [ ] Mehrere Sportarten: Auswahl oben rechts.
+
+### E. Protokoll
+- [ ] Im *Zugriffsprotokoll* stehen für Medizin/Psychologie/Schule die Öffnungen mit Ergebnis („nur Status“, „vollständig“, „nur freigegebene Hinweise“) und verweigerte Versuche.

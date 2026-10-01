@@ -3,7 +3,7 @@ import { esc, fmt, fmtTs, ageOf, dayDiff, TODAY } from '../util.js';
 import { get, post, put, del } from '../api.js';
 import { actions, forms, changes, toast, showModal, closeModal, confirmDialog, locked, options, asArray } from '../ui.js';
 import { state, can } from '../state.js';
-import { statusPill, athleteFormFields, athletePayload } from './athlete-common.js';
+import { statusPill, athleteFormFields, athletePayload, ampel } from './athlete-common.js';
 import { entriesPanel } from './entries.js';
 import { credentialsModal } from './users.js';
 
@@ -22,7 +22,7 @@ const LOCK_REASON = {
   overview: 'Die Stammdaten dieser Akte sind für diese Rolle nicht freigegeben.',
 };
 const TAB_CATEGORY = { overview: 'allgemein', plan: 'plan', monitoring: 'training', health: 'medizin', psych: 'psychologie', school: 'schule', privacy: 'datenschutz' };
-const PHASE_OF = { plan: 3, monitoring: 3, decisions: 3, health: 4, psych: 4, school: 4 };
+const PHASE_OF = {};
 
 const baseOf = () => (state.session.user.role === 'athlet' ? 'meine-akte' : `athleten/${cur.id}`);
 export const levelPill = (tab) => {
@@ -41,7 +41,7 @@ export async function renderAkte(id, tab) {
   return `<div class="head"><div>${isAth ? '' : '<button class="btn sm" data-act="nav" data-to="athleten">← Zurück zur Liste</button>'}
       <h1 style="margin-top:8px">${esc(a.name)}</h1>
       <p>${esc(a.id)} · ${esc(a.sport)}${a.discipline ? ', ' + esc(a.discipline) : ''}${a.group ? ' · ' + esc(a.group) : ''}${a.kader ? ' · ' + esc(a.kader) : ''} · ${ageOf(a.born)} Jahre</p></div>
-      <div class="row">${a.demo ? '<span class="pill tag-demo">Demo</span>' : ''}${statusPill(a.status)}</div></div>
+      <div class="row">${a.demo ? '<span class="pill tag-demo">Demo</span>' : ''}${d.loadStatus ? ampel(d.loadStatus) : ''}${statusPill(a.status)}</div></div>
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => {
       const lockedTab = k !== 'docs' && d.levels[k] === 'none';
       return `<button role="tab" aria-selected="${tab === k}" data-act="akte-tab" data-t="${k}">${esc(l)}${lockedTab ? ' <span class="lock" aria-label="gesperrt">🔒</span>' : ''}</button>`;

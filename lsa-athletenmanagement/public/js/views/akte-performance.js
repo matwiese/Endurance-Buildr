@@ -163,7 +163,7 @@ forms['measure-save'] = async (f, v) => { await put(`/api/measures/${f.dataset.i
 
 // ---------------------------------------------------------------- Entscheidungen
 export function decisionForm(aid, reason = '') {
-  return `<form class="panel" data-form="decision-add" style="margin-top:14px"><h3>Entscheidung dokumentieren</h3><div class="fgrid c3">
+  return `<form class="panel" data-form="decision-add" data-aid="${esc(aid)}" style="margin-top:14px"><h3>Entscheidung dokumentieren</h3><div class="fgrid c3">
    <div class="f"><label>Anlass</label><input name="reason" value="${esc(reason)}" required maxlength="300"></div><div class="f"><label>Verwendete Informationen</label><input name="info" required maxlength="300"></div><div class="f"><label>Entscheidung</label><input name="decision" required maxlength="500"></div>
    <div class="f"><label>Verantwortlich</label><input name="resp" value="${esc(state.session.user.displayName)}" required maxlength="150"></div><div class="f"><label>Betroffene Personen</label><input name="affected" maxlength="200"></div><div class="f"><label>Maßnahme</label><input name="measure" maxlength="300"></div>
    <div class="f"><label>Prüftermin</label><input type="date" name="review" required></div></div><div class="err" data-err></div><button class="btn primary">Entscheidung speichern</button></form>`;

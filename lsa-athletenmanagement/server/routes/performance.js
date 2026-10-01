@@ -4,6 +4,8 @@ import { audit } from '../auth.js';
 import { accessFor, need, visibleWithLevels, athleteDto } from '../access.js';
 import { SESSION_STATUS, VARIABLES, READINESS_ITEMS } from '../catalog.js';
 import { evaluateAthlete, alertVisible, alertDto } from '../alerts.js';
+import { statusDto } from './medical.js';
+import { hintDto } from './psych.js';
 import { addDays, dayDiff, isDate, nowIso, str, todayStr, bool } from '../util.js';
 
 const ph = (n) => Array(n).fill('?').join(',');
@@ -36,7 +38,7 @@ export function register(app) {
     if (ctx.query.athlete) vis = vis.filter((v) => v.athlete.id === ctx.query.athlete);
     const ids = vis.map((v) => v.athlete.id);
     const lv = (id) => vis.find((v) => v.athlete.id === id).levels;
-    const out = { today, athletes: [], readiness: {}, sessions: [], plans: {}, events: [], alerts: [] };
+    const out = { today, athletes: [], readiness: {}, sessions: [], plans: {}, events: [], alerts: [], status: {}, exams: [], released: {} };
 
     const team = new Map();
     if (ids.length) {
@@ -56,6 +58,17 @@ export function register(app) {
       if (sIds.length) out.sessions = db.all(`SELECT * FROM training WHERE athlete_id IN (${ph(sIds.length)}) AND date BETWEEN ? AND ? ORDER BY date, id`, ...sIds, addDays(today, -13), addDays(today, 14)).map(sessionDto);
     }
     for (const id of ids.filter((i) => lv(i).plan !== 'none')) out.plans[id] = planDto(db, id);
+
+    // Belastungsstatus (Ampel), Prüfungen und freigegebene Hinweise – jeweils nur bei passender Stufe
+    const stIds = ids.filter((id) => ['status', 'physio', 'full', 'own'].includes(lv(id).health));
+    if (stIds.length) {
+      const rows = new Map(db.all(`SELECT * FROM load_status WHERE athlete_id IN (${ph(stIds.length)})`, ...stIds).map((r) => [r.athlete_id, r]));
+      for (const id of stIds) out.status[id] = statusDto(rows.get(id));
+    }
+    const exIds = ids.filter((id) => ['planning', 'full', 'own'].includes(lv(id).school));
+    if (exIds.length) out.exams = db.all(`SELECT athlete_id, date, subject FROM exams WHERE athlete_id IN (${ph(exIds.length)}) AND date BETWEEN ? AND ? ORDER BY date`, ...exIds, addDays(today, -1), addDays(today, 45)).map((x) => ({ aid: x.athlete_id, date: x.date, subject: x.subject }));
+    const hIds = ids.filter((id) => ['released', 'own', 'full'].includes(lv(id).psych));
+    if (hIds.length) for (const h of db.all(`SELECT * FROM released_hints WHERE athlete_id IN (${ph(hIds.length)}) ORDER BY date DESC, id DESC`, ...hIds)) (out.released[h.athlete_id] ||= []).push(hintDto(h));
 
     // Termine: für die Sportarten der sichtbaren Akten (oder alle, wenn die Person alle Athlet:innen betreut)
     const sports = new Set(vis.map((v) => v.athlete.sport));

@@ -298,4 +298,96 @@ export const MIGRATIONS = [
     created_at TEXT NOT NULL
   );
   `,
+
+  // ---------- 4: Medizin, Psychologie, Schule (Phase 4) ----------
+  `
+  CREATE TABLE load_status (
+    athlete_id TEXT PRIMARY KEY REFERENCES athletes(id) ON DELETE CASCADE,
+    color      TEXT NOT NULL DEFAULT 'gruen',      -- gruen | gelb | orange | rot
+    allowed    TEXT NOT NULL DEFAULT '',
+    restricted TEXT NOT NULL DEFAULT '',
+    next_check TEXT NOT NULL DEFAULT '',
+    set_by     TEXT NOT NULL DEFAULT '',
+    updated    TEXT NOT NULL DEFAULT '',           -- Datum der letzten Änderung
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE status_history (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    athlete_id TEXT NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    color      TEXT NOT NULL,
+    allowed    TEXT NOT NULL DEFAULT '',
+    restricted TEXT NOT NULL DEFAULT '',
+    next_check TEXT NOT NULL DEFAULT '',
+    set_by     TEXT NOT NULL DEFAULT '',
+    ts         TEXT NOT NULL
+  );
+
+  CREATE TABLE injuries (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    athlete_id  TEXT NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    date        TEXT NOT NULL,
+    activity    TEXT NOT NULL DEFAULT '',
+    setting     TEXT NOT NULL DEFAULT 'Training',
+    region      TEXT NOT NULL,
+    kind        TEXT NOT NULL DEFAULT 'Verletzung',
+    type        TEXT NOT NULL,
+    first       TEXT NOT NULL DEFAULT 'Erstauftreten',
+    onset       TEXT NOT NULL DEFAULT 'akut',
+    mechanism   TEXT NOT NULL DEFAULT '',
+    diagnosis   TEXT NOT NULL,
+    resp        TEXT NOT NULL DEFAULT '',
+    treat       TEXT NOT NULL DEFAULT '',
+    rtp         INTEGER NOT NULL DEFAULT 1,
+    return_date TEXT NOT NULL DEFAULT '',
+    full_date   TEXT NOT NULL DEFAULT '',
+    closed      INTEGER NOT NULL DEFAULT 0,
+    meds        TEXT NOT NULL DEFAULT '',
+    labs        TEXT NOT NULL DEFAULT '',
+    created_by  TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+  );
+  CREATE INDEX injuries_athlete ON injuries(athlete_id, date);
+
+  CREATE TABLE cycle_notes (
+    athlete_id TEXT PRIMARY KEY REFERENCES athletes(id) ON DELETE CASCADE,
+    note       TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL,
+    updated_by TEXT NOT NULL DEFAULT ''
+  );
+
+  CREATE TABLE psych_notes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    athlete_id TEXT NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    date       TEXT NOT NULL,
+    text       TEXT NOT NULL,
+    author     TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE released_hints (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    athlete_id TEXT NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    date       TEXT NOT NULL,
+    text       TEXT NOT NULL,
+    author     TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
+
+  CREATE TABLE school (
+    athlete_id TEXT PRIMARY KEY REFERENCES athletes(id) ON DELETE CASCADE,
+    absences   INTEGER NOT NULL DEFAULT 0,
+    trend      TEXT NOT NULL DEFAULT '–',
+    updated_at TEXT NOT NULL,
+    updated_by TEXT NOT NULL DEFAULT ''
+  );
+  CREATE TABLE exams (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    athlete_id TEXT NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    date       TEXT NOT NULL,
+    subject    TEXT NOT NULL,
+    created_by TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX exams_athlete ON exams(athlete_id, date);
+  `,
 ];

@@ -125,6 +125,7 @@ export function register(app) {
         export: !!f['export.athlete'],
       },
       login: f['athlete.login'] || f['users.manage'] ? loginOf(a.id) : null,
+      loadStatus: ['status', 'physio', 'full', 'own'].includes(levels.health) ? (() => { const r = db.get('SELECT color FROM load_status WHERE athlete_id = ?', a.id); return r ? r.color : 'gruen'; })() : null,
     };
   });
 

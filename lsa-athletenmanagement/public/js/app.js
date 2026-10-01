@@ -9,6 +9,8 @@ import './views/konzept.js';
 import './views/users.js';
 import './views/athleten.js';
 import './views/akte-performance.js';
+import './views/akte-clinical.js';
+import './views/medizin-seiten.js';
 import './views/check.js';
 import './views/training.js';
 import './views/hinweise.js';

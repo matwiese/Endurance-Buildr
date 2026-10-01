@@ -1,5 +1,5 @@
 // Gemeinsame Bausteine für Athletenliste und Akte
-import { esc } from '../util.js';
+import { esc, fmt, dayDiff } from '../util.js';
 import { options } from '../ui.js';
 import { state } from '../state.js';
 
@@ -34,3 +34,16 @@ export function athletePayload(v) {
     school: v.school, schoolClass: v.schoolClass, eduGoal: v.eduGoal, boarding: v.boarding === '1', guardian: v.guardian, emergency: v.emergency, entryDate: v.entryDate, reviewDate: v.reviewDate };
 }
 
+
+export const ampel = (color) => `<span class="pill"><span class="dot s-${esc(color)}"></span>${esc(state.meta.catalog.status[color] || color)}</span>`;
+export function statusCard(st, { detail = true, note = '' } = {}) {
+  const cat = state.meta.catalog;
+  return `<div class="status-card"><div class="status-big s-${esc(st.color)}" style="${st.color === 'gelb' ? 'color:#2A2200' : ''}">${esc(cat.status[st.color])}</div>
+  <div><b>${esc(cat.statusMean[st.color])}</b>
+  ${detail && st.color !== 'gruen' ? `<dl class="kv" style="margin-top:6px">${st.allowed ? `<dt>Erlaubt</dt><dd>${esc(st.allowed)}</dd>` : ''}<dt>Nicht erlaubt</dt><dd>${esc(st.restricted || '–')}</dd>
+    <dt>Nächste Kontrolle</dt><dd>${fmt(st.next)}${st.next && dayDiff(st.next) < 0 ? ' <span class="bad">überfällig</span>' : ''}</dd></dl>` : ''}
+  <div class="small muted" style="margin-top:6px">${st.by ? `Gesetzt von ${esc(st.by)} am ${fmt(st.updated)}.` : 'Noch kein Status gesetzt – es gilt Grün.'}${note}</div></div></div>`;
+}
+export function rtpStepper(n) {
+  return `<div class="stepper" style="margin-top:6px">${state.meta.catalog.rtp.map((t, i) => `<div class="${i + 1 < n ? 'done' : i + 1 === n ? 'now' : ''}">${i + 1}. ${esc(t)}</div>`).join('')}</div>`;
+}

@@ -72,6 +72,13 @@ export const ALERT_CATS_BY_ROLE = {
   trainer: ['perf', 'health'], koordinator: ['perf', 'health', 'well', 'school'], sportwiss: ['perf'], physio: ['health'], arzt: ['health'], psych: ['well'], dualcareer: ['school'],
 };
 
+// ---- Phase 4 ----
+export const STATUS = { gruen: 'Grün', gelb: 'Gelb', orange: 'Orange', rot: 'Rot' };
+export const STATUS_MEAN = { gruen: 'uneingeschränktes Training', gelb: 'Training mit definierten Anpassungen', orange: 'nur Rehabilitation oder alternatives Training', rot: 'keine sportliche Belastung' };
+export const RTP = ['Medizinische Stabilität', 'Grundlegende Funktion', 'Sportartspezifische Belastbarkeit', 'Volle Trainingsintegration', 'Wettkampfbelastbarkeit', 'Früheres Leistungsniveau'];
+export const INJURY_OPTIONS = { kind: ['Verletzung', 'Erkrankung'], setting: ['Training', 'Wettkampf', 'außerhalb'], first: ['Erstauftreten', 'Wiederverletzung'], onset: ['akut', 'schleichend'] };
+export const SCHOOL_TRENDS = ['–', 'stabil', 'steigend', 'fallend'];
+
 // Datenwörterbuch für Messwerte: Plausibilitätsgrenzen erzeugen bei Verstoß eine Markierung (nie stilles Löschen)
 export const VARIABLES = [
   { key: 'Körpermasse', unit: 'kg', min: 25, max: 200, source: 'Waage', def: 'morgens vor dem Frühstück unter Standardbedingungen' },
@@ -92,7 +99,7 @@ export function catalogForClient() {
   return {
     sex: SEX, lifecycle: LIFECYCLE, teamFunctions: TEAM_FUNCTIONS, teamFunctionByRole: TEAM_FUNCTION_BY_ROLE,
     docCategories: Object.fromEntries(Object.entries(DOC_CATEGORIES).map(([k, v]) => [k, { label: v.label, tab: v.tab }])),
-    readinessItems: READINESS_ITEMS, sessionStatus: SESSION_STATUS, goalAreas: GOAL_AREAS, eventTypes: EVENT_TYPES, stages: STAGES, stageText: STAGE_TEXT, alertCats: ALERT_CATS, variables: VARIABLES,
+    status: STATUS, statusMean: STATUS_MEAN, rtp: RTP, injuryOptions: INJURY_OPTIONS, schoolTrends: SCHOOL_TRENDS, readinessItems: READINESS_ITEMS, sessionStatus: SESSION_STATUS, goalAreas: GOAL_AREAS, eventTypes: EVENT_TYPES, stages: STAGES, stageText: STAGE_TEXT, alertCats: ALERT_CATS, variables: VARIABLES,
     allowedUploads: Object.keys(ALLOWED_UPLOADS), exitChecklist: EXIT_CHECKLIST, consentStatus: CONSENT_STATUS, consentGivenBy: CONSENT_GIVEN_BY,
   };
 }

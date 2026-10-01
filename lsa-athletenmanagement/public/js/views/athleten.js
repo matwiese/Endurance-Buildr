@@ -1,9 +1,10 @@
 // Athlet:innen: Liste und Aufnahme einer neuen Akte
 import { esc, fmt, ageOf } from '../util.js';
 import { get, post } from '../api.js';
+import { getCore, readinessToday, openMeasures, planComplete } from '../calc.js';
 import { actions, forms, changes, inputs, toast, head, options } from '../ui.js';
 import { state, registerView, registerNav, can, isRole } from '../state.js';
-import { statusPill, athleteFormFields, athletePayload } from './athlete-common.js';
+import { statusPill, athleteFormFields, athletePayload, ampel } from './athlete-common.js';
 import { renderAkte, mountAkte } from './akte.js';
 
 const filter = { q: '', sport: '', status: 'aktuelle' };
@@ -26,7 +27,9 @@ registerView('athleten', {
 });
 
 async function listHtml() {
-  const { athletes } = await get('/api/athletes');
+  const core = await getCore();
+  const athletes = core.athletes;
+  const hasStatus = athletes.some((a) => ['status', 'physio', 'full', 'own'].includes(a.levels.health)), hasCheck = athletes.some((a) => ['read', 'full', 'own', 'wellbeing'].includes(a.levels.monitoring)), hasPlan = athletes.some((a) => a.levels.plan !== 'none');
   const q = filter.q.toLowerCase();
   const rows = athletes.filter((a) => (filter.status === 'alle' || (filter.status === 'aktuelle' ? a.status !== 'ausgetreten' : a.status === filter.status))
     && (!filter.sport || a.sport === filter.sport)
@@ -41,10 +44,10 @@ async function listHtml() {
         <select data-change="ath-filter-status">${options([['aktuelle', 'ohne Ausgetretene'], ['alle', 'alle Status'], ...state.meta.catalog.lifecycle], filter.status)}</select>
         <span class="right small muted">${rows.length} von ${athletes.length}</span>
       </div>
-      ${rows.length ? `<div class="scroll"><table><tr><th>Athlet:in</th><th>ID</th><th>Sportart / Disziplin</th><th>Gruppe · Kader</th><th>Alter</th><th>Betreuung</th><th>Status</th></tr>
+      ${rows.length ? `<div class="scroll"><table><tr><th>Athlet:in</th><th>ID</th><th>Sportart / Disziplin</th><th>Gruppe · Kader</th><th>Alter</th><th>Betreuung</th><th>Status</th>${hasStatus ? '<th>Belastungsstatus</th>' : ''}${hasCheck ? '<th>Check heute</th>' : ''}${hasPlan ? '<th>Plan</th><th>Offene Maßnahmen</th>' : ''}</tr>
       ${rows.map((a) => `<tr class="click" data-act="nav" data-to="athleten" data-arg="${esc(a.id)}"><td><b>${esc(a.name)}</b>${a.demo ? ' <span class="pill tag-demo">Demo</span>' : ''}</td><td class="small nowrap">${esc(a.id)}</td>
         <td>${esc(a.sport)}<div class="small muted">${esc(a.discipline)}</div></td><td class="small">${esc(a.group || '–')}<div class="muted">${esc(a.kader)}</div></td><td>${ageOf(a.born)}</td>
-        <td class="small">${a.team.filter((t) => t.function === 'Trainer:in').map((t) => esc(t.name)).join(', ') || '<span class="muted">kein Trainer zugeordnet</span>'}</td><td>${statusPill(a.status)}</td></tr>`).join('')}</table></div>`
+        <td class="small">${a.team.filter((t) => t.function === 'Trainer:in').map((t) => esc(t.name)).join(', ') || '<span class="muted">kein Trainer zugeordnet</span>'}</td><td>${statusPill(a.status)}</td>${hasStatus ? `<td>${core.status[a.id] ? ampel(core.status[a.id].color) : '–'}</td>` : ''}${hasCheck ? `<td>${a.levels.monitoring === 'none' ? '<span class="muted">n/a</span>' : (readinessToday(core, a.id) ? '✓' : '<span class="muted">–</span>')}</td>` : ''}${hasPlan ? `<td>${core.plans[a.id] ? (planComplete(core.plans[a.id]) ? '<span class="ok">vollständig</span>' : '<span class="warn">Lücken</span>') : '–'}</td><td>${core.plans[a.id] ? openMeasures(core, a.id).length : '–'}</td>` : ''}</tr>`).join('')}</table></div>`
       : `<div class="empty">${athletes.length ? 'Keine Treffer.' : (can('athletes.create') ? 'Noch keine Akten angelegt. Mit „+ Athlet:in aufnehmen“ beginnen.' : 'Ihnen sind noch keine Athlet:innen zugeordnet.')}</div>`}
     </div>`;
 }
