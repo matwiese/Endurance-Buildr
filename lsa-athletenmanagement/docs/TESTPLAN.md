@@ -41,3 +41,41 @@ Zu jeder Phase gibt es eine kurze Durchlauf-Liste. Haken setzen, was funktionier
 ### F. Sicherung
 - [ ] *System → Jetzt Sicherung erstellen* → Eintrag in der Liste, Ordner unter `…\daten\backups\` vorhanden.
 - [ ] Programm beenden und neu starten → alle Personen und Rechte sind noch da.
+
+## Phase 2 – Athlet:innen-Akten
+
+**Vorbereitung:** Zwei Trainer:innen anlegen (z. B. *Markus Huber* – Sportart Leichtathletik, *Petra Wagner* – Schwimmen), außerdem *Sabine Kern* (Performance-Koordination, alle Athlet:innen) und *Dr. Eva Lang* (Sportmedizin, alle).
+
+### A. Akte anlegen
+- [ ] Als Koordination (oder Administration): *Athlet:innen → + Athlet:in aufnehmen*, alle Felder ausfüllen → Akte erhält die ID `LSA-0001`.
+- [ ] Eine zweite Akte in der anderen Sportart anlegen (`LSA-0002`).
+- [ ] Zukünftiges Geburtsdatum bzw. unbekannte Sportart wird mit verständlicher Meldung abgelehnt.
+- [ ] *Bearbeiten* am Stammdatenblatt → Änderung speichern → im Zugriffsprotokoll steht „Stammdaten geändert“ mit den geänderten Feldnamen.
+
+### B. Betreuungsteam und Athletenbereich
+- [ ] *Team bearbeiten*: Trainer:in zuordnen (Funktion wird passend vorgeschlagen).
+- [ ] Als Trainer (Testansicht oder Login): sieht nur Akten der eigenen Sportart – die Akte der anderen Sportart ist weder in der Liste noch per Adresse erreichbar.
+- [ ] Trainer:in der *anderen* Sportart zusätzlich dem Team einer Akte zuordnen → sieht nun genau diese eine Akte. Wieder entfernen → Zugriff weg.
+
+### C. Reiter und Sperren
+- [ ] Administration: Reiter *Gesundheit*, *Psychologie*, *Schule* … zeigen 🔒 und eine Begründung; der Versuch steht im Protokoll.
+- [ ] Trainer: *Gesundheit* zeigt Stufe „nur Belastungsstatus“, *Wohlbefinden & Psychologie* „nur freigegebene Hinweise“, *Daten & Einwilligungen* ist gesperrt.
+- [ ] Sportmedizin: Gesundheit vollständig; Psychologie nur freigegebene Hinweise.
+
+### D. Dokumente und Notizen
+- [ ] In *Überblick* eine Notiz anlegen, danach eine PDF/ein Bild hochladen (Text + Datei zusammen geht auch).
+- [ ] Datei liegt im Datenordner unter `dokumente\LSA-0001\` mit zufälligem Namen; Download funktioniert, Bilder erscheinen als Vorschau.
+- [ ] Eine `.exe` oder eine umbenannte Textdatei als `.png` wird abgelehnt.
+- [ ] Sportmedizin legt unter *Gesundheit* einen Eintrag an → der Trainer sieht ihn **nicht**; Sportpsychologie-Einträge sieht nur die Psychologie.
+- [ ] „Für Athlet:in sichtbar“ ankreuzen → die Athlet:in sieht genau diesen Eintrag.
+
+### E. Zugang der Athlet:in
+- [ ] In der Akte *Zugang anlegen* → vorläufiges Passwort wird einmalig angezeigt.
+- [ ] Mit diesem Login anmelden: Passwortwechsel, danach nur „Meine Akte“; fremde Akten per Adresse (`#/athleten/LSA-0002`) nicht erreichbar.
+- [ ] Unter *Daten & Einwilligungen*: freiwillige Zwecke selbst erteilen/widerrufen; „Tägliches Monitoring“ lässt sich nicht selbst ändern.
+- [ ] Koordination dokumentiert eine Papier-Einwilligung („Ändern …“ → durch Erziehungsberechtigte).
+
+### F. Austritt und Löschung
+- [ ] Status *ausgetreten* setzen → Zugang der Athlet:in ist beendet, die Checkliste erscheint, für Trainer ist die Akte unsichtbar.
+- [ ] *Akte löschen* verlangt die Athleten-ID; danach sind Akte, Einwilligungen und der Ordner unter `dokumente\` weg; das Protokoll hält die Löschung fest.
+- [ ] Programm beenden/neu starten → alles ist noch da (Datenbank im Datenordner).

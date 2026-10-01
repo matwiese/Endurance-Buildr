@@ -4,6 +4,7 @@ import { getSetting, setSetting } from '../db.js';
 import { ROLES, MATRIX, effectivePerms, scopeOf, publicMeta } from '../permissions.js';
 import { str, nowIso } from '../util.js';
 import { VERSION } from '../config.js';
+import { catalogForClient } from '../catalog.js';
 
 export function userDto(u) {
   const perms = effectivePerms(u);
@@ -37,7 +38,7 @@ export function register(app) {
   const { router, db, config, auth } = app;
 
   router.get('/api/session', { auth: false }, (ctx) => sessionPayload(app, ctx));
-  router.get('/api/meta', () => publicMeta());
+  router.get('/api/meta', () => ({ ...publicMeta(), catalog: catalogForClient() }));
 
   // Ersteinrichtung: nur solange noch keine Person existiert
   router.post('/api/setup', { auth: false }, async (ctx) => {

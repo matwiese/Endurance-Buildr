@@ -27,14 +27,15 @@ export function showModal(innerHtml, { wide = false } = {}) {
   first?.focus();
 }
 export function closeModal() { document.getElementById('modalHost').innerHTML = ''; }
+actions['dlg-cancel'] = () => closeModal();
 
 // Ja/Nein-Abfrage als Dialog, liefert Promise<boolean>
 export function confirmDialog(message, { ok = 'Ja', cancel = 'Abbrechen', danger = false, title = 'Bitte bestätigen' } = {}) {
   return new Promise((resolve) => {
     showModal(`<h2>${esc(title)}</h2><p>${esc(message)}</p>
-      <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" data-act="dlg-cancel">${esc(cancel)}</button><button class="btn ${danger ? 'danger' : 'primary'}" data-act="dlg-ok">${esc(ok)}</button></div>`);
-    actions['dlg-ok'] = () => { closeModal(); resolve(true); };
-    actions['dlg-cancel'] = () => { closeModal(); resolve(false); };
+      <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" data-act="dlg-no">${esc(cancel)}</button><button class="btn ${danger ? 'danger' : 'primary'}" data-act="dlg-yes">${esc(ok)}</button></div>`);
+    actions['dlg-yes'] = () => { closeModal(); resolve(true); };
+    actions['dlg-no'] = () => { closeModal(); resolve(false); };
   });
 }
 

@@ -238,7 +238,6 @@ export function credentialsModal({ title, name, username, password, generated })
     <div class="pwbox" id="pwShown">${esc(password)}</div>
     <div class="note warn" style="margin-top:12px">${generated ? 'Dieses Passwort wird <b>nur jetzt</b> angezeigt und ist danach nicht mehr abrufbar. ' : ''}Bitte der Person auf sicherem Weg mitteilen. Bei der ersten Anmeldung muss sie ein eigenes Passwort wählen.</div>
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" data-act="copy-pw">In die Zwischenablage kopieren</button><button class="btn primary" data-act="dlg-cancel">Fertig</button></div>`);
-  actions['dlg-cancel'] = () => closeModal();
 }
 actions['copy-pw'] = async (el) => {
   const t = document.getElementById('pwShown').textContent;

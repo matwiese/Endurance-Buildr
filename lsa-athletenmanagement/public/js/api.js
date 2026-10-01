@@ -28,4 +28,4 @@ export async function api(method, url, body, opts = {}) {
 export const get = (u, o) => api('GET', u, undefined, o);
 export const post = (u, b = {}, o) => api('POST', u, b, o);
 export const put = (u, b = {}, o) => api('PUT', u, b, o);
-export const del = (u, o) => api('DELETE', u, undefined, o);
+export const del = (u, body, o) => api('DELETE', u, body, o);

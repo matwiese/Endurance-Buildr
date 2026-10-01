@@ -7,6 +7,8 @@ import { createAuth } from './auth.js';
 import { defaultSettings, register as registerSystem } from './routes/system.js';
 import { register as registerAuth } from './routes/auth.js';
 import { register as registerUsers } from './routes/users.js';
+import { register as registerAthletes } from './routes/athletes.js';
+import { register as registerEntries } from './routes/entries.js';
 import { autoBackup } from './backup.js';
 
 function makeLogger(config) {
@@ -33,6 +35,8 @@ export async function createApp(config) {
   app.auth = createAuth({ db, config });
   registerAuth(app);
   registerUsers(app);
+  registerAthletes(app);
+  registerEntries(app);
   registerSystem(app);
 
   const server = createHttpServer({

@@ -23,3 +23,12 @@ export const AREAS = ['Performance', 'Medizin', 'Psychologie', 'Schule', 'Safegu
 // Farbklasse für Berechtigungsstufen in der Kopfzeile (wie im Prototyp)
 export const lvl = (t) => ['ja', 'vollständig', 'vollständig eigener Bereich', 'eigener Fallbereich', 'vollständig erforderlich'].includes(t) ? 'full'
   : t === 'nein' ? 'none' : (t === 'aggregiert' || t === 'Prüfung und Audit') ? 'agg' : t.startsWith('eigene') ? 'own' : 'limited';
+
+export function ageOf(born, on = TODAY) {
+  if (!born) return null;
+  const [y, m, d] = born.split('-').map(Number), [ty, tm, td] = on.split('-').map(Number);
+  let a = ty - y;
+  if (tm < m || (tm === m && td < d)) a--;
+  return a;
+}
+export const nl2br = (s) => esc(s).replace(/\n/g, '<br>');

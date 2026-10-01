@@ -7,6 +7,7 @@ import { renderLogin, renderSetup, renderPwChange } from './views/auth.js';
 import './views/start.js';
 import './views/konzept.js';
 import './views/users.js';
+import './views/athleten.js';
 import './views/rights.js';
 import './views/system.js';
 import './views/audit.js';
