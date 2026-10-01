@@ -20,3 +20,8 @@ export * from './csv/index.ts';
 export * from './metrics/doc.ts';
 export * from './synth/index.ts';
 export * from './live/index.ts';
+export * from './filter.ts';
+export * from './cop.ts';
+export * from './balance.ts';
+export * from './iso.ts';
+export * from './config/iso-presets.ts';

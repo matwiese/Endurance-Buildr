@@ -19,6 +19,7 @@ import {
   type MassInfo,
   type TraceArrays,
 } from './contexts.ts';
+import { analyzeBalance, analyzeIsometric } from './static.ts';
 import type { RecordingAnalysis, RepResult } from './types.ts';
 
 export interface AnalyzeOptions {
@@ -350,6 +351,30 @@ export function analyzeRecording(trace: ForceTrace, opts: AnalyzeOptions = {}): 
   for (let i = 0; i + 1 < cuts.length; i++)
     if (cuts[i + 1]! - cuts[i]! > 1) segments.push([cuts[i]!, cuts[i + 1]!]);
 
+  // Isometrie/Balance: nicht blockbasiert, Körpermasse optional (Gewicht in Testposition)
+  const staticFamily = mode !== 'auto' ? TEST_TYPE_INFO[mode].family : null;
+  if (staticFamily === 'isometric' || staticFamily === 'balance') {
+    const mass = opts.bodyMassKg ?? null;
+    const sreps: RepResult[] = [];
+    const sc = { n: 0 };
+    for (const [a, b] of segments) {
+      const r =
+        staticFamily === 'isometric'
+          ? analyzeIsometric(t, cfg, mode as TestType, mass, a, b, sc)
+          : analyzeBalance(trace, t, cfg, mode as TestType, mass, a, b, sc);
+      sreps.push(...r.reps);
+      warnings.push(...r.warnings);
+    }
+    return {
+      hz: trace.hz,
+      bodyMassKg: mass,
+      massSource: mass !== null ? 'session' : 'none',
+      externalLoadKg: 0,
+      reps: sreps,
+      warnings,
+    };
+  }
+
   // Körpermasse
   let bodyMass: number | null = opts.bodyMassKg ?? null;
   let massSource: RecordingAnalysis['massSource'] = bodyMass !== null ? 'session' : 'none';
@@ -375,14 +400,6 @@ export function analyzeRecording(trace: ForceTrace, opts: AnalyzeOptions = {}): 
   const c: Ctx = { t, m, cfg, classifier: opts.classifier ?? DEFAULT_CLASSIFIER, mode };
   const reps: RepResult[] = [];
   const counter = { n: 0 };
-
-  if (
-    mode !== 'auto' &&
-    (TEST_TYPE_INFO[mode].family === 'isometric' || TEST_TYPE_INFO[mode].family === 'balance')
-  ) {
-    warnings.push(warn('not_implemented', 'error', { params: { type: mode } }));
-    return { hz: trace.hz, bodyMassKg: bodyMass, massSource, externalLoadKg: loadKg, reps, warnings };
-  }
 
   for (const [a, b] of segments) {
     const seg = segmentBlocks(total, trace.hz, bw, cfg, a, b);

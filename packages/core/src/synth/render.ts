@@ -1,4 +1,5 @@
 import { G } from '../constants.ts';
+import { DEFAULT_PLATE_GEOMETRY, plateCenterX, type PlateGeometry } from '../cop.ts';
 import type { ForceTrace } from '../types.ts';
 import { createRng, type Rng } from './prng.ts';
 import type { Profile } from './profiles.ts';
@@ -42,6 +43,10 @@ export interface SegmentTruth {
 
 export interface RenderedScript {
   trace: ForceTrace;
+  /** Eckenlasten n×8 (nur wenn ein Profil CoP liefert oder `corners` gesetzt ist) */
+  corners?: Float32Array;
+  /** rauschfreier CoP (mm) der Balance-Profile – Wahrheit für Tests */
+  cleanCop?: { x: Float32Array; y: Float32Array };
   segments: SegmentTruth[];
   /** rauschfreie Gesamtkraft (zur Kontrolle) */
   cleanTotal: Float64Array;
@@ -114,6 +119,48 @@ export class SampleSynth {
   }
 }
 
+/**
+ * Eckenlasten [lFL, lFR, lBL, lBR, rFL, rFR, rBL, rBR] aus Plattenkräften und (optionalem) globalem CoP in mm.
+ * Beidbeinig bestimmt der ML-Anteil des CoP die Links/Rechts-Aufteilung, AP wirkt auf beiden Platten gleich.
+ */
+export function cornersFor(
+  left: number,
+  right: number,
+  cop: { x: number; y: number } | null,
+  g: PlateGeometry,
+  noiseN: number,
+  rng: Rng,
+): number[] {
+  const out: number[] = [];
+  const total = left + right;
+  const cL = plateCenterX(g, 'left');
+  const cR = plateCenterX(g, 'right');
+  for (const side of ['left', 'right'] as const) {
+    const F = side === 'left' ? left : right;
+    // lokaler CoP der Platte (mm, relativ zur Plattenmitte)
+    let lx = 0;
+    let ly = 0;
+    if (cop && total > 1) {
+      const c = side === 'left' ? cL : cR;
+      // beidbeinig: Plattenanteil folgt dem ML-CoP → lokal 0; einbeinig: CoP relativ zur belasteten Platte
+      const onlyThis = (side === 'left' ? right : left) < 0.02 * total;
+      lx = onlyThis ? cop.x - c : 0;
+      ly = cop.y;
+    }
+    const xn = Math.max(-1, Math.min(1, lx / (g.widthMm / 2)));
+    const yn = Math.max(-1, Math.min(1, ly / (g.lengthMm / 2)));
+    const q = F / 4;
+    const e = noiseN / 2;
+    out.push(
+      q * (1 - xn + yn) + rng.normal() * e,
+      q * (1 + xn + yn) + rng.normal() * e,
+      q * (1 - xn - yn) + rng.normal() * e,
+      q * (1 + xn - yn) + rng.normal() * e,
+    );
+  }
+  return out;
+}
+
 /** Hüllkurve (0..1) für Sway/Rocking: 1 im Stand, an den Profilrändern sanft ein-/ausgeblendet. */
 export const stanceEnvelope = (local: number, duration: number, fadeS = 0.3): number =>
   Math.max(0, Math.min(1, local / fadeS, (duration - local) / fadeS));
@@ -123,7 +170,15 @@ export const stanceEnvelope = (local: number, duration: number, fadeS = 0.3): nu
  */
 export function renderScript(
   profiles: readonly Profile[],
-  opts: { hz: number; athlete?: Partial<AthleteModel>; seed?: number; rng?: Rng; fadeS?: number },
+  opts: {
+    hz: number;
+    athlete?: Partial<AthleteModel>;
+    seed?: number;
+    rng?: Rng;
+    fadeS?: number;
+    geometry?: PlateGeometry;
+    corners?: boolean;
+  },
 ): RenderedScript {
   const hz = opts.hz;
   const rng = opts.rng ?? createRng(opts.seed ?? 1);
@@ -134,6 +189,11 @@ export function renderScript(
   const left = new Float32Array(n);
   const right = new Float32Array(n);
   const clean = new Float64Array(n);
+  const geometry = opts.geometry ?? DEFAULT_PLATE_GEOMETRY;
+  const wantCorners = opts.corners ?? profiles.some((p) => p.cop !== undefined);
+  const corners = wantCorners ? new Float32Array(n * 8) : undefined;
+  const copX = wantCorners ? new Float32Array(n) : undefined;
+  const copY = wantCorners ? new Float32Array(n) : undefined;
 
   const segments: SegmentTruth[] = [];
   const starts: number[] = [];
@@ -161,12 +221,49 @@ export function renderScript(
     const p = profiles[pi]!;
     const local = Math.min(p.duration, t - starts[pi]!);
     const env = p.stance ? stanceEnvelope(local, p.duration, fade) : 0;
-    const s = synth.sample(p.force(local), t, env, p.stance);
+    let s = synth.sample(p.force(local), t, env, p.stance);
+    let cop: { x: number; y: number } | null = null;
+    if (p.cop) {
+      cop = p.cop(local);
+      // Balance: Plattenaufteilung folgt dem ML-CoP (beidbeinig) bzw. der Einbeinvorgabe
+      const a = synth.athlete;
+      let shareL: number;
+      if (a.singleLeg === 'left') shareL = 1;
+      else if (a.singleLeg === 'right') shareL = 0;
+      else {
+        const cL = plateCenterX(geometry, 'left');
+        const cR = plateCenterX(geometry, 'right');
+        shareL = Math.max(0, Math.min(1, (cR - cop.x) / (cR - cL)));
+      }
+      s = { ...s, left: s.clean * shareL, right: s.clean * (1 - shareL) };
+    }
+    if (corners) {
+      const cs = cornersFor(
+        cop ? s.left : s.left,
+        cop ? s.right : s.right,
+        cop,
+        geometry,
+        synth.athlete.noiseN,
+        synth.rng,
+      );
+      for (let q = 0; q < 8; q++) corners[k * 8 + q] = cs[q]!;
+      if (cop) {
+        s = { ...s, left: cs[0]! + cs[1]! + cs[2]! + cs[3]!, right: cs[4]! + cs[5]! + cs[6]! + cs[7]! };
+        copX![k] = cop.x;
+        copY![k] = cop.y;
+      }
+    }
     left[k] = s.left;
     right[k] = s.right;
     clean[k] = s.clean;
   }
-  return { trace: { hz, left, right }, segments, cleanTotal: clean };
+  return {
+    trace: { hz, left, right },
+    corners,
+    cleanCop: copX && copY ? { x: copX, y: copY } : undefined,
+    segments,
+    cleanTotal: clean,
+  };
 }
 
 /** Körpergewicht (N) für eine Masse. */

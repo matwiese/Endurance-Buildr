@@ -241,3 +241,40 @@
 | `time_to_peak_force` | Zeit bis Spitzenkraft / Time to Peak Force | s | landing | Zeit vom Erstkontakt bis zur maximalen Kraft im Landefenster. — `t(F_max) − t_Landung` |
 | `time_to_stabilization` | Stabilisierungszeit / Time to Stabilisation | s | landing | Zeit vom Erstkontakt, bis die Kraft ≥ 500 ms lang innerhalb von ±5 % BW bleibt. — `t_stab − t_Landung;  \|F − BW\| ≤ 0,05·BW für ≥ 500 ms` |
 | `asym_landing_mean_force` | Asymmetrie Landungs-Mittelkraft / Landing Mean Force Asymmetry | % | asymmetry | Links/Rechts-Asymmetrie der Mittelkraft im Landefenster (Land and Hold). — `Mittelkraft je Platte über [t_Landung, t_Landung+500 ms]. Vorzeichen: + = rechts höher.` |
+
+## Isometrie-Familie (generisch, IMTP, Isometric Squat, Shoulder ISO-I/Y/T)
+
+| Schlüssel | Bezeichnung | Einheit | Phase | Formel / Definition |
+| --- | --- | --- | --- | --- |
+| `iso_peak_force` | Spitzenkraft / Peak Force | N | isometric | Maximale Gesamtkraft der Kontraktion (brutto). — `F_peak = max F(t) über die Kontraktion (bei invertierter Richtung: min F(t))` |
+| `iso_net_peak_force` | Netto-Spitzenkraft / Net Peak Force | N | isometric | Spitzenkraft abzüglich Körpergewicht in Testposition (bzw. Basislinie). — `F_net = \|F_peak − BW\|,  BW = Gewicht in Testposition (gewogen) bzw. Ruhe-Basislinie` |
+| `iso_time_to_peak` | Zeit bis Spitzenkraft / Time to Peak Force | s | isometric | Zeit vom Kontraktionsbeginn (Yank-/5-SD-Onset) bis zur Spitzenkraft. — `t(F_peak) − t_Onset` |
+| `iso_duration` | Kontraktionsdauer / Contraction Duration | s | isometric | Dauer der Kontraktion (Onset bis Kraftabfall unter 15 % der Spitze). — `t_Ende − t_Onset` |
+| `iso_rfd_50` | RFD 0–50 ms / RFD 0–50 ms | N/s | isometric | Mittlere Kraftanstiegsrate in den ersten 50 ms ab Onset. — `RFD = (F(t_Onset + 50 ms) − F_Basis) / 50 ms` |
+| `iso_rfd_100` | RFD 0–100 ms / RFD 0–100 ms | N/s | isometric | Mittlere Kraftanstiegsrate in den ersten 100 ms ab Onset. — `RFD = (F(t_Onset + 100 ms) − F_Basis) / 100 ms` |
+| `iso_rfd_150` | RFD 0–150 ms / RFD 0–150 ms | N/s | isometric | Mittlere Kraftanstiegsrate in den ersten 150 ms ab Onset. — `RFD = (F(t_Onset + 150 ms) − F_Basis) / 150 ms` |
+| `iso_rfd_200` | RFD 0–200 ms / RFD 0–200 ms | N/s | isometric | Mittlere Kraftanstiegsrate in den ersten 200 ms ab Onset. — `RFD = (F(t_Onset + 200 ms) − F_Basis) / 200 ms` |
+| `iso_rfd_250` | RFD 0–250 ms / RFD 0–250 ms | N/s | isometric | Mittlere Kraftanstiegsrate in den ersten 250 ms ab Onset. — `RFD = (F(t_Onset + 250 ms) − F_Basis) / 250 ms` |
+| `iso_impulse_100ms` | Impuls 0–100 ms / Impulse 0–100 ms | N·s | isometric | Netto-Impuls über der Basislinie in den ersten 100 ms ab Onset. — `J = ∫(F − F_Basis) dt über [t_Onset, t_Onset + 100 ms]` |
+| `iso_impulse_200ms` | Impuls 0–200 ms / Impulse 0–200 ms | N·s | isometric | Netto-Impuls über der Basislinie in den ersten 200 ms ab Onset. — `J = ∫(F − F_Basis) dt über [t_Onset, t_Onset + 200 ms]` |
+| `iso_impulse_300ms` | Impuls 0–300 ms / Impulse 0–300 ms | N·s | isometric | Netto-Impuls über der Basislinie in den ersten 300 ms ab Onset. — `J = ∫(F − F_Basis) dt über [t_Onset, t_Onset + 300 ms]` |
+| `iso_rfd_max` | Max-RFD (20 ms) / Max RFD (20 ms) | N/s | isometric | Größter Kraftanstieg in einem 20-ms-Fenster zwischen Onset und Spitzenkraft. — `max_t [F(t + 20 ms) − F(t)] / 0,02 s` |
+| `asym_iso_peak_force` | Asymmetrie Spitzenkraft / Peak Force Asymmetry | % | asymmetry | Links/Rechts-Asymmetrie der Netto-Spitzenkraft je Platte (über der jeweiligen Basislinie). — `Netto-Spitze je Platte = \|extremum − Basislinie_Platte\|. Asymmetrie = (größere − kleinere Seite)/größere · 100; + = rechts höher.` |
+| `asym_iso_impulse_200ms` | Asymmetrie Impuls 0–200 ms / Impulse 0–200 ms Asymmetry | % | asymmetry | Links/Rechts-Asymmetrie des Netto-Impulses in den ersten 200 ms. — `J_Platte = ∫(F_Platte − Basislinie_Platte) dt über [t_Onset, t_Onset + 200 ms]; Vorzeichen: + = rechts höher.` |
+
+## Balance-Familie (Quiet Stand, SL Stand, SL Range of Stability)
+
+| Schlüssel | Bezeichnung | Einheit | Phase | Formel / Definition |
+| --- | --- | --- | --- | --- |
+| `balance_duration` | Auswertedauer / Analysis Duration | s | balance | Dauer des ausgewerteten Fensters (ohne die ersten 1 s Einschwingen). — `N / f_s` |
+| `cop_path_length` | CoP-Pfadlänge / CoP Path Length | mm | balance | Gesamtlänge der CoP-Bahn (10-Hz-Zero-Phase-Tiefpass). — `L = Σ √(Δx² + Δy²)` |
+| `cop_mean_velocity` | CoP-Mittelgeschwindigkeit / CoP Mean Velocity | mm/s | balance | Mittlere Geschwindigkeit des CoP (Pfadlänge / Dauer). — `v̄ = L / T` |
+| `cop_area_95` | CoP-Fläche (95-%-Ellipse) / CoP Area (95 % ellipse) | mm² | balance | Fläche der 95-%-Konfidenzellipse der CoP-Punktwolke. — `A = χ²(2; 0,95)·π·√(λ₁·λ₂) = 5,991·π·√det Σ` |
+| `cop_hull_area` | CoP-Hüllfläche / CoP Hull Area | mm² | balance | Fläche der konvexen Hülle der CoP-Bahn (Stabilitätsbereich). — `Fläche der konvexen Hülle aller CoP-Punkte` |
+| `cop_ap_sd` | AP-Schwankung (SD) / AP Sway (SD) | mm | balance | Standardabweichung der CoP-Position in anterior-posteriorer Richtung. — `SD(y)` |
+| `cop_ml_sd` | ML-Schwankung (SD) / ML Sway (SD) | mm | balance | Standardabweichung der CoP-Position in medio-lateraler Richtung. — `SD(x)` |
+| `cop_ap_range` | AP-Ausschlag (Range) / AP Range | mm | balance | Maximaler Ausschlag des CoP in AP-Richtung. — `max y − min y` |
+| `cop_ml_range` | ML-Ausschlag (Range) / ML Range | mm | balance | Maximaler Ausschlag des CoP in ML-Richtung. — `max x − min x` |
+| `cop_ap_velocity` | AP-Geschwindigkeit / AP Velocity | mm/s | balance | Mittlere Betragsgeschwindigkeit des CoP in AP-Richtung. — `mean \|Δy\|·f_s` |
+| `cop_ml_velocity` | ML-Geschwindigkeit / ML Velocity | mm/s | balance | Mittlere Betragsgeschwindigkeit des CoP in ML-Richtung. — `mean \|Δx\|·f_s` |
+| `asym_balance_load` | Asymmetrie Belastung / Weight-bearing Asymmetry | % | asymmetry | Links/Rechts-Asymmetrie der mittleren Plattenlast im Auswertefenster. — `Mittelkraft je Platte; Asymmetrie = (größere − kleinere)/größere · 100; + = rechts höher.` |

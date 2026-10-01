@@ -17,6 +17,12 @@ import {
   type Profile,
   type Rng,
   type TestType,
+  DEFAULT_PLATE_GEOMETRY,
+  balanceProfile,
+  cornersFor,
+  isometricProfile,
+  plateCenterX,
+  type PlateGeometry,
 } from '@buildr/core';
 import { BaseAdapter, DeviceError, type DeviceInfo, type Sample } from './types.ts';
 
@@ -40,6 +46,9 @@ export interface SimulatorOptions {
   /** Störungen für Jitterbuffer-/Paketverlust-Tests */
   impair?: { dropProb?: number; reorderProb?: number; timestampJitterUs?: number };
   now?: () => number;
+  /** Eckensensor-Daten (CoP) liefern */
+  corners?: boolean;
+  geometry?: PlateGeometry;
 }
 
 export interface TrialParams {
@@ -50,6 +59,14 @@ export interface TrialParams {
   hops?: number;
   side?: 'left' | 'right';
   contactS?: number;
+  /** Isometrie: Netto-Spitze (N) bzw. relativ zum Körpergewicht, Anstiegs-/Haltezeit */
+  peakNetN?: number;
+  riseS?: number;
+  holdS?: number;
+  /** Balance: Dauer und Schwankung (SD) in mm; `unstable` verdoppelt die Schwankung (Augen zu / instabile Unterlage) */
+  durationS?: number;
+  sigmaMm?: number;
+  unstable?: boolean;
 }
 
 interface QueueItem {
@@ -63,6 +80,17 @@ interface QueueItem {
 
 export type Presence = 'empty' | 'standing' | 'moving';
 
+const STATIC_TYPES: ReadonlySet<SimTrialType> = new Set<SimTrialType>([
+  'isometric',
+  'imtp',
+  'iso_squat',
+  'shoulder_iso_i',
+  'shoulder_iso_y',
+  'shoulder_iso_t',
+  'quiet_stand',
+  'sl_stand',
+  'sl_range_of_stability',
+]);
 const STANCE_TYPES: ReadonlySet<SimTrialType> = new Set<SimTrialType>([
   'cmj',
   'loaded_cmj',
@@ -117,6 +145,7 @@ export class SimulatorAdapter extends BaseAdapter {
   private idleWaiters: Array<() => void> = [];
   private droppedByImpair = 0;
   private baseAthlete: Partial<AthleteModel>;
+  private readonly geometry: PlateGeometry;
 
   constructor(options: SimulatorOptions = {}) {
     super();
@@ -132,6 +161,7 @@ export class SimulatorAdapter extends BaseAdapter {
     this.rng = createRng(this.o.seed);
     this.impairRng = createRng(this.o.seed + 777);
     this.baseAthlete = { bodyMass: 80, ...options.athlete };
+    this.geometry = options.geometry ?? DEFAULT_PLATE_GEOMETRY;
     this.synth = new SampleSynth(this.baseAthlete, createRng(this.o.seed + 101));
     this.offsets = options.plateOffsets ?? { left: 14.2, right: -9.7 };
     this.idle = options.startStanding ? 'standing' : 'empty';
@@ -141,7 +171,8 @@ export class SimulatorAdapter extends BaseAdapter {
       serial: `SIM-${this.o.seed.toString(16).padStart(6, '0')}`,
       plates: 2,
       supportedHz: [200, 500, 1000],
-      hasCorners: false,
+      hasCorners: !!options.corners,
+      geometry: options.geometry ?? DEFAULT_PLATE_GEOMETRY,
     };
     this._status = { ...this._status, samplingHz: this.hz, batteryPct: 87 };
   }
@@ -293,7 +324,7 @@ export class SimulatorAdapter extends BaseAdapter {
     const loadKg = p.loadKg ?? (loaded ? 20 : this.load);
     const needsEmpty = type === 'dj' || type === 'sl_dj' || type === 'land_hold' || type === 'sl_land_hold';
     if (needsEmpty) this.ensurePresence('empty');
-    else if (STANCE_TYPES.has(type)) {
+    else if (STANCE_TYPES.has(type) || STATIC_TYPES.has(type)) {
       this.ensurePresence('standing');
       if (loadKg !== this.load) this.setLoad(loadKg);
     }
@@ -365,6 +396,49 @@ export class SimulatorAdapter extends BaseAdapter {
       case 'failed_attempt':
         trial = [abortedProfile(sys)];
         break;
+      case 'isometric':
+      case 'imtp':
+      case 'iso_squat':
+      case 'shoulder_iso_i':
+      case 'shoulder_iso_y':
+      case 'shoulder_iso_t': {
+        const shoulder = type.startsWith('shoulder');
+        const net =
+          p.peakNetN ??
+          (shoulder
+            ? 160 + 40 * this.rng.next()
+            : (type === 'imtp' ? 2.1 : 1.6) * sys * G * this.variation());
+        trial = [
+          isometricProfile({
+            baselineN: sys * G,
+            peakNetN: net,
+            rise: p.riseS ?? (shoulder ? 1.4 : 0.9),
+            hold: p.holdS ?? 2.5,
+            lead: 1.0,
+          }),
+        ];
+        break;
+      }
+      case 'quiet_stand':
+      case 'sl_stand':
+      case 'sl_range_of_stability': {
+        const rs = type === 'sl_range_of_stability';
+        const k = (p.unstable ? 2 : 1) * (type === 'quiet_stand' ? 1 : 1.6) * (rs ? 2.5 : 1);
+        const sigma = p.sigmaMm ?? 6 * k;
+        const center = sl ? plateCenterX(this.geometry, (p.side ?? 'right') as 'left' | 'right') : 0;
+        trial = [
+          balanceProfile({
+            mass: sys,
+            duration: p.durationS ?? 30,
+            sigmaMl: sigma,
+            sigmaAp: sigma * 1.5,
+            tau: rs ? 2.2 : 1.2,
+            centerX: center,
+            rng: createRng(this.o.seed * 31 + this.index),
+          }),
+        ];
+        break;
+      }
       default:
         throw new DeviceError(`Simulator kann „${type}“ nicht abspielen`, 'unsupported');
     }
@@ -456,12 +530,14 @@ export class SimulatorAdapter extends BaseAdapter {
       let force = 0;
       let stance = false;
       let env = 0;
+      let cop: { x: number; y: number } | null = null;
       if (this.cur) {
         const local = (this.index - this.cur.startIdx) / this.hz;
         const p = this.cur.item.profile;
         force = p.force(Math.min(local, p.duration));
         stance = p.stance;
         env = stance ? stanceEnvelope(local, p.duration) : 0;
+        if (p.cop) cop = p.cop(Math.min(local, p.duration));
         if (local + 1 / this.hz >= p.duration) {
           const done = this.cur.item;
           if (done.then) {
@@ -476,13 +552,38 @@ export class SimulatorAdapter extends BaseAdapter {
         stance = true;
         env = Math.min(1, (this.index - this.idleSince) / (0.3 * this.hz));
       }
-      const s = this.synth.sample(force, t, env, stance);
+      let s = this.synth.sample(force, t, env, stance);
+      let corners: number[] | undefined;
+      if (this.o.corners) {
+        // Balance: Plattenaufteilung folgt dem ML-CoP (beidbeinig) bzw. der Einbeinvorgabe
+        if (cop) {
+          const a = this.synth.athlete;
+          const cL = plateCenterX(this.geometry, 'left');
+          const cR = plateCenterX(this.geometry, 'right');
+          const shareL =
+            a.singleLeg === 'left'
+              ? 1
+              : a.singleLeg === 'right'
+                ? 0
+                : Math.max(0, Math.min(1, (cR - cop.x) / (cR - cL)));
+          s = { ...s, left: s.clean * shareL, right: s.clean * (1 - shareL) };
+        }
+        corners = cornersFor(s.left, s.right, cop, this.geometry, this.synth.athlete.noiseN, this.synth.rng);
+        s = {
+          ...s,
+          left: corners[0]! + corners[1]! + corners[2]! + corners[3]!,
+          right: corners[4]! + corners[5]! + corners[6]! + corners[7]!,
+        };
+      }
       const drift = (this.index / this.hz) * 0.02;
+      const offL = this.offsets.left + drift;
+      const offR = this.offsets.right - drift;
       out.push({
         t: this.index * periodUs,
-        left: s.left + this.offsets.left + drift,
-        right: s.right + this.offsets.right - drift,
+        left: s.left + offL,
+        right: s.right + offR,
         seq: this.index & 0xffff,
+        corners: corners?.map((v, i) => v + (i < 4 ? offL : offR) / 4),
       });
       this.index++;
     }

@@ -3,3 +3,4 @@ export * from './pchip.ts';
 export * from './profiles.ts';
 export * from './render.ts';
 export * from './scripts.ts';
+export * from './static.ts';

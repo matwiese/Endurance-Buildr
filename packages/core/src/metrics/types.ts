@@ -66,8 +66,10 @@ export interface IsoData {
   /** Onset (gebrochen) und Peak-Index */
   onset: number;
   peakIdx: number;
-  /** Basislinie (N): Ruhe vor der Kontraktion */
+  /** Basislinie (N): Ruhe vor der Kontraktion (Gesamtkraft) und je Platte */
   baselineN: number;
+  baseLeft: number;
+  baseRight: number;
   /** Vorzeichen: +1 Kraft steigt, −1 Kraft sinkt (invertiert analysiert) */
   sign: 1 | -1;
   /** Kontraktionsende */

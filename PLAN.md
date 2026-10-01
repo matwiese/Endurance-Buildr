@@ -2,33 +2,33 @@
 
 Status: ☐ offen · ◐ in Arbeit · ☑ fertig. Nach jedem Meilenstein: Tests grün, Commit, Push auf den Entwicklungsbranch.
 
-## M0 – Repo, CI, Typen, Metrik-Registry ◐
+## M0 – Repo, CI, Typen, Metrik-Registry ☑
 
 - pnpm-Monorepo (`packages/core`, `packages/device`, `apps/server`, `apps/web`, `e2e`), strict TS, ESLint, Prettier, Vitest, GitHub-Actions-CI.
 - `CLAUDE.md`, `PLAN.md`, `ASSUMPTIONS.md`, `/reference` (+ README mit den aus den Referenzdaten abgeleiteten Konventionen).
 - Core: Typen (`ForceTrace`, `TestType`, …), Konfiguration, Metrik-Registry (Definition, Registrierung, Doku-Generator), VALD-CSV-Parser.
 - **Abnahme**: `pnpm check` grün; Registry-/Parser-Tests; CI-Workflow vorhanden.
 
-## M1 – Simulator + Signal-Pipeline ☐
+## M1 – Simulator + Signal-Pipeline ☑
 
 - `core/synth`: physikbasierter Athlet (Kraft-Kontrollpunkte, PCHIP, Wahrheit durch feine Integration), Rauschen/Rocking/Asymmetrie.
 - `device`: `DeviceAdapter`, `SimulatorAdapter` (Szenarien, Fehlversuche), `FileReplayAdapter`, Jitterbuffer + Paketverlust, Stubs.
 - `core`: Statistik, Zero, Weigh (Stabilität), Ruhephasen, Onset (20 N/5-SD/Yank), Flugphasen, Rohdaten-Blobformat.
 - **Abnahme**: Onset-Index == Referenz in allen 4 CSVs; Zero/Weigh/Re-Zero-Tests; Jitterbuffer-Tests.
 
-## M2 – Phasen + Metriken ☐
+## M2 – Phasen + Metriken ☑
 
 - Geschwindigkeit/Weg/Phasen (CMJ/SJ/DJ/Hop/CMRJ/Landing), Metriken als Registry-Einträge inkl. Asymmetrie.
 - `docs/metrics.md` wird aus der Registry generiert (Test gegen Drift).
 - **Abnahme**: Sprunghöhe ±0,5 cm und Zeiten ±2 ms gegen synthetische Wahrheit (Monte-Carlo über Seeds/Massen); Referenz-Regression der v/s/Impuls-Spalten.
 
-## M3 – Auto-Detect + restliche Testtypen ☐
+## M3 – Auto-Detect + restliche Testtypen ☑
 
 - Segmentierung in Blöcke, Merkmale, deklarative Regeln in `config/classifier-rules.ts`, Konfidenz, „Unklar“.
 - Isometrics (Yank/5-SD, Presets), Balance (CoP, Ellipse), Land & Hold, Hop-Auswahl, SL-Varianten.
 - **Abnahme**: Alle Simulator-Testtypen werden korrekt erkannt; die 4 Referenzdateien → cmj / sj / sl_jump (L,R).
 
-## M4 – Live-UI ☐
+## M4 – Live-UI ◐
 
 - Vite/React/Tailwind/PWA/Zustand/TanStack Query/i18n; Live-Engine + Web Worker; Canvas-Plot; Workflow-Schrittleiste; Review; lokale Speicherung (IndexedDB).
 - **Abnahme**: Voller Workflow mit Simulator im Browser; Sofortergebnisse < 1 s nach Landung+Beruhigung.

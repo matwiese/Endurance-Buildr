@@ -4,6 +4,7 @@ import {
   G,
   analyzeRecording,
   computeZero,
+  copFromCorners,
   mergeConfig,
   parseForceTraceCsv,
   type ForceTrace,
@@ -291,5 +292,101 @@ describe('FileReplayAdapter', () => {
     adapter.advance(500); // 100 bis Ende + Schleife
     expect(n).toBe(500);
     expect(adapter.position).toBe(400);
+  });
+});
+
+describe('Simulator: Isometrie und Balance (mit Eckensensoren)', () => {
+  const MASS = 80;
+  it('IMTP/Isometric/Shoulder werden als Kontraktion mit plausiblen Metriken analysiert', async () => {
+    for (const type of [
+      'imtp',
+      'iso_squat',
+      'shoulder_iso_i',
+      'shoulder_iso_y',
+      'shoulder_iso_t',
+      'isometric',
+    ] as const) {
+      const sim = new SimulatorAdapter({ clock: 'manual', seed: 31, athlete: { bodyMass: MASS } });
+      await sim.connect();
+      const rec = recorder(1000);
+      sim.onSample(rec.push);
+      sim.advance(2500);
+      sim.stepOn();
+      sim.advance(3500);
+      sim.perform(type);
+      let guard = 0;
+      while (sim.queueLength > 0 && guard++ < 100) sim.advance(500);
+      sim.advance(1000);
+      const z = zeroed(rec.finish(), 2.5);
+      const res = analyzeRecording(z.trace, { mode: type, bodyMassKg: MASS });
+      expect(res.reps, type).toHaveLength(1);
+      expect(res.reps[0]!.metrics['iso_net_peak_force']!, type).toBeGreaterThan(
+        type.startsWith('shoulder') ? 100 : 800,
+      );
+      expect(res.reps[0]!.metrics['iso_time_to_peak']!, type).toBeGreaterThan(0.5);
+    }
+  });
+
+  it('Quiet Stand/SL Stand/Range of Stability mit 200 Hz: CoP aus Eckensensoren, Metriken plausibel', async () => {
+    const hz = 200;
+    const out: Record<string, Record<string, number | null>> = {};
+    for (const [type, side, unstable] of [
+      ['quiet_stand', undefined, false],
+      ['quiet_stand', undefined, true],
+      ['sl_stand', 'left', false],
+      ['sl_range_of_stability', 'right', false],
+    ] as const) {
+      const sim = new SimulatorAdapter({
+        clock: 'manual',
+        seed: 32,
+        hz,
+        corners: true,
+        athlete: { bodyMass: MASS },
+      });
+      await sim.connect();
+      expect(sim.info.hasCorners).toBe(true);
+      const jb = new JitterBuffer({ hz, hasCorners: true });
+      const L: number[] = [];
+      const R: number[] = [];
+      const C: number[] = [];
+      const add = (c: ReturnType<JitterBuffer['push']>) => {
+        L.push(...c.left);
+        R.push(...c.right);
+        C.push(...Array.from(c.corners!));
+      };
+      sim.onSample((b) => add(jb.push(b)));
+      sim.advance(2500);
+      sim.stepOn();
+      sim.advance(3500);
+      sim.perform(type, { side, unstable, durationS: 30 });
+      let guard = 0;
+      while (sim.queueLength > 0 && guard++ < 200) sim.advance(1000);
+      add(jb.flush());
+      const trace: ForceTrace = { hz, left: Float32Array.from(L), right: Float32Array.from(R) };
+      const z = zeroed(trace, 2.5);
+      // Roh-Offsets sind je Ecke verteilt; vor der CoP-Berechnung entfernen (Verhältnisse bleiben sonst leicht verzerrt)
+      const corners = Float32Array.from(C, (v, i) => v - (i % 8 < 4 ? z.offL : z.offR) / 4);
+      const cop = copFromCorners(corners);
+      const start = Math.round(6 * hz); // ab Teststart (nach Zero + Stehen)
+      const sub = {
+        hz,
+        left: z.trace.left.subarray(start),
+        right: z.trace.right.subarray(start),
+        copX: cop.x.subarray(start),
+        copY: cop.y.subarray(start),
+      };
+      const res = analyzeRecording(sub, { mode: type, bodyMassKg: MASS });
+      expect(res.reps).toHaveLength(1);
+      out[`${type}${unstable ? '+unstable' : ''}`] = res.reps[0]!.metrics;
+      if (side) expect(res.reps[0]!.side).toBe(side);
+    }
+    const q = out['quiet_stand']!;
+    expect(q['cop_path_length']!).toBeGreaterThan(300);
+    expect(q['cop_area_95']!).toBeGreaterThan(50);
+    expect(out['quiet_stand+unstable']!['cop_path_length']!).toBeGreaterThan(q['cop_path_length']! * 1.5);
+    expect(out['sl_stand']!['cop_ml_sd']!).toBeGreaterThan(q['cop_ml_sd']!);
+    expect(out['sl_range_of_stability']!['cop_hull_area']!).toBeGreaterThan(
+      out['sl_stand']!['cop_hull_area']!,
+    );
   });
 });

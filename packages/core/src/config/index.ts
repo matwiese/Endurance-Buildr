@@ -107,6 +107,12 @@ export interface AnalysisConfig {
   balance: {
     trimStartMs: number;
     ellipseChi2: number;
+    /** Zero-Phase-Tiefpass für den CoP (Hz); 0 = aus */
+    copCutoffHz: number;
+    /** Plattengeometrie (mm) für die CoP-Berechnung */
+    geometry: { widthMm: number; lengthMm: number; gapMm: number };
+    /** kürzere Fenster werden mit Warnung `short_balance` ausgewertet */
+    minDurationS: number;
   };
 }
 
@@ -162,7 +168,13 @@ export const DEFAULT_ANALYSIS_CONFIG: AnalysisConfig = {
     blockGapMs: 800,
     minConfidence: 0.55,
   },
-  balance: { trimStartMs: 1000, ellipseChi2: 5.991 },
+  balance: {
+    trimStartMs: 1000,
+    ellipseChi2: 5.991,
+    copCutoffHz: 10,
+    geometry: { widthMm: 400, lengthMm: 600, gapMm: 100 },
+    minDurationS: 10,
+  },
 };
 
 export type DeepPartial<T> = { [K in keyof T]?: T[K] extends (infer U)[] ? U[] : DeepPartial<T[K]> };

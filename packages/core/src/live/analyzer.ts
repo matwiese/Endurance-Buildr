@@ -6,6 +6,7 @@ import { computeZero, type ZeroFailReason, type ZeroResult } from '../zero.ts';
 import { mean, msToSamples, sd } from '../stats.ts';
 import type { TestType } from '../testTypes.ts';
 import type { AnalysisWarning, ForceTrace } from '../types.ts';
+import { copFromCorners } from '../cop.ts';
 import { WeighTracker, weighFromQuiet, type WeighState } from '../weigh.ts';
 import { GrowableF32 } from './growable.ts';
 
@@ -77,6 +78,9 @@ export class LiveAnalyzer {
   // Aufnahme
   private rl = new GrowableF32();
   private rr = new GrowableF32();
+  private cx = new GrowableF32();
+  private cy = new GrowableF32();
+  private hasCop = false;
   private breaks: number[] = [];
   private det: LiveDetector;
   private lastEmittedEnd = 0;
@@ -245,6 +249,9 @@ export class LiveAnalyzer {
     }
     this.rl.clear();
     this.rr.clear();
+    this.cx.clear();
+    this.cy.clear();
+    this.hasCop = false;
     this.breaks = [];
     this.det.reset();
     this.lastEmittedEnd = 0;
@@ -284,7 +291,13 @@ export class LiveAnalyzer {
     const n = this.rl.length;
     const breaks = [...this.breaks].filter((b) => b > 0 && b < n);
     return {
-      trace: { hz: this.opts.hz, left: this.rl.copy(), right: this.rr.copy(), breaks },
+      trace: {
+        hz: this.opts.hz,
+        left: this.rl.copy(),
+        right: this.rr.copy(),
+        breaks,
+        ...(this.hasCop && this.cx.length === n ? { copX: this.cx.copy(), copY: this.cy.copy() } : {}),
+      },
       offsetLeft: this.offL,
       offsetRight: this.offR,
       bodyMassKg: this.mass,
@@ -309,7 +322,13 @@ export class LiveAnalyzer {
 
   // ───────────── Datenfluss ─────────────
   /** Rohsamples (ungenullt) eines Chunks. */
-  push(left: ArrayLike<number>, right: ArrayLike<number>, breakBefore = false): void {
+  /** Rohsamples (ungenullt); `corners` optional: n×8 Eckenlasten [lFL,lFR,lBL,lBR,rFL,rFR,rBL,rBR] */
+  push(
+    left: ArrayLike<number>,
+    right: ArrayLike<number>,
+    corners?: ArrayLike<number>,
+    breakBefore = false,
+  ): void {
     const n = Math.min(left.length, right.length);
     if (n === 0) return;
     if (this.zeroBuf) {
@@ -336,14 +355,30 @@ export class LiveAnalyzer {
         this.breaks.push(this.rl.length);
         this.det.reset();
       }
-      this.recordChunk(zl, zr);
+      this.recordChunk(zl, zr, corners);
     }
   }
 
-  private recordChunk(zl: Float32Array, zr: Float32Array): void {
+  private recordChunk(zl: Float32Array, zr: Float32Array, corners?: ArrayLike<number>): void {
     const start = this.rl.length;
     this.rl.push(zl);
     this.rr.push(zr);
+    if (corners && corners.length >= zl.length * 8) {
+      // Plattenoffsets gleichmäßig auf die vier Ecken verteilen, dann CoP (mm)
+      const z = new Float32Array(zl.length * 8);
+      for (let i = 0; i < zl.length; i++)
+        for (let q = 0; q < 8; q++) z[i * 8 + q] = corners[i * 8 + q]! - (q < 4 ? this.offL : this.offR) / 4;
+      const cop = copFromCorners(z, this.cfg.balance.geometry);
+      this.cx.push(cop.x);
+      this.cy.push(cop.y);
+      this.hasCop = true;
+    } else if (this.hasCop) {
+      // Chunk ohne Ecken in einer Aufnahme mit CoP: letzten Wert halten (gleiche Länge)
+      const lx = this.cx.length ? this.cx.view()[this.cx.length - 1]! : 0;
+      const ly = this.cy.length ? this.cy.view()[this.cy.length - 1]! : 0;
+      this.cx.push(new Float32Array(zl.length).fill(lx));
+      this.cy.push(new Float32Array(zl.length).fill(ly));
+    }
     const bw = this.mass !== null ? (this.mass + this.opts.externalLoadKg) * G : null;
     const events = this.det.push(zl, zr, start, bw);
     for (const m of events.markers) {
