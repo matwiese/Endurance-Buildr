@@ -5,6 +5,10 @@ import { audit } from '../auth.js';
 import { getSetting, setSetting } from '../db.js';
 import { createBackup, listBackups } from '../backup.js';
 import { str, bool } from '../util.js';
+import { validatePassword } from '../auth.js';
+import { seedDemo, removeDemo, demoLoaded } from '../seed.js';
+import { ROLES } from '../permissions.js';
+import { badRequest as bad } from '../http.js';
 import { VERSION } from '../config.js';
 
 export function defaultSettings(db) {
@@ -80,6 +84,27 @@ export function register(app) {
     const b = createBackup(db, config, { label: 'manuell', withDocs: true });
     audit(db, ctx, { area: 'System', action: 'Backup erstellt', detail: b.name });
     return { backup: { name: b.name, path: b.dir, documents: b.documents } };
+  });
+
+  // ---- Demodaten
+  router.get('/api/system/demo', { feature: 'system.manage' }, () => ({
+    loaded: demoLoaded(db),
+    users: db.all('SELECT username, display_name, role, function_title FROM users WHERE demo = 1 ORDER BY id').map((u) => ({ username: u.username, displayName: u.display_name, role: u.role, roleLabel: ROLES[u.role]?.label })),
+    athletes: db.get('SELECT COUNT(*) AS n FROM athletes WHERE demo = 1').n,
+  }));
+  router.post('/api/system/demo', { feature: 'system.manage' }, async (ctx) => {
+    const b = await ctx.json();
+    const err = validatePassword(b.password, '');
+    if (err) throw bad(err);
+    if (demoLoaded(db)) throw bad('Die Demodaten sind bereits geladen.');
+    const r = await seedDemo(db, { password: b.password, by: ctx.user.display_name });
+    audit(db, ctx, { area: 'System', action: 'Demodaten geladen', detail: `${r.athletes} Athlet:innen, ${r.users} Personen` });
+    return { ok: true, ...r };
+  });
+  router.delete('/api/system/demo', { feature: 'system.manage' }, async (ctx) => {
+    const r = removeDemo(db, config);
+    audit(db, ctx, { area: 'System', action: 'Demodaten entfernt', detail: `${r.athletes} Athlet:innen, ${r.users} Personen` });
+    return { ok: true, ...r };
   });
 
   // Zugriffsprotokoll (Administration und Datenschutz). Filter: Ergebnis, Athleten-ID, Bereich, Text.

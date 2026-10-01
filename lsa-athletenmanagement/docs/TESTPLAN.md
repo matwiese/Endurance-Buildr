@@ -150,3 +150,39 @@ Zu jeder Phase gibt es eine kurze Durchlauf-Liste. Haken setzen, was funktionier
 
 ### E. Protokoll
 - [ ] Im *Zugriffsprotokoll* stehen für Medizin/Psychologie/Schule die Öffnungen mit Ergebnis („nur Status“, „vollständig“, „nur freigegebene Hinweise“) und verweigerte Versuche.
+
+## Phase 5 – Governance, Demodaten, Export
+
+### A. Demodaten und Rundgang
+- [ ] *System → Demodaten laden* (Passwort festlegen) → 10 Athlet:innen, 13 Demo-Zugänge (`demo.…`).
+- [ ] *Systemkonzept → Rundgang in fünf Schritten*: Buttons öffnen die Testansicht der jeweiligen Demo-Person.
+- [ ] *Demodaten entfernen* löscht nur die Demo-Daten; eigene Akten, Personen und Dokumente bleiben.
+
+### B. Datenqualität (als „Performance Data“)
+- [ ] Markierte Werte (z. B. Körpermasse 520 kg, Sprung > 10 %) → „Korrigieren“ mit Zahl und Begründung → Wert wird korrigiert, **Rohwert bleibt erhalten**; „bestätigen“ klärt ohne Änderung.
+- [ ] Sportwissenschaft und Koordination sehen die Seite, dürfen aber nicht klären.
+- [ ] Datenwörterbuch, Data Owner und Vollständigkeit je Athlet:in (nur IDs, keine Inhalte).
+
+### C. Kennzahlen (als Geschäftsführung)
+- [ ] Nur aggregierte Zahlen, **keine Namen**; Sportarten mit weniger als 5 Personen sind unterdrückt.
+- [ ] Geschäftsführung hat keinen Zugriff auf Akten, Hinweise oder Datenqualität.
+
+### D. Datenschutz & Audit (als Datenschutzbeauftragte)
+- [ ] Umsetzungsstand abhaken, „Heute geprüft“ je Rolle, Aufbewahrungsfristen eintragen und speichern.
+- [ ] Hinweis auf Personen mit **individuell angepassten Rechten**.
+- [ ] Zugriffsprotokoll mit Filtern; Datenschutz sieht **keine Akteninhalte**.
+- [ ] Athlet:in: *Daten & Einwilligungen → Auskunft anfordern* → Anfrage erscheint beim Datenschutz und lässt sich als erledigt markieren.
+
+### E. Export / Auskunft
+- [ ] Athlet:in: „Meine Daten herunterladen“ → JSON enthält nur eigene Daten (keine Gesprächsnotizen, keine Medikation).
+- [ ] Koordination: Export enthält nur, was sie sehen darf; fehlende Bereiche stehen unter `nichtEnthalten`.
+- [ ] Trainer: keine Exportfunktion.
+
+### F. Safeguarding
+- [ ] Athlet:in: „Vertrauliche Meldung“ (anonym) → erscheint nur beim Safeguarding Officer; im Protokoll steht „anonym“.
+- [ ] Safeguarding Officer: Fall bearbeiten; „Zugriff im Schutzfall“ nur mit Begründung → minimale Akteninfo, Eintrag im Protokoll.
+- [ ] Administration, Koordination, Medizin, Datenschutz haben **keinen** Zugriff auf die Fälle.
+
+### G. Sicherung und Wiederherstellung
+- [ ] *System → Jetzt Sicherung erstellen*, danach Daten ändern, Programm beenden, `RESTORE.bat` → Sicherung wählen → Stand ist wie zuvor; „vor-wiederherstellung_…“ liegt als Notkopie in `backups\`.
+- [ ] Laufendes Programm: `RESTORE.bat` verweigert mit Hinweis.

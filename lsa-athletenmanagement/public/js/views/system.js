@@ -1,6 +1,6 @@
 // System: Datenspeicher, Organisation, Sportarten, Backups, Testansicht
 import { esc, fmtTs, fmtSize } from '../util.js';
-import { get, post, put } from '../api.js';
+import { get, post, put, del } from '../api.js';
 import { actions, forms, toast, head, confirmDialog } from '../ui.js';
 import { state, registerView, registerNav, can } from '../state.js';
 
@@ -8,7 +8,8 @@ registerView('system', {
   title: 'System',
   guard: () => can('system.manage'),
   async render() {
-    const [sys, st] = await Promise.all([get('/api/system'), get('/api/settings')]);
+    const [sys, st, demo] = await Promise.all([get('/api/system'), get('/api/settings'), get('/api/system/demo')]);
+    const sugg = 'Demo-' + Math.random().toString(36).slice(2, 10) + '-26';
     return head('System', 'Datenspeicher, Sicherungen und Grundeinstellungen.') + `
     <div class="grid g2">
       <div class="panel"><h3>Datenspeicher</h3>
@@ -38,6 +39,13 @@ registerView('system', {
         <p class="small muted">Eine pro Zeile. Verwendete Sportarten (bei Athlet:innen oder im Athletenbereich einer Person) lassen sich nicht entfernen.</p>
         <textarea name="sports" rows="6" style="min-height:120px">${esc(st.sports.join('\n'))}</textarea>
         <div class="err" data-err></div><button class="btn primary" style="margin-top:6px">Speichern</button></form>
+    </div>
+    <div class="panel" style="margin-top:14px"><h3>Demodaten zum Durchspielen</h3>
+      <p class="small muted">Fiktive Daten aus dem Prototyp: 10 Athlet:innen mit Tages-Checks, Einheiten, Plänen, Verletzungen, Hinweisen usw. sowie je eine Person pro Rolle. Alles ist als „Demo“ markiert und lässt sich <b>vollständig und ohne Spuren in Ihren eigenen Daten</b> wieder entfernen.</p>
+      ${demo.loaded ? `<div class="note ok"><b>Demodaten sind geladen</b> (${demo.athletes} Athlet:innen). Anmelden mit den unten stehenden Benutzernamen und dem beim Laden festgelegten Passwort – oder bequem per „Testansicht“ unter <a href="#/users">Personen &amp; Rechte</a>.</div>
+        <div class="scroll"><table><tr><th>Benutzername</th><th>Name</th><th>Rolle</th></tr>${demo.users.map((u) => `<tr><td><code>${esc(u.username)}</code></td><td>${esc(u.displayName)}</td><td>${esc(u.roleLabel)}</td></tr>`).join('')}</table></div>
+        <button class="btn danger" data-act="demo-remove" style="margin-top:10px">Demodaten entfernen …</button>`
+      : `<form data-form="demo-load" class="row" style="align-items:flex-end"><div class="f" style="margin:0;min-width:280px"><label>Gemeinsames Passwort aller Demo-Zugänge</label><input name="password" type="text" minlength="10" value="${esc(sugg)}" required></div><button class="btn primary">Demodaten laden</button></form><div class="err" data-err></div>`}
     </div>`;
   },
 });
@@ -51,6 +59,17 @@ forms['settings-sports'] = async (f, v) => {
   await put('/api/settings', { sports: v.sports.split(/\r?\n/).map((s) => s.trim()).filter(Boolean) });
   toast('Sportarten gespeichert.');
   await window.__lsa.refresh();
+};
+forms['demo-load'] = async (f, v) => {
+  await post('/api/system/demo', { password: v.password });
+  toast('Demodaten geladen. Das Passwort steht im Eingabefeld – bitte notieren.');
+  await window.__lsa.rerender();
+};
+actions['demo-remove'] = async () => {
+  if (!(await confirmDialog('Alle Demodaten (Demo-Athlet:innen, Demo-Personen, Demo-Termine und -Fälle) endgültig entfernen? Ihre eigenen Daten bleiben unverändert.', { ok: 'Demodaten entfernen', danger: true }))) return;
+  const r = await del('/api/system/demo');
+  toast(`Entfernt: ${r.athletes} Athlet:innen, ${r.users} Personen.`);
+  await window.__lsa.rerender();
 };
 actions['backup-now'] = async (el) => {
   el.disabled = true; el.textContent = 'Sicherung läuft …';

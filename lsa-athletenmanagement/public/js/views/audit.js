@@ -35,4 +35,4 @@ inputs['audit-q'] = (el) => {
 };
 actions['audit-more'] = () => { f.limit += 200; window.__lsa.rerender(); };
 
-registerNav({ id: 'protokoll', label: 'Zugriffsprotokoll', view: 'protokoll', order: 85, show: () => can('audit.view') });
+registerNav({ id: 'protokoll', label: 'Zugriffsprotokoll', view: 'protokoll', order: 85, show: () => can('audit.view') && !can('privacy.manage') });

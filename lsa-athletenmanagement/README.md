@@ -2,7 +2,7 @@
 
 Betriebsbereiter Prototyp des Athletenmanagements: echte Anmeldung, Benutzer- und Rechteverwaltung, SQLite-Datenbank und Dokumentenablage **auf Ihrem Laptop (Laufwerk C:)**. Es läuft nichts in der Cloud, es braucht keine Installation und keine Fremdpakete.
 
-> **Stand:** Phase 4 von 5 – Fundament, Benutzer & Rechte, Akten, Performance, Medizin/Psychologie/Schule. Die weiteren Phasen kommen als eigene, jeweils lauffähige Stände dazu (siehe unten). Ihre Daten bleiben beim Update erhalten.
+> **Stand:** alle fünf Phasen sind umgesetzt. Jede Phase ist ein eigener, lauffähiger Commit (siehe „Zwischenstände“) – Ihre Daten bleiben beim Wechsel/Update erhalten, die Datenbank wird beim Start automatisch angepasst.
 
 ## Starten (Windows)
 
@@ -44,9 +44,21 @@ C:\LSA-Athletenmanagement\daten\
 | **2 – Athlet:innen-Akten** | **Akten anlegen**, Stammdaten, Lebenszyklus/Austritt, Betreuungsteam, **Dokumente & Notizen je Bereich**, Einwilligungen, Athletenzugang, Löschung | **fertig** |
 | **3 – Performance** | Tages-Check, Trainingserfassung (planen/erfassen), Messwerte mit Validierung, Entwicklungsplan + Wirkungskontrolle, Entscheidungsprotokoll, Termine, **Hinweise & Eskalation**, Rollen-Cockpits | **fertig** |
 | **4 – Medizin, Psychologie, Schule** | Belastungsstatus (Ampel), Verletzungsregister mit Return-to-Performance, Athletinnengesundheit, geschützter Beratungsbereich mit Freigabe-Hinweisen, Gesprächswünsche, Schule/Prüfungen mit Konfliktprüfung, Wochenbesprechung | **fertig** |
-| 5 – Governance | Datenqualität, Kennzahlen, Datenschutz & Audit, Safeguarding, Demodaten, Export | folgt |
+| **5 – Governance** | Datenqualität (Markieren/Korrigieren), Kennzahlen (aggregiert, k ≥ 5), Datenschutz & Audit (DSFA-Stand, Rechteprüfung, Fristen, Anfragen), Safeguarding, Auskunfts-Export, **Demodaten**, Wiederherstellung (`RESTORE.bat`) | **fertig** |
 
-Was Sie je Phase testen können: [docs/TESTPLAN.md](docs/TESTPLAN.md).
+Was Sie je Phase testen können: [docs/TESTPLAN.md](docs/TESTPLAN.md) · Kurzanleitung: [docs/ANLEITUNG.md](docs/ANLEITUNG.md).
+
+### Zwischenstände (jeweils ein Commit auf dem Branch `claude/jolly-bell-ruba0c`)
+
+| Phase | Commit |
+|---|---|
+| 1 Fundament, Benutzer & Rechte | `5202d17` |
+| 2 Athlet:innen-Akten | `cbb76ce` |
+| 3 Performance | `d802b55` |
+| 4 Medizin, Psychologie, Schule | `24a6250` |
+| 5 Governance, Demodaten (= aktueller Stand) | Spitze des Branches |
+
+Einen Zwischenstand ausprobieren: `git checkout <Commit>` (oder auf GitHub beim Commit „Browse files → Code → Download ZIP“). Danach wieder `git checkout claude/jolly-bell-ruba0c`. Die Datenbank wird nur nach **oben** migriert – zum Zurückgehen auf eine frühere Phase bitte einen eigenen Datenordner verwenden (`LSA_DATA_DIR`).
 
 ## Technik
 

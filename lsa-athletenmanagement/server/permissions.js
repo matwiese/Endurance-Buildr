@@ -84,7 +84,7 @@ export const FEATURES = [
   { key: 'athletes.create', group: 'Akten', label: 'Athlet:innen anlegen', desc: 'Neue Akten anlegen; Lebenszyklus (aktiv, pausiert, ausgetreten) setzen.' },
   { key: 'team.assign', group: 'Akten', label: 'Betreuungsteam zuweisen', desc: 'Personen einer Akte zuordnen (Trainer, Arzt …). Zugeordnete Personen erhalten Zugriff auf diese Akte.' },
   { key: 'athlete.login', group: 'Akten', label: 'Zugänge für Athlet:innen anlegen', desc: 'Login für die Athlet:in zur eigenen Akte erstellen oder zurücksetzen.' },
-  { key: 'export.athlete', group: 'Akten', label: 'Akte exportieren (Auskunft)', desc: 'Gesamte Akte als Datei ausgeben (Auskunftsrecht).' },
+  { key: 'export.athlete', group: 'Akten', label: 'Akte exportieren (Auskunft)', desc: 'Akte als Datei (JSON) ausgeben – enthält nur, was die Person selbst sehen darf. Athlet:innen exportieren ihre eigenen Daten.' },
   { key: 'checkin.self', group: 'Monitoring', label: 'Tages-Check ausfüllen', desc: 'Eigener Tages-Check, Einwilligungen, vertrauliche Gesprächsanfrage.' },
   { key: 'training.record', group: 'Monitoring', label: 'Trainingserfassung', desc: 'Anwesenheit, Dauer, Session-RPE je Einheit erfassen.' },
   { key: 'events.manage', group: 'Monitoring', label: 'Termine pflegen', desc: 'Wettkämpfe, Reisen, Tests und Termine im gemeinsamen Kalender anlegen und ändern.' },
@@ -110,7 +110,7 @@ const tabs = (o) => ({ ...NO_TABS, ...o });
 
 // Rollenvorlagen: Reiter-Stufen, Funktionsrechte, Standard-Athletenbereich ('all' | 'sports' | 'self' | 'none')
 export const ROLE_DEFAULTS = {
-  athlet: { tabs: ALL_SELF_OWN, features: ['checkin.self', 'safeguarding.report'], scope: 'self' },
+  athlet: { tabs: ALL_SELF_OWN, features: ['checkin.self', 'safeguarding.report', 'export.athlete'], scope: 'self' },
   trainer: {
     tabs: tabs({ overview: 'read', plan: 'full', monitoring: 'full', health: 'status', psych: 'released', school: 'planning', decisions: 'full' }),
     features: ['training.record', 'events.manage', 'alerts.view', 'meeting.view'], scope: 'sports',
@@ -141,7 +141,7 @@ export const ROLE_DEFAULTS = {
   },
   data: { tabs: tabs({}), features: ['quality.view', 'quality.resolve', 'kpi.view'], scope: 'none' },
   management: { tabs: tabs({}), features: ['kpi.view'], scope: 'none' },
-  datenschutz: { tabs: tabs({}), features: ['audit.view', 'privacy.manage', 'export.athlete'], scope: 'none' },
+  datenschutz: { tabs: tabs({}), features: ['audit.view', 'privacy.manage'], scope: 'none' },
   safeguarding: { tabs: tabs({}), features: ['safeguarding.cases'], scope: 'none' },
   admin: {
     tabs: tabs({ overview: 'full' }),

@@ -1,7 +1,9 @@
 // Systemkonzept (aus dem Prototyp übernommen) mit Berechtigungsmatrix aus der Datenbank-Rollenvorlage
 import { esc, AREAS, lvl } from '../util.js';
 import { state, views, registerView, registerNav, ensureMeta } from '../state.js';
-import { head } from '../ui.js';
+import { head, actions, toast } from '../ui.js';
+import { get, post } from '../api.js';
+import { can } from '../state.js';
 
 // [Modul, Funktion, Quelle im Konzept, Phase, View]
 const MODS = [
@@ -25,6 +27,7 @@ registerView('konzept', {
   async render() {
     const meta = await ensureMeta();
     const me = state.session.user.role;
+    const tour = await tourHtml();
     const mx = meta.roles.map((r) => `<tr class="${r.key === me ? 'me' : ''}"><td>${esc(r.label)}</td>${r.matrix.map((t) => `<td class="${lvl(t)}">${esc(t)}</td>`).join('')}</tr>`).join('');
     return head('So ist das Athletenmanagement aufgebaut', 'Der Prototyp setzt das Gesamtmodell des LSA um – jetzt mit echter Datenbank, Anmeldung und serverseitig durchgesetzten Rechten.') + `
     <div class="panel"><h3>Architektur: drei getrennte Datenbereiche, ein Entwicklungsplan</h3>
@@ -49,8 +52,31 @@ registerView('konzept', {
     </div>
     <div class="panel" style="margin-top:14px"><h3>Datenverarbeitung in sieben Schritten</h3>
      <div class="steps7">${[['Erfassung', 'nah an der Quelle: Athlet:in, Trainer, Messsystem, Medizin, Schule, Koordination'], ['Validierung', 'fehlend, falsche Einheit, unmöglich, Duplikat, Sprung, Zeitstempel'], ['Aufbereitung', 'Einheiten, Zeiträume, Ausfalltage; Lücken bleiben sichtbar'], ['Analyse', 'vorab definierte Fragen, z. B. steigt Belastung schneller als Belastbarkeit?'], ['Interpretation', 'Trainer, Sportwissenschaft, Medizin im Kontext'], ['Entscheidung', 'protokolliert mit Anlass, Daten, Verantwortung'], ['Wirkungskontrolle', 'umgesetzt? verändert? beenden, anpassen, fortführen']].map((x) => `<div><b>${x[0]}</b>${x[1]}</div>`).join('')}</div>
-     <p class="small muted" style="margin-top:10px">Pflicht-Metadaten je Datensatz: Athleten-ID, Datensatz-ID, Zeitpunkt, Kategorie, Quelle, erfassende Person oder Gerät, Einheit, Rohwert, berechneter Wert, Gültigkeit, Änderung und Änderungsverantwortlicher, Zugriffsgruppe, Aufbewahrungsfrist, Zweck, Qualitätskennzeichen.</p></div>`;
+     <p class="small muted" style="margin-top:10px">Pflicht-Metadaten je Datensatz: Athleten-ID, Datensatz-ID, Zeitpunkt, Kategorie, Quelle, erfassende Person oder Gerät, Einheit, Rohwert, berechneter Wert, Gültigkeit, Änderung und Änderungsverantwortlicher, Zugriffsgruppe, Aufbewahrungsfrist, Zweck, Qualitätskennzeichen.</p></div>${tour}`;
   },
 });
+
+// Rundgang in fünf Schritten (Administration + Testansicht + Demodaten)
+async function tourHtml() {
+  const steps = [
+    ['Als <b>Athletin</b> den Tages-Check ausfüllen und Schmerz melden.', 'demo.lena.berger', 'check', 'Tages-Check starten'],
+    ['Als <b>Trainer</b> sehen, dass ein Hinweis entsteht – aber keine Diagnose.', 'demo.markus.huber', 'start', 'Als Trainer ansehen'],
+    ['Als <b>Sportmedizin</b> den Belastungsstatus setzen.', 'demo.eva.lang', 'athleten', 'Als Sportmedizin öffnen'],
+    ['Als <b>Koordination</b> die Wochenbesprechung öffnen und einen Beschluss protokollieren.', 'demo.sabine.kern', 'besprechung', 'Wochenbesprechung öffnen'],
+    ['Als <b>Datenschutz</b> im Protokoll nachvollziehen, wer was gesehen hat.', 'demo.datenschutz', 'datenschutz', 'Als Datenschutz öffnen'],
+  ];
+  let demoUsers = null;
+  if (can('users.manage') && state.session.testMode) { try { demoUsers = (await get('/api/users')).users.filter((u) => u.demo); } catch { /* nicht erlaubt */ } }
+  const ready = demoUsers && demoUsers.length;
+  return `<div class="panel tint" style="margin-top:14px"><h3>Rundgang in fünf Schritten</h3><ol class="steps-list">${steps.map(([t, u, to, b]) => `<li>${t}${ready && demoUsers.some((x) => x.username === u) ? ` <button class="btn sm primary" data-act="tour" data-u="${u}" data-to="${to}">${b}</button>` : ''}</li>`).join('')}</ol>
+    ${can('users.manage') ? (ready ? '<p class="small muted" style="margin:0">Die Buttons öffnen die Testansicht mit den Rechten der jeweiligen Demo-Person (oben mit „Testansicht beenden“ zurück).</p>' : `<div class="note" style="margin-bottom:0">Für den Rundgang zuerst unter <a href="#/system">System</a> die <b>Demodaten laden</b>${state.session.testMode ? '' : ' und die Testansicht erlauben'}.</div>`) : '<p class="small muted" style="margin:0">Die Administration kann den Rundgang mit den Demodaten per Testansicht starten.</p>'}</div>`;
+}
+actions.tour = async (el) => {
+  const u = (await get('/api/users')).users.find((x) => x.username === el.dataset.u);
+  if (!u) { toast('Demo-Person nicht gefunden.', 'error'); return; }
+  await post('/api/impersonate', { userId: u.id });
+  await window.__lsa.switchSession(el.dataset.to);
+  toast(`Testansicht als ${u.displayName}. Oben können Sie sie beenden.`);
+};
 
 registerNav({ id: 'konzept', label: 'Systemkonzept', view: 'konzept', order: 5 });

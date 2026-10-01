@@ -77,6 +77,7 @@ const TABLES_BY_VERSION = {
   2: ['consents', 'entries', 'athlete_staff', 'athletes'],
   3: ['readiness', 'training', 'measurements', 'quality_flags', 'plans', 'measures', 'goals', 'decisions', 'events', 'alerts', 'contact_requests'],
   4: ['load_status', 'status_history', 'injuries', 'cycle_notes', 'psych_notes', 'released_hints', 'school', 'exams'],
+  5: ['dpia', 'rights_review', 'retention', 'safe_cases', 'data_requests'],
 };
 export function downgrade(db, version) {
   db.exec('PRAGMA foreign_keys=OFF');

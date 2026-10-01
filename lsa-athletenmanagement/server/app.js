@@ -14,6 +14,7 @@ import { register as registerPlan } from './routes/plan.js';
 import { register as registerEvents } from './routes/events.js';
 import { register as registerMedical } from './routes/medical.js';
 import { register as registerPsych } from './routes/psych.js';
+import { register as registerGovernance, ensureGovernanceDefaults } from './routes/governance.js';
 import { autoBackup } from './backup.js';
 
 function makeLogger(config) {
@@ -33,6 +34,7 @@ export async function createApp(config) {
   const before = db.version;
   db.migrate();
   defaultSettings(db);
+  ensureGovernanceDefaults(db);
   if (before !== db.version) log.info(`Datenbank-Schema von Version ${before} auf ${db.version} aktualisiert`);
 
   const router = new Router();
@@ -47,6 +49,7 @@ export async function createApp(config) {
   registerEvents(app);
   registerMedical(app);
   registerPsych(app);
+  registerGovernance(app);
   registerSystem(app);
 
   const server = createHttpServer({

@@ -390,4 +390,50 @@ export const MIGRATIONS = [
   );
   CREATE INDEX exams_athlete ON exams(athlete_id, date);
   `,
+
+  // ---------- 5: Governance (Phase 5) – Datenschutz-Verwaltung, Safeguarding, Anfragen ----------
+  `
+  CREATE TABLE dpia (
+    id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    item  TEXT NOT NULL UNIQUE,
+    done  INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT,
+    updated_by TEXT NOT NULL DEFAULT ''
+  );
+  CREATE TABLE rights_review (
+    role TEXT PRIMARY KEY,
+    last TEXT NOT NULL DEFAULT '',
+    next TEXT NOT NULL DEFAULT '',
+    by   TEXT NOT NULL DEFAULT ''
+  );
+  CREATE TABLE retention (
+    cat    TEXT PRIMARY KEY,
+    period TEXT NOT NULL DEFAULT '',
+    owner  TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'festzulegen'
+  );
+  CREATE TABLE safe_cases (
+    id           TEXT PRIMARY KEY,                 -- SG-01 …
+    date         TEXT NOT NULL,
+    text         TEXT NOT NULL,
+    anon         INTEGER NOT NULL DEFAULT 1,
+    from_athlete TEXT,                             -- nur gesetzt, wenn nicht anonym
+    status       TEXT NOT NULL DEFAULT 'neu',
+    steps        TEXT NOT NULL DEFAULT '',
+    demo         INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT NOT NULL,
+    updated_at   TEXT NOT NULL,
+    updated_by   TEXT NOT NULL DEFAULT ''
+  );
+  CREATE TABLE data_requests (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    athlete_id  TEXT NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    type        TEXT NOT NULL,                     -- Auskunft | Berichtigung | Datenschutzproblem
+    text        TEXT NOT NULL DEFAULT '',
+    status      TEXT NOT NULL DEFAULT 'offen',
+    created_at  TEXT NOT NULL,
+    handled_by  TEXT NOT NULL DEFAULT '',
+    handled_at  TEXT
+  );
+  `,
 ];

@@ -226,8 +226,9 @@ forms['user-save'] = async (f) => {
   } else {
     const r = await put('/api/users/' + current.id, payload);
     current = r.user; draft = draftFrom(r.user);
-    toast('Gespeichert.');
-    rerenderForm();
+    const self = (state.session.realUser || state.session.user).id === r.user.id;
+    toast(self ? 'Gespeichert. Ihre eigenen Rechte gelten ab sofort.' : 'Gespeichert.');
+    if (self) await window.__lsa.refresh(); else rerenderForm();
   }
 };
 

@@ -1,6 +1,6 @@
 {
   "name": "lsa-athletenmanagement",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "LSA Athletenmanagement – lokaler Prototyp mit SQLite-Datenbank, Benutzer- und Rechteverwaltung",
   "private": true,
   "type": "module",
