@@ -79,3 +79,41 @@ Zu jeder Phase gibt es eine kurze Durchlauf-Liste. Haken setzen, was funktionier
 - [ ] Status *ausgetreten* setzen → Zugang der Athlet:in ist beendet, die Checkliste erscheint, für Trainer ist die Akte unsichtbar.
 - [ ] *Akte löschen* verlangt die Athleten-ID; danach sind Akte, Einwilligungen und der Ordner unter `dokumente\` weg; das Protokoll hält die Löschung fest.
 - [ ] Programm beenden/neu starten → alles ist noch da (Datenbank im Datenordner).
+
+## Phase 3 – Performance
+
+**Vorbereitung:** Eine Athlet:in (z. B. *Lena Berger*) mit Zugang, ein Trainer im Betreuungsteam, die Koordination und eine Person mit Rolle *Sportwissenschaft*.
+
+### A. Tages-Check (als Athlet:in)
+- [ ] Start zeigt „Tages-Check ausfüllen“. Alle sechs Fragen mit 1–5 beantworten, Schlaf, **Schmerzen = ja**, speichern.
+- [ ] Meldung „1 Hinweis zur menschlichen Prüfung erzeugt“. Erneut speichern erzeugt keinen zweiten Hinweis.
+- [ ] Zweites Speichern am selben Tag überschreibt den Tages-Check (kein Duplikat).
+- [ ] Ohne Angabe bei einer Frage lässt sich nicht speichern.
+
+### B. Hinweise & Eskalation
+- [ ] Als Trainer (Testansicht): Cockpit zeigt „Schmerz gemeldet“ bei der Athlet:in, Hinweis in der Liste – **keine Diagnose**.
+- [ ] Als Koordination: *Hinweise & Eskalation* → Stufe 2 setzen, Notiz → „Aktualisieren“. Als Trainer darf man den Hinweis ansehen, aber nicht bearbeiten.
+- [ ] Stufe 5 (Akutprozess): der Hinweis verschwindet aus der Trainer-Sicht (nur Koordination/Medizin/Psychologie).
+- [ ] „Abschließen“ verlangt eine Notiz.
+- [ ] Sportwissenschaft sieht nur Performance-Hinweise (nicht „Schmerz“), Sportpsychologie nur Wohlbefinden/vertrauliche.
+- [ ] Haken „vertrauliches Gespräch“ im Tages-Check → Hinweis erscheint **nur** bei der Sportpsychologie.
+
+### C. Trainingserfassung (als Trainer)
+- [ ] *Einheit planen*: Titel, Dauer, Athlet:innen wählen → Einheiten erscheinen in der Tabelle.
+- [ ] Status „vollständig“, Dauer 90, RPE 6 speichern; bei „nicht teilgenommen“ ohne Grund erscheint eine Warnung (wird gespeichert, bleibt aber als Lücke sichtbar).
+- [ ] RPE 11 oder Dauer 400 wird abgelehnt. Leere Felder bleiben leer (keine 0).
+- [ ] Athlet:in kann die Session-RPE selbst nachtragen („Wie anstrengend war dein Training?“ im Tages-Check).
+- [ ] Belastungssprung > +30 % gegenüber der Vorwoche erzeugt einen Hinweis für die Sportwissenschaft.
+
+### D. Akte: Monitoring, Plan, Entscheidungen
+- [ ] *Monitoring*: Heatmap der letzten 14 Tage (Lücken schraffiert), Belastungs-Diagramm, Einheitenliste.
+- [ ] *Messwert erfassen*: Körpermasse 520 kg → gespeichert, aber **markiert** (nicht gelöscht). 10-m-Zeit mit Sprung > 10 % → markiert.
+- [ ] *Entwicklungsplan*: Ausgangslage + langfristiges Ziel speichern, Jahresziele anlegen (4. Ziel im selben Bereich wird abgelehnt).
+- [ ] Maßnahme ohne Verantwortliche/Prüftermin/Erfolgskriterium wird nicht gespeichert.
+- [ ] Bei fälliger Maßnahme erscheint die Wirkungskontrolle; sie landet automatisch im *Entscheidungsprotokoll*.
+- [ ] *Entscheidungen*: eigene Entscheidung dokumentieren, Ergebnis später nachtragen.
+- [ ] Rollen: Sportmedizin kann Plan **lesen**, aber nicht ändern; Dual Career sieht kein Monitoring.
+
+### E. Termine & Cockpits
+- [ ] *Termine*: Wettkampf für die eigene Sportart anlegen. Trainer:innen anderer Sportarten sehen ihn nicht; „alle Sportarten“ dürfen nur Personen mit Vollzugriff wählen.
+- [ ] Cockpits: Trainer (Gruppe heute), Koordination (fällige Wirkungskontrollen, Pläne mit Lücken), Sportwissenschaft (Belastung), Athlet:in (Woche, Ziele, Ansprechpersonen).

@@ -55,10 +55,44 @@ export const CONSENT_DEFAULTS = [
 export const CONSENT_STATUS = ['informiert', 'erteilt', 'nicht erteilt', 'widerrufen', 'entfällt'];
 export const CONSENT_GIVEN_BY = ['Athlet:in', 'Erziehungsberechtigte', 'Athlet:in und Erziehungsberechtigte'];
 
+// ---- Phase 3: Performance ----
+export const READINESS_ITEMS = [
+  ['sleepQ', 'Schlafqualität', '1 sehr schlecht · 5 sehr gut'], ['recovery', 'Körperliche Erholung', '1 gar nicht erholt · 5 voll erholt'],
+  ['soreness', 'Muskelbeschwerden', '1 starke Beschwerden · 5 keine'], ['fatigue', 'Müdigkeit', '1 sehr müde · 5 frisch'],
+  ['stress', 'Psychische Belastung', '1 sehr belastet · 5 entspannt'], ['ready', 'Trainingsbereitschaft', '1 gar nicht bereit · 5 voll bereit'],
+];
+export const SESSION_STATUS = ['geplant', 'vollständig', 'angepasst', 'abgebrochen', 'nicht teilgenommen'];
+export const GOAL_AREAS = ['sporttechnisch', 'taktisch', 'körperlich', 'gesundheitlich', 'mental', 'schulisch', 'Selbstmanagement'];
+export const EVENT_TYPES = ['Wettkampf', 'Reise', 'Test', 'Training', 'Schule', 'Sonstiges'];
+export const STAGES = ['', 'Beobachtung', 'Gespräch', 'Maßnahme', 'Fachabklärung', 'Akutprozess'];
+export const STAGE_TEXT = ['', 'Koordination prüft den Verlauf', 'Athlet:in und Fachperson klären die Situation', 'Training, Schule oder Betreuung wird angepasst', 'Medizin, Psychologie oder andere Fachstelle übernimmt', 'Sofortige Schutz- oder Notfallmaßnahme außerhalb des Dashboards'];
+export const ALERT_CATS = { perf: 'Performance', health: 'Gesundheit', well: 'Wohlbefinden', school: 'Schule', conf: 'vertraulich' };
+// Welche Hinweis-Kategorien sieht eine Rolle (Prototyp, Kap. 17)
+export const ALERT_CATS_BY_ROLE = {
+  trainer: ['perf', 'health'], koordinator: ['perf', 'health', 'well', 'school'], sportwiss: ['perf'], physio: ['health'], arzt: ['health'], psych: ['well'], dualcareer: ['school'],
+};
+
+// Datenwörterbuch für Messwerte: Plausibilitätsgrenzen erzeugen bei Verstoß eine Markierung (nie stilles Löschen)
+export const VARIABLES = [
+  { key: 'Körpermasse', unit: 'kg', min: 25, max: 200, source: 'Waage', def: 'morgens vor dem Frühstück unter Standardbedingungen' },
+  { key: 'Körpergröße', unit: 'cm', min: 120, max: 230, source: 'Messlatte', def: 'barfuß, aufrecht' },
+  { key: 'Ruhepuls', unit: 'bpm', min: 30, max: 120, source: 'Pulsuhr', def: 'morgens im Liegen' },
+  { key: '10-m-Zeit', unit: 's', min: 1.2, max: 3.5, source: 'Lichtschranke', def: 'fliegender/stehender Start je Protokoll' },
+  { key: '30-m-Zeit', unit: 's', min: 3, max: 8, source: 'Lichtschranke', def: '' },
+  { key: '60-m-Zeit', unit: 's', min: 6, max: 14, source: 'Lichtschranke', def: '' },
+  { key: 'Counter-Movement-Jump', unit: 'cm', min: 10, max: 90, source: 'Kontaktmatte', def: 'Sprunghöhe' },
+  { key: 'Squat-Jump', unit: 'cm', min: 10, max: 90, source: 'Kontaktmatte', def: '' },
+  { key: 'Maximalkraft Kniebeuge (1RM)', unit: 'kg', min: 20, max: 400, source: 'Hantel', def: '' },
+  { key: '100-m-Freistil', unit: 's', min: 40, max: 200, source: 'Zeitnahme', def: '' },
+  { key: 'Laktat', unit: 'mmol/l', min: 0.3, max: 25, source: 'Messgerät', def: '' },
+  { key: 'VO2max', unit: 'ml/kg/min', min: 20, max: 90, source: 'Spiroergometrie', def: '' },
+];
+
 export function catalogForClient() {
   return {
     sex: SEX, lifecycle: LIFECYCLE, teamFunctions: TEAM_FUNCTIONS, teamFunctionByRole: TEAM_FUNCTION_BY_ROLE,
     docCategories: Object.fromEntries(Object.entries(DOC_CATEGORIES).map(([k, v]) => [k, { label: v.label, tab: v.tab }])),
+    readinessItems: READINESS_ITEMS, sessionStatus: SESSION_STATUS, goalAreas: GOAL_AREAS, eventTypes: EVENT_TYPES, stages: STAGES, stageText: STAGE_TEXT, alertCats: ALERT_CATS, variables: VARIABLES,
     allowedUploads: Object.keys(ALLOWED_UPLOADS), exitChecklist: EXIT_CHECKLIST, consentStatus: CONSENT_STATUS, consentGivenBy: CONSENT_GIVEN_BY,
   };
 }

@@ -1,13 +1,19 @@
 // Start der Oberfläche: Sitzung laden, Rahmen (Navigation, Kopfzeile) und Hash-Router.
 import { esc, AREAS, lvl } from './util.js';
-import { post, setUnauthorizedHandler } from './api.js';
+import { get, post, setUnauthorizedHandler } from './api.js';
 import { installGlobalHandlers, actions, changes, toast, reportError } from './ui.js';
-import { state, views, navItems, loadSession } from './state.js';
+import { state, views, navItems, loadSession, can } from './state.js';
 import { renderLogin, renderSetup, renderPwChange } from './views/auth.js';
 import './views/start.js';
 import './views/konzept.js';
 import './views/users.js';
 import './views/athleten.js';
+import './views/akte-performance.js';
+import './views/check.js';
+import './views/training.js';
+import './views/hinweise.js';
+import './views/termine.js';
+import './views/cockpit.js';
 import './views/rights.js';
 import './views/system.js';
 import './views/audit.js';
@@ -58,6 +64,14 @@ function renderShell() {
   shellFor = u.id + ':' + (s.realUser ? s.realUser.id : '') + ':' + JSON.stringify(s.permissions);
 }
 
+async function updateBadges(route) {
+  if (!can('alerts.view')) { state.alertCount = 0; return; }
+  try {
+    const r = await get('/api/alerts/count');
+    if (state.alertCount !== r.open) { state.alertCount = r.open; renderNav(route); }
+  } catch { /* Anzeige ist optional */ }
+}
+
 let renderSeq = 0;
 export async function renderRoute() {
   const seq = ++renderSeq;
@@ -82,6 +96,7 @@ export async function renderRoute() {
     main.innerHTML = html;
     document.title = `${view.title || 'LSA'} · LSA Athletenmanagement`;
     view.mount?.(main, route.parts);
+    updateBadges(route);
   } catch (e) {
     if (seq !== renderSeq) return;
     main.innerHTML = `<div class="note bad"><b>Konnte nicht geladen werden.</b><br>${esc(e.message)}</div>`;

@@ -19,6 +19,16 @@ export function visibleAthletes(db, user) {
   return rows.filter((a) => inScope(user, a, !!a.assigned));
 }
 
+// Sichtbare Akten samt Zugriffsstufen je Reiter (eine Abfrage statt vieler)
+export function visibleWithLevels(db, user) {
+  return visibleAthletes(db, user).map((a) => {
+    const assigned = !!a.assigned;
+    const levels = {};
+    for (const t of TAB_KEYS) levels[t] = tabLevel(user, a, t, assigned);
+    return { athlete: a, assigned, levels };
+  });
+}
+
 export function accessFor(db, ctx, athleteId, { quiet = false } = {}) {
   const a = db.get('SELECT * FROM athletes WHERE id = ?', String(athleteId));
   const assigned = a ? isAssigned(db, ctx.user.id, a.id) : false;

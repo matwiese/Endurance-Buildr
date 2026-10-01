@@ -71,3 +71,16 @@ export async function makeUser(t, admin, fields, password = 'Trainer-Passwort-12
   if (p.status !== 200) throw new Error('Passwortwechsel fehlgeschlagen: ' + JSON.stringify(p.data));
   return { client: c, id: r.data.user.id };
 }
+
+// Simuliert eine ältere Datenbank: entfernt alle Tabellen, die nach `version` angelegt wurden, und setzt die Schema-Version zurück.
+const TABLES_BY_VERSION = {
+  2: ['consents', 'entries', 'athlete_staff', 'athletes'],
+  3: ['readiness', 'training', 'measurements', 'quality_flags', 'plans', 'measures', 'goals', 'decisions', 'events', 'alerts', 'contact_requests'],
+};
+export function downgrade(db, version) {
+  db.exec('PRAGMA foreign_keys=OFF');
+  for (const [v, tables] of Object.entries(TABLES_BY_VERSION).sort((a, b) => b[0] - a[0])) {
+    if (Number(v) > version) for (const t of tables) db.exec(`DROP TABLE IF EXISTS ${t}`);
+  }
+  db.exec(`PRAGMA user_version = ${version}; PRAGMA foreign_keys=ON`);
+}

@@ -9,6 +9,9 @@ import { register as registerAuth } from './routes/auth.js';
 import { register as registerUsers } from './routes/users.js';
 import { register as registerAthletes } from './routes/athletes.js';
 import { register as registerEntries } from './routes/entries.js';
+import { register as registerPerformance } from './routes/performance.js';
+import { register as registerPlan } from './routes/plan.js';
+import { register as registerEvents } from './routes/events.js';
 import { autoBackup } from './backup.js';
 
 function makeLogger(config) {
@@ -37,6 +40,9 @@ export async function createApp(config) {
   registerUsers(app);
   registerAthletes(app);
   registerEntries(app);
+  registerPerformance(app);
+  registerPlan(app);
+  registerEvents(app);
   registerSystem(app);
 
   const server = createHttpServer({

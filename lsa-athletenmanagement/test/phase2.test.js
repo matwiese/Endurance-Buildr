@@ -2,7 +2,8 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { startTestApp, setupAdmin, makeUser } from './helpers.js';
+import { startTestApp, setupAdmin, makeUser, downgrade } from './helpers.js';
+import { MIGRATIONS } from '../server/migrations.js';
 
 let t, admin, koord, trainerLA, trainerSW, arzt, psych, dc;
 let a1, a2; // Athleten-IDs
@@ -267,10 +268,10 @@ test('Akte löschen: ID-Bestätigung nötig, entfernt Daten, Dokumente und Zugan
 test('Datenbank-Migration: Update von Phase 1 behält Daten', async () => {
   const t3 = await startTestApp();
   try {
-    t3.db.exec('PRAGMA foreign_keys=OFF; DROP TABLE consents; DROP TABLE entries; DROP TABLE athlete_staff; DROP TABLE athletes; PRAGMA user_version = 1; PRAGMA foreign_keys=ON;');
+    downgrade(t3.db, 1);
     const adm = await setupAdmin(t3);
     t3.db.migrate();
-    assert.equal(t3.db.version, 2);
+    assert.equal(t3.db.version, MIGRATIONS.length);
     assert.equal((await adm.get('/api/session')).data.user.username, 'admin');
     assert.equal((await adm.get('/api/athletes')).status, 200);
   } finally { await t3.stop(); }

@@ -87,6 +87,7 @@ export const FEATURES = [
   { key: 'export.athlete', group: 'Akten', label: 'Akte exportieren (Auskunft)', desc: 'Gesamte Akte als Datei ausgeben (Auskunftsrecht).' },
   { key: 'checkin.self', group: 'Monitoring', label: 'Tages-Check ausfüllen', desc: 'Eigener Tages-Check, Einwilligungen, vertrauliche Gesprächsanfrage.' },
   { key: 'training.record', group: 'Monitoring', label: 'Trainingserfassung', desc: 'Anwesenheit, Dauer, Session-RPE je Einheit erfassen.' },
+  { key: 'events.manage', group: 'Monitoring', label: 'Termine pflegen', desc: 'Wettkämpfe, Reisen, Tests und Termine im gemeinsamen Kalender anlegen und ändern.' },
   { key: 'alerts.view', group: 'Hinweise', label: 'Hinweise einsehen', desc: 'Hinweise & Eskalation (nur Kategorien der Rolle).' },
   { key: 'alerts.edit', group: 'Hinweise', label: 'Hinweise bearbeiten', desc: 'Eskalationsstufe, Verantwortliche und Kontrolltermin ändern; Hinweise abschließen.' },
   { key: 'meeting.view', group: 'Hinweise', label: 'Wochenbesprechung', desc: 'Automatische Agenda und Beschlussprotokoll.' },
@@ -112,15 +113,15 @@ export const ROLE_DEFAULTS = {
   athlet: { tabs: ALL_SELF_OWN, features: ['checkin.self', 'safeguarding.report'], scope: 'self' },
   trainer: {
     tabs: tabs({ overview: 'read', plan: 'full', monitoring: 'full', health: 'status', psych: 'released', school: 'planning', decisions: 'full' }),
-    features: ['training.record', 'alerts.view', 'meeting.view'], scope: 'sports',
+    features: ['training.record', 'events.manage', 'alerts.view', 'meeting.view'], scope: 'sports',
   },
   koordinator: {
     tabs: tabs({ overview: 'full', plan: 'full', monitoring: 'full', health: 'status', psych: 'released', school: 'full', decisions: 'full', privacy: 'full' }),
-    features: ['athletes.create', 'team.assign', 'athlete.login', 'export.athlete', 'alerts.view', 'alerts.edit', 'meeting.view', 'quality.view'], scope: 'all',
+    features: ['athletes.create', 'team.assign', 'athlete.login', 'export.athlete', 'events.manage', 'alerts.view', 'alerts.edit', 'meeting.view', 'quality.view'], scope: 'all',
   },
   sportwiss: {
     tabs: tabs({ overview: 'read', plan: 'full', monitoring: 'full', health: 'status', school: 'planning', decisions: 'full' }),
-    features: ['alerts.view', 'alerts.edit', 'meeting.view', 'quality.view'], scope: 'all',
+    features: ['events.manage', 'alerts.view', 'alerts.edit', 'meeting.view', 'quality.view'], scope: 'all',
   },
   physio: {
     tabs: tabs({ overview: 'read', plan: 'read', monitoring: 'read', health: 'physio', decisions: 'full' }),
@@ -136,7 +137,7 @@ export const ROLE_DEFAULTS = {
   },
   dualcareer: {
     tabs: tabs({ overview: 'read', plan: 'read', school: 'full', decisions: 'read' }),
-    features: ['alerts.view'], scope: 'all',
+    features: ['events.manage', 'alerts.view'], scope: 'all',
   },
   data: { tabs: tabs({}), features: ['quality.view', 'quality.resolve', 'kpi.view'], scope: 'none' },
   management: { tabs: tabs({}), features: ['kpi.view'], scope: 'none' },
