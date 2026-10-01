@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { StatusBar } from '../../components/StatusBar.tsx';
 import { StepBar } from '../../components/StepBar.tsx';
 import { useT } from '../../i18n/hooks.ts';
@@ -12,6 +12,7 @@ import { StepSave } from './StepSave.tsx';
 import { StepTestType } from './StepTestType.tsx';
 import { StepWeigh } from './StepWeigh.tsx';
 import { StepZero } from './StepZero.tsx';
+import { useWorkflowEffects } from './useWorkflowEffects.ts';
 
 /** Linearer Test-Workflow mit sichtbarer Schrittleiste: Gerät → Test → Athlet → Nullen → Wiegen → Aufnahme → Ergebnis → Speichern. */
 export function TestWorkflow({ simSpeed = 1 }: { simSpeed?: number }) {
@@ -24,32 +25,7 @@ export function TestWorkflow({ simSpeed = 1 }: { simSpeed?: number }) {
   const go = (s: StepId) => wf.setStep(s);
   const next = () => go(STEPS[Math.min(STEPS.length - 1, idx + 1)]!);
 
-  // Beim Betreten des Wiege-Schritts die Stabilitätserkennung starten, beim Verlassen beenden
-  useEffect(() => {
-    if (wf.step === 'weigh' && live.connection === 'connected') live.startWeigh();
-    return () => {
-      if (wf.step === 'weigh') useLive.getState().cancelWeigh();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur beim Schrittwechsel
-  }, [wf.step]);
-
-  // Athletenwechsel: das gewogene Gewicht gehört zum vorherigen Athleten
-  const profileId = wf.profile?.id ?? (wf.guest ? 'guest' : null);
-  useEffect(() => {
-    const st = useLive.getState();
-    if (st.massSource === 'weighed' || st.massSource === 'estimated') st.setMass(null);
-  }, [profileId]);
-
-  // Verbindung verloren → zurück zum Gerät-Schritt (Daten im Review bleiben erhalten)
-  useEffect(() => {
-    if (
-      live.connection !== 'connected' &&
-      ['zero', 'weigh', 'record'].includes(wf.step) &&
-      live.engine === null
-    )
-      wf.setStep('connect');
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- nur bei Verbindungswechsel
-  }, [live.connection, live.engine]);
+  useWorkflowEffects({ onConnectionLost: () => wf.setStep('connect') });
 
   return (
     <div

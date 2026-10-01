@@ -13,6 +13,7 @@ import { metricRoutes } from './routes/metrics.ts';
 import { profileRoutes } from './routes/profiles.ts';
 import { recordingRoutes } from './routes/recordings.ts';
 import { referenceRoutes } from './routes/reference.ts';
+import { sessionRoutes } from './routes/sessions.ts';
 import { syncRoutes } from './routes/sync.ts';
 import { testRoutes } from './routes/tests.ts';
 import { userRoutes } from './routes/users.ts';
@@ -108,6 +109,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       await api.register(profileRoutes(ctx));
       await api.register(testRoutes(ctx));
       await api.register(recordingRoutes(ctx));
+      await api.register(sessionRoutes(ctx));
       await api.register(syncRoutes(ctx));
       await api.register(metricRoutes(ctx));
       await api.register(auditRoutes(ctx));

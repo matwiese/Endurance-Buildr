@@ -34,6 +34,9 @@ interface LiveStore {
   latencyMs: number;
   lossPct: number;
   errorCode: string | null;
+  /** Simulator: Sprungvermögen (m) des gerade simulierten Athleten (Gruppentest: je Athlet), null = Standard */
+  simAbilityM: number | null;
+  setSimAbility: (m: number | null) => void;
 
   connectSimulator: (o: {
     hz: number;
@@ -56,6 +59,7 @@ interface LiveStore {
 }
 
 const INITIAL = {
+  simAbilityM: null as number | null,
   engine: null,
   simulator: null,
   adapterKind: null,
@@ -191,6 +195,7 @@ export const useLive = create<LiveStore>((set, get) => {
       set({ ...INITIAL });
     },
 
+    setSimAbility: (m) => set({ simAbilityM: m }),
     configure: (mode, load) => get().engine?.configure({ mode, externalLoadKg: load }),
     startZero: () => {
       set((s) => ({ zero: { ...s.zero, running: true, reason: null } }));

@@ -27,7 +27,7 @@ export function StatusBar() {
   const tone =
     conn === 'connected' ? 'ok' : conn === 'connecting' ? 'warn' : conn === 'error' ? 'danger' : 'off';
   const connText = t(`status.${conn}` as 'status.connected');
-  const zeroTone = s.zero.ok ? 'ok' : s.zero.running ? 'warn' : 'off';
+  const zeroTone = s.zero.running ? 'warn' : s.zero.ok ? 'ok' : 'off';
   return (
     <div
       role="status"
@@ -49,7 +49,7 @@ export function StatusBar() {
       </span>
       <span className="flex items-center gap-2" data-testid="status-zero">
         <Dot tone={zeroTone} />
-        {s.zero.ok ? t('status.zeroOk') : t('status.zeroNone')}
+        {s.zero.running ? t('status.zeroRunning') : s.zero.ok ? t('status.zeroOk') : t('status.zeroNone')}
       </span>
       <span data-testid="status-latency" title={t('status.latency')}>
         {t('status.latency')} {s.latencyMs ? `${Math.round(s.latencyMs)} ms` : '–'}

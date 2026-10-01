@@ -3,13 +3,14 @@ import type {
   GroupDTO,
   ProfileDTO,
   RecordingRecord,
+  SessionDTO,
   TagDTO,
   TagTypeDTO,
   TestRecord,
 } from '@buildr/shared';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 
-export type OutboxKind = 'test' | 'profile' | 'delete-profile' | 'tag' | 'tagType';
+export type OutboxKind = 'test' | 'profile' | 'delete-profile' | 'tag' | 'tagType' | 'session';
 
 export interface OutboxItem {
   id?: number;
@@ -33,6 +34,7 @@ export interface BuildrDB extends DBSchema {
   tags: { key: string; value: TagDTO };
   tests: { key: string; value: TestRecord; indexes: { byProfile: string; byCreated: string } };
   recordings: { key: string; value: RecordingRecord };
+  sessions: { key: string; value: SessionDTO; indexes: { byCreated: string } };
   outbox: { key: number; value: OutboxItem; indexes: { byNext: number } };
   kv: { key: string; value: unknown };
 }
@@ -40,8 +42,14 @@ export interface BuildrDB extends DBSchema {
 let dbPromise: Promise<IDBPDatabase<BuildrDB>> | null = null;
 
 export function getDb(name = 'buildr-force'): Promise<IDBPDatabase<BuildrDB>> {
-  dbPromise ??= openDB<BuildrDB>(name, 1, {
-    upgrade(db) {
+  dbPromise ??= openDB<BuildrDB>(name, 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion >= 1) {
+        // v2: Gruppensitzungen
+        const sessions = db.createObjectStore('sessions', { keyPath: 'id' });
+        sessions.createIndex('byCreated', 'createdAt');
+        return;
+      }
       const profiles = db.createObjectStore('profiles', { keyPath: 'id' });
       profiles.createIndex('byName', 'name');
       db.createObjectStore('categories', { keyPath: 'id' });
@@ -55,6 +63,8 @@ export function getDb(name = 'buildr-force'): Promise<IDBPDatabase<BuildrDB>> {
       const outbox = db.createObjectStore('outbox', { keyPath: 'id', autoIncrement: true });
       outbox.createIndex('byNext', 'nextAttemptAt');
       db.createObjectStore('kv');
+      const sessions = db.createObjectStore('sessions', { keyPath: 'id' });
+      sessions.createIndex('byCreated', 'createdAt');
     },
   });
   return dbPromise;

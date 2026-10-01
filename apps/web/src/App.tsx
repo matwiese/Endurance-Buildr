@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect, useState, type ReactNode } from 'react';
+import { NavLink, Navigate, Route, Routes, useMatch } from 'react-router-dom';
 import { Banner, Button } from './components/ui.tsx';
 import { useT } from './i18n/hooks.ts';
 import { localRepo } from './offline/repo.ts';
 import { HubHome } from './pages/hub/HubHome.tsx';
+import { BeamerBoard } from './session/BeamerBoard.tsx';
+import { SessionRunner } from './session/SessionRunner.tsx';
+import { SessionsPage } from './session/SessionsPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { SettingsPage } from './pages/SettingsPage.tsx';
 import { TestWorkflow } from './pages/test/TestWorkflow.tsx';
@@ -53,6 +56,7 @@ function Header() {
   const { t } = useT();
   const s = useSettings();
   const auth = useAuth();
+  const canRun = useAuth(canTest);
   const link = ({ isActive }: { isActive: boolean }) =>
     `rounded-lg px-4 py-2 font-semibold ${isActive ? 'bg-primary text-primary-fg' : 'hover:bg-surface2'}`;
 
@@ -72,6 +76,11 @@ function Header() {
         <NavLink to="/test" className={link} data-testid="nav-test">
           {t('nav.test')}
         </NavLink>
+        {canRun && (
+          <NavLink to="/session" className={link} data-testid="nav-session">
+            {t('nav.session')}
+          </NavLink>
+        )}
         <NavLink to="/hub" className={link} data-testid="nav-hub">
           {t('nav.hub')}
         </NavLink>
@@ -135,7 +144,8 @@ function SyncRunner() {
   return null;
 }
 
-function TestRoute({ speed }: { speed: number }) {
+/** Seiten, die Tests aufnehmen (Einzeltest, Gruppentest): Betrachter sehen nur einen Hinweis. */
+function RecorderRoute({ children }: { children: ReactNode }) {
   const { t } = useT();
   const allowed = useAuth(canTest);
   if (!allowed)
@@ -144,8 +154,11 @@ function TestRoute({ speed }: { speed: number }) {
         <Banner tone="warn">{t('auth.viewerNoTest')}</Banner>
       </div>
     );
-  return <TestWorkflow simSpeed={speed} />;
+  return <>{children}</>;
 }
+
+// Simulator-Tempo (Demo/Tests): ?speed=5 beschleunigt den Autopiloten – einmal beim Start gelesen (bleibt bei Navigation erhalten)
+const SPEED = Number(new URLSearchParams(window.location.search).get('speed') ?? 1) || 1;
 
 export function App() {
   const lang = useSettings((s) => s.lang);
@@ -163,11 +176,10 @@ export function App() {
     setStarted(true);
     void useAuth.getState().init();
   }, [started]);
-  // Simulator-Tempo (Demo/Tests): ?speed=5 beschleunigt den Autopiloten
-  const speed = Number(new URLSearchParams(window.location.search).get('speed') ?? 1) || 1;
+  const boardView = useMatch('/session/:id/board');
   return (
     <div className="flex min-h-full flex-col" data-auth={status}>
-      <Header />
+      {!boardView && <Header />}
       <SyncRunner />
       <div className="flex-1">
         {status === 'loading' ? (
@@ -179,7 +191,31 @@ export function App() {
         ) : (
           <Routes>
             <Route path="/" element={<Navigate to="/test" replace />} />
-            <Route path="/test" element={<TestRoute speed={speed} />} />
+            <Route
+              path="/test"
+              element={
+                <RecorderRoute>
+                  <TestWorkflow simSpeed={SPEED} />
+                </RecorderRoute>
+              }
+            />
+            <Route
+              path="/session"
+              element={
+                <RecorderRoute>
+                  <SessionsPage />
+                </RecorderRoute>
+              }
+            />
+            <Route
+              path="/session/:id"
+              element={
+                <RecorderRoute>
+                  <SessionRunner simSpeed={SPEED} />
+                </RecorderRoute>
+              }
+            />
+            <Route path="/session/:id/board" element={<BeamerBoard />} />
             <Route path="/hub/*" element={<HubHome />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/test" replace />} />

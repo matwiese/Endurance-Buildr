@@ -4,6 +4,7 @@ import { allMetrics } from '@buildr/core';
 import type { SyncPullDTO } from '@buildr/shared';
 import { auditLog, metricDefinitions } from '../src/db/schema.ts';
 import {
+  addUser,
   buildUpload,
   client,
   makeGroups,
@@ -390,6 +391,87 @@ describe('Mandantentrennung', () => {
         })
       ).statusCode,
     ).toBe(422);
+    await s.close();
+  });
+});
+
+describe('Gruppensitzungen', () => {
+  it('Sitzung anlegen (idempotent, LWW), Tests mit sessionId, Filter, Berechtigungen, Löschen lässt Tests bestehen', async () => {
+    const s = await makeServer();
+    const admin = await setupAdmin(s);
+    const ref = await makeGroups(admin);
+    const mk = (name: string, groupIds: string[]) => profileBody(groupIds, { name });
+    const [a, b] = [mk('Anna', [ref.groupIds[0]!]), mk('Ben', [ref.groupIds[1]!])];
+    for (const p of [a, b]) await admin.put(`/api/profiles/${p.id}`, p);
+    const now = new Date().toISOString();
+    const body = {
+      id: randomUUID(),
+      name: 'Montagstest',
+      mode: 'cmj',
+      externalLoadKg: 0,
+      groupId: ref.groupIds[0]!,
+      status: 'active',
+      queue: [
+        { profileId: a.id, status: 'waiting' },
+        { profileId: b.id, status: 'waiting' },
+      ],
+      board: { metric: 'jump_height_impmom', testType: 'cmj', aggregate: 'best' },
+      createdAt: now,
+      updatedAt: now,
+      finishedAt: null,
+    };
+    expect((await admin.put(`/api/sessions/${body.id}`, body)).statusCode).toBe(201);
+    expect((await admin.put(`/api/sessions/${body.id}`, body)).statusCode).toBe(200);
+    // älterer Stand überschreibt nicht
+    const stale = await admin.put(`/api/sessions/${body.id}`, {
+      ...body,
+      name: 'Alt',
+      updatedAt: new Date(Date.parse(now) - 5000).toISOString(),
+    });
+    expect(stale.json()).toMatchObject({ applied: false, session: { name: 'Montagstest' } });
+    // Statuswechsel + neuere Version
+    const paused = { ...body, status: 'paused', updatedAt: new Date(Date.parse(now) + 1000).toISOString() };
+    expect((await admin.put(`/api/sessions/${body.id}`, paused)).json().session.status).toBe('paused');
+    // unbekannte Athleten/Gruppe
+    const ghost = { ...body, id: randomUUID(), queue: [{ profileId: randomUUID(), status: 'waiting' }] };
+    expect((await admin.put(`/api/sessions/${ghost.id}`, ghost)).json().error).toBe('unknown_profile');
+    const noGroup = { ...body, id: randomUUID(), groupId: randomUUID() };
+    expect((await admin.put(`/api/sessions/${noGroup.id}`, noGroup)).json().error).toBe('unknown_group');
+    expect((await admin.put(`/api/sessions/${randomUUID()}`, body)).statusCode).toBe(400);
+
+    // Tests der Sitzung
+    const u = await buildUpload(a.id, { jumps: 1 });
+    u.test.sessionId = body.id;
+    await uploadAll(admin, u);
+    const bad = await buildUpload(a.id, { jumps: 1, seed: 5 });
+    bad.test.sessionId = randomUUID();
+    await admin.putBlob(`/api/recordings/${bad.recordingId}?profileId=${a.id}`, bad.blob);
+    expect((await admin.put(`/api/tests/${bad.test.id}`, bad.test)).json().error).toBe('unknown_session');
+    const inSession = (await admin.get(`/api/tests?sessionId=${body.id}`)).json() as Array<{
+      id: string;
+      sessionId: string;
+    }>;
+    expect(inSession.map((t) => t.id)).toEqual([u.test.id]);
+    expect(inSession[0]!.sessionId).toBe(body.id);
+
+    // Liste; Rollen
+    expect(((await admin.get('/api/sessions')).json() as unknown[]).length).toBe(1);
+    const viewer = await addUser(s, admin, 'v@example.test', 'viewer');
+    expect((await viewer.get(`/api/sessions/${body.id}`)).statusCode).toBe(200);
+    expect((await viewer.put(`/api/sessions/${body.id}`, paused)).statusCode).toBe(403);
+    const scoped = await addUser(s, admin, 's@example.test', 'tester', {
+      groupScope: 'restricted',
+      access: [{ groupId: ref.groupIds[0]!, access: 'write' }],
+    });
+    expect((await scoped.get(`/api/sessions/${body.id}`)).statusCode).toBe(404); // fremde Sitzung
+    const own = { ...body, id: randomUUID(), queue: [{ profileId: a.id, status: 'waiting' }] };
+    expect((await scoped.put(`/api/sessions/${own.id}`, own)).statusCode).toBe(201);
+    const withB = { ...body, id: randomUUID() }; // enthält Ben (Gruppe ohne Rechte)
+    expect((await scoped.put(`/api/sessions/${withB.id}`, withB)).json().error).toBe('profile_forbidden');
+
+    // Löschen: Tests bleiben, session_id wird leer
+    expect((await admin.del(`/api/sessions/${body.id}`)).statusCode).toBe(204);
+    expect((await admin.get(`/api/tests/${u.test.id}`)).json().sessionId).toBeNull();
     await s.close();
   });
 });

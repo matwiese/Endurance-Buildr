@@ -2,13 +2,16 @@
 import { randomUUID } from 'node:crypto';
 import { analyzeRecording } from '@buildr/core';
 import type { ProfileDTO } from '@buildr/shared';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApi, NetworkError } from '../src/api/client.ts';
 import { BROWSER_CODEC } from '../src/sync/blob.ts';
 import { SyncEngine } from '../src/sync/engine.ts';
+import { syncEngine } from '../src/sync/index.ts';
 import { resetDbForTests } from '../src/offline/db.ts';
 import { localRepo } from '../src/offline/repo.ts';
 import { createTagOffline } from '../src/hub/services.ts';
+import { newSession } from '../src/session/queue.ts';
+import { saveSession } from '../src/session/service.ts';
 import { useAuth } from '../src/state/auth.ts';
 import { useWorkflow } from '../src/state/workflow.ts';
 import { createServer, type Server } from '../../server/src/server.ts';
@@ -340,6 +343,50 @@ describe('Sync-Engine gegen echten Server', () => {
     const srv = await api.get<Array<{ tagIds: string[] }>>(`/api/tests?profileId=${p.id}`);
     expect(srv[0]!.tagIds).toEqual([tag.id]);
     expect(saved.length).toBeGreaterThan(0);
+  });
+
+  it('Gruppentest offline: Profil → Session → Tests (mit sessionId) werden in dieser Reihenfolge hochgeladen', async () => {
+    useAuth.setState({ status: 'authenticated' });
+    vi.spyOn(syncEngine, 'run').mockResolvedValue(syncEngine.state); // saveSession stößt sonst den globalen Abgleich an
+    await engine.run();
+    groupId = (await localRepo.groups.list())[0]!.id;
+    const p = profile('Session Sven');
+    await localRepo.profiles.put(p);
+    await localRepo.outbox.add('profile', p.id);
+    const sess = newSession({
+      id: randomUUID(),
+      name: 'Offline-Session',
+      mode: 'cmj',
+      externalLoadKg: 0,
+      groupId,
+      profileIds: [p.id],
+    });
+    await saveSession(sess);
+    useWorkflow.getState().resetAll();
+    useWorkflow.getState().setSession(sess.id);
+    net.online = false;
+    const saved = await saveLocalTestKeepTags(p);
+    expect(saved[0]!.sessionId).toBe(sess.id);
+    net.online = true;
+    net.log = [];
+    expect((await engine.run()).pending).toBe(0);
+    const order = net.log.filter((l) => l.startsWith('PUT')).map((l) => l.split('/')[2]);
+    expect(order.indexOf('profiles')).toBeLessThan(order.indexOf('sessions'));
+    expect(order.indexOf('sessions')).toBeLessThan(order.indexOf('tests'));
+    const srv = await api.get<{ queue: unknown[]; status: string }>(`/api/sessions/${sess.id}`);
+    expect(srv.queue).toHaveLength(1);
+    const tests = await api.get<Array<{ sessionId: string }>>(`/api/tests?sessionId=${sess.id}`);
+    expect(tests).toHaveLength(saved.length);
+    // spätere Änderung (z. B. beendet) → LWW
+    await saveSession({
+      ...sess,
+      status: 'finished',
+      finishedAt: new Date().toISOString(),
+      updatedAt: new Date(Date.now() + 5000).toISOString(),
+    });
+    await engine.run();
+    expect((await api.get<{ status: string }>(`/api/sessions/${sess.id}`)).status).toBe('finished');
+    vi.restoreAllMocks();
   });
 
   it('Netzwerkfehler werden als NetworkError gemeldet', async () => {

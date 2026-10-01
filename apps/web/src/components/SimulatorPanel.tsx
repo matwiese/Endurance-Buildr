@@ -45,6 +45,7 @@ export function SimulatorPanel({ speed = 1 }: { speed?: number }) {
       try {
         sim.perform(next, {
           loadKg: TEST_TYPE_INFO[next as TestType]?.loaded ? Math.max(wf.externalLoadKg, 20) : undefined,
+          jumpHeightM: useLive.getState().simAbilityM ?? undefined,
         });
       } catch {
         /* nicht verbunden */
@@ -97,6 +98,7 @@ export function SimulatorPanel({ speed = 1 }: { speed?: number }) {
                 loadKg: TEST_TYPE_INFO[type as TestType]?.loaded
                   ? Math.max(wf.externalLoadKg, 20)
                   : undefined,
+                jumpHeightM: live.simAbilityM ?? undefined,
               });
             } catch {
               /* ignore */

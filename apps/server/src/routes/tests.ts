@@ -13,6 +13,7 @@ import {
   recordings,
   repMetrics,
   reps,
+  sessions,
   tags,
   testTags,
   tests,
@@ -149,6 +150,7 @@ async function assertTestAccess(db: Db, p: Principal, row: TestRow, mode: 'read'
 
 const listQuery = z.object({
   profileId: z.uuid().optional(),
+  sessionId: z.uuid().optional(),
   testType: z.string().max(400).optional(),
   from: z.iso.datetime({ offset: true }).optional(),
   to: z.iso.datetime({ offset: true }).optional(),
@@ -167,6 +169,7 @@ export const testRoutes =
       const q = parse(listQuery, req.query);
       const where: SQL[] = [];
       if (q.profileId) where.push(eq(tests.profileId, q.profileId));
+      if (q.sessionId) where.push(eq(tests.sessionId, q.sessionId));
       if (q.testType) where.push(inArray(tests.testType, q.testType.split(',').filter(Boolean)));
       if (q.from) where.push(gte(tests.createdAt, new Date(q.from)));
       if (q.to) where.push(lte(tests.createdAt, new Date(q.to)));
@@ -198,6 +201,13 @@ export const testRoutes =
       }
 
       if (input.profileId) await assertProfileAccess(db, req, input.profileId, 'write');
+      if (input.sessionId) {
+        const [ses] = await db
+          .select({ id: sessions.id })
+          .from(sessions)
+          .where(and(eq(sessions.id, input.sessionId), eq(sessions.orgId, p.orgId)));
+        if (!ses) throw new HttpError(422, 'unknown_session');
+      }
       const [rec] = await db
         .select()
         .from(recordings)

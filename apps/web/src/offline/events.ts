@@ -4,10 +4,19 @@ import { useSyncExternalStore } from 'react';
 let version = 0;
 const listeners = new Set<() => void>();
 
+/** Weitere Fenster/Tabs derselben App (z. B. Beamer-Rangliste) erfahren von lokalen Änderungen über einen BroadcastChannel. */
+const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('buildr-repo');
+
+const notify = (): void => {
+  version++;
+  for (const l of listeners) l();
+};
+if (channel) channel.onmessage = () => notify();
+
 export const repoEvents = {
   bump(): void {
-    version++;
-    for (const l of listeners) l();
+    notify();
+    channel?.postMessage(1);
   },
   subscribe(fn: () => void): () => void {
     listeners.add(fn);

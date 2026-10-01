@@ -3,6 +3,7 @@ import type {
   GroupDTO,
   ProfileDTO,
   RecordingRecord,
+  SessionDTO,
   TagDTO,
   TagTypeDTO,
   TestRecord,
@@ -101,6 +102,23 @@ export const localRepo = {
       await (await getDb()).delete('recordings', id);
     },
   },
+  sessions: {
+    async list(): Promise<SessionDTO[]> {
+      const all = await (await getDb()).getAll('sessions');
+      return all.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    },
+    async get(id: string): Promise<SessionDTO | undefined> {
+      return (await getDb()).get('sessions', id);
+    },
+    async put(s: SessionDTO): Promise<void> {
+      await (await getDb()).put('sessions', s);
+      repoEvents.bump();
+    },
+    async remove(id: string): Promise<void> {
+      await (await getDb()).delete('sessions', id);
+      repoEvents.bump();
+    },
+  },
   outbox: {
     async add(kind: OutboxKind, entityId: string): Promise<void> {
       const db = await getDb();
@@ -131,6 +149,7 @@ export const localRepo = {
     const outbox = await db.getAll('outbox');
     const pendingTests = new Set(outbox.filter((o) => o.kind === 'test').map((o) => o.entityId));
     const pendingProfiles = new Set(outbox.filter((o) => o.kind === 'profile').map((o) => o.entityId));
+    const pendingSessions = new Set(outbox.filter((o) => o.kind === 'session').map((o) => o.entityId));
     const keepRecordings = new Set<string>();
     for (const t of await db.getAll('tests')) {
       if (pendingTests.has(t.id)) keepRecordings.add(t.recordingId);
@@ -140,6 +159,8 @@ export const localRepo = {
       if (!keepRecordings.has(r)) await db.delete('recordings', r);
     for (const p of await db.getAll('profiles'))
       if (!pendingProfiles.has(p.id)) await db.delete('profiles', p.id);
+    for (const id of await db.getAllKeys('sessions'))
+      if (!pendingSessions.has(id)) await db.delete('sessions', id);
     for (const store of ['categories', 'groups', 'tagTypes', 'tags'] as const) await db.clear(store);
     await db.delete('kv', 'syncCursor');
     repoEvents.bump();

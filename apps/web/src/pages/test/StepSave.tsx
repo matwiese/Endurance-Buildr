@@ -6,9 +6,12 @@ import { useWorkflow } from '../../state/workflow.ts';
 export function StepSave({
   onNextSameAthlete,
   onNewAthlete,
+  labels,
 }: {
   onNextSameAthlete: () => void;
   onNewAthlete: () => void;
+  /** Beschriftung der beiden Folgeaktionen (Gruppentest: „Erneut testen“ / „Nächster Athlet“) */
+  labels?: { same: string; other: string };
 }) {
   const { t, lang } = useT();
   const wf = useWorkflow();
@@ -59,10 +62,10 @@ export function StepSave({
             </ul>
             <div className="flex flex-wrap gap-3">
               <Button variant="primary" size="lg" onClick={onNextSameAthlete} data-testid="next-same">
-                {t('save.next')}
+                {labels?.same ?? t('save.next')}
               </Button>
-              <Button size="lg" onClick={onNewAthlete}>
-                {t('save.newAthlete')}
+              <Button size="lg" onClick={onNewAthlete} data-testid="next-other">
+                {labels?.other ?? t('save.newAthlete')}
               </Button>
             </div>
           </div>

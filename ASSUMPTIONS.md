@@ -78,6 +78,18 @@ Push in ein öffentliches Repository prüfen**, ob die Daten dort liegen dürfen
 - DSGVO: Art.-9-Einwilligung pro Profil (Zeitstempel/Version), Foto/Video-Einwilligung unter 18 nur mit Erziehungsberechtigten-Einwilligung,
   Export (JSON+CSV) und Löschung (Hard-Delete inkl. Blobs) pro Person, Audit-Log (wer/was/wann, ohne Messwerte).
 
+## Gruppentest und Rangliste
+
+- Gerät wird **einmal je Session** verbunden und genullt (Neu nullen jederzeit möglich, nicht während der Aufnahme); je Athlet wird neu gewogen.
+- Warteschlange: wartend → wird getestet → fertig (ab dem Speichern) bzw. übersprungen; höchstens ein Athlet „wird getestet“; „Erneut testen“ erzeugt
+  immer ein **neues** Test-Objekt. Athletenwechsel ist während der Aufnahme gesperrt. Der erste wartende Athlet startet automatisch.
+- Rangliste: nur eingeschlossene Wiederholungen (ohne Lead-in) des gewählten Testtyps; Wertung **Bester** (Standard), **Letzter** oder **Mittel** über alle
+  Versuche der Session; Gleichstand teilt den Platz (1, 2, 2, 4); Athleten ohne Wert stehen hinten. Richtung aus der Registry (`higherIsBetter`),
+  **unbestimmt → höher zuerst** (umkehrbar); Asymmetrien zählen als Betrag, kleiner ist besser (ohne Seitenangabe).
+- Beamer-Ansicht (`/session/:id/board`): aktualisiert sich im selben Browser über `BroadcastChannel`, auf anderen Rechnern über Server-Polling (4 s).
+- Simulator im Gruppentest: Körpermasse aus dem Profil, Sprungvermögen (22–48 cm) und Seitenverhältnis deterministisch aus der Profil-ID.
+- Sessions sind **keine** Pflichtobjekte eines Tests (`sessionId` optional); Löschen einer Session lässt die Tests bestehen.
+
 ## Genauigkeit (gemessen, `packages/core/test/accuracy.test.ts`)
 
 Monte-Carlo-Läufe mit physikalisch simulierten Sprüngen (Masse 55–110 kg, 18–60 cm, variierte Tempo/Entlastung/Asymmetrie, Rauschen

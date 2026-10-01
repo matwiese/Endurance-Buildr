@@ -55,6 +55,7 @@ test.describe('Live-Aufnahme', () => {
     await page.getByTestId('sim-stepoff').click();
     await expect(page.getByTestId('sim-presence')).toContainText('empty', { timeout: 15_000 });
     await page.getByTestId('record-rezero').click();
+    await expect(page.getByTestId('status-zero')).toContainText('läuft'); // erst wenn die Nullung fertig ist, wieder auftreten
     await expect(page.getByTestId('status-zero')).toContainText('genullt', { timeout: 30_000 });
     await expect(page.getByTestId('record-state')).toContainText('Aufnahme läuft');
     await page.getByTestId('sim-stepon').click();

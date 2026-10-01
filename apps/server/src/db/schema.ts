@@ -18,7 +18,14 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import type { AnalysisWarning } from '@buildr/core';
-import type { Role, Sex, TestConditions } from '@buildr/shared';
+import type {
+  Role,
+  SessionBoard,
+  SessionQueueEntry,
+  SessionStatus,
+  Sex,
+  TestConditions,
+} from '@buildr/shared';
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
@@ -238,6 +245,29 @@ export const recordings = pgTable(
   (t) => [index('recordings_org_idx').on(t.orgId), index('recordings_profile_idx').on(t.profileId)],
 );
 
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: uuid('id').primaryKey(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    mode: text('mode').notNull(),
+    externalLoadKg: doublePrecision('external_load_kg').notNull().default(0),
+    groupId: uuid('group_id').references(() => groups.id, { onDelete: 'set null' }),
+    status: text('status').$type<SessionStatus>().notNull(),
+    queue: jsonb('queue').$type<SessionQueueEntry[]>().notNull().default([]),
+    board: jsonb('board').$type<SessionBoard>().notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: ts('created_at').notNull(),
+    /** vom Client gesetzt (letzter Schreiber gewinnt) */
+    updatedAt: ts('updated_at').notNull(),
+    finishedAt: ts('finished_at'),
+  },
+  (t) => [index('sessions_org_created_idx').on(t.orgId, t.createdAt)],
+);
+
 export const tests = pgTable(
   'tests',
   {
@@ -246,7 +276,7 @@ export const tests = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     profileId: uuid('profile_id').references(() => profiles.id, { onDelete: 'cascade' }),
-    sessionId: uuid('session_id'),
+    sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
     testType: text('test_type').notNull(),
     detectedType: text('detected_type'),
     bodyMassKg: doublePrecision('body_mass_kg'),
@@ -271,6 +301,7 @@ export const tests = pgTable(
     index('tests_org_created_idx').on(t.orgId, t.createdAt),
     index('tests_profile_idx').on(t.profileId, t.testType, t.createdAt),
     index('tests_recording_idx').on(t.recordingId),
+    index('tests_session_idx').on(t.sessionId),
   ],
 );
 

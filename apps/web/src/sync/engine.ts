@@ -1,5 +1,5 @@
 import { encodeBlob, type BlobCodec } from '@buildr/core';
-import type { ProfileDTO, SyncPullDTO, TestRecord } from '@buildr/shared';
+import type { ProfileDTO, SessionDTO, SyncPullDTO, TestRecord } from '@buildr/shared';
 import { ApiError, NetworkError, type Api } from '../api/client.ts';
 import type { OutboxItem } from '../offline/db.ts';
 import type { localRepo } from '../offline/repo.ts';
@@ -34,8 +34,9 @@ const KIND_RANK: Record<OutboxItem['kind'], number> = {
   tagType: 0,
   tag: 0,
   profile: 1,
-  test: 2,
-  'delete-profile': 3,
+  session: 2,
+  test: 3,
+  'delete-profile': 4,
 };
 
 const stripStatus = (t: TestRecord): Omit<TestRecord, 'status'> => {
@@ -164,6 +165,16 @@ export class SyncEngine {
       }
       case 'test':
         return this.pushTest(item.entityId);
+      case 'session': {
+        const sess = await repo.sessions.get(item.entityId);
+        if (!sess) return;
+        const res = await api.put<{ session: SessionDTO; applied: boolean }>(
+          `/api/sessions/${sess.id}`,
+          sess,
+        );
+        if (!res.applied) await repo.sessions.put(res.session);
+        return;
+      }
       case 'tagType': {
         const t = await repo.tagTypes.get(item.entityId);
         if (t) await api.put(`/api/reference/tag-types/${t.id}`, t);

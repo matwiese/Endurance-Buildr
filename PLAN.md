@@ -48,7 +48,12 @@ Status: ☐ offen · ◐ in Arbeit · ☑ fertig. Nach jedem Meilenstein: Tests 
 - CSV-Import mit Spaltenzuordnung, Trockenlauf/Prüfbericht, Duplikaterkennung (Externe ID bzw. Name + Geburtsdatum → Update), Export im Round-Trip-Format (`packages/shared/src/profileCsv.ts`).
 - **Abnahme**: Unit-Tests (Parser/Plan/Round-Trip), Komponententests (Liste, Bulk, Rollen, Import), Playwright (Gruppen → Import → Re-Import → Bulk → Export → Löschen, Tags, Nutzer).
 
-## M7 – Gruppensession + Leaderboard ☐
+## M7 – Gruppensession + Leaderboard ☑
+
+- Session-Assistent (Gruppe/Einzelne, Testtyp, Last, Demo mit 10 simulierten Athleten), Warteschlange (Status, umsortieren, hinzufügen/entfernen, überspringen, erneut testen),
+  Zero einmal je Session, Wiegen/Aufnahme/Review/Speichern je Athlet, Pause mit Zwischenstand, Beenden mit CSV-Export.
+- Live-Rangliste (Testtyp/Kennzahl/Wertung wählbar), Beamer-/Vollbildansicht (auch zweites Fenster/anderer Rechner); Sessions werden über Outbox → Server synchronisiert.
+- **Abnahme (DoD)**: Playwright mit 10 simulierten Athleten inkl. Rangliste, Pause, Export, Beamer-Fenster und Serverabgleich (`e2e/tests/session.spec.ts`).
 
 ## M8 – Hub-Reports, Normen, Export ☐
 

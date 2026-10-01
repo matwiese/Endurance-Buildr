@@ -103,6 +103,35 @@ export interface RecordingRecord {
   createdAt: string;
 }
 
+export type SessionStatus = 'active' | 'paused' | 'finished';
+export type QueueStatus = 'waiting' | 'testing' | 'done' | 'skipped';
+
+export interface SessionQueueEntry {
+  profileId: string;
+  status: QueueStatus;
+}
+
+export interface SessionBoard {
+  metric: string | null;
+  testType: TestType | null;
+  aggregate: 'best' | 'last' | 'mean';
+}
+
+/** Gruppentest: Warteschlange von Athleten, die nacheinander auf denselben Platten getestet werden. */
+export interface SessionDTO {
+  id: string;
+  name: string;
+  mode: 'auto' | TestType;
+  externalLoadKg: number;
+  groupId: string | null;
+  status: SessionStatus;
+  queue: SessionQueueEntry[];
+  board: SessionBoard;
+  createdAt: string;
+  updatedAt: string;
+  finishedAt: string | null;
+}
+
 export const ANALYSIS_VERSION = '1.0.0';
 
 export type { TestType };

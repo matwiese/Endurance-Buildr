@@ -127,6 +127,26 @@ export const testPatchInput = z.object({
     .optional(),
 });
 
+export const sessionInput = z.object({
+  id,
+  name: z.string().trim().min(1).max(160),
+  mode: z.union([testTypeSchema, z.literal('auto')]),
+  externalLoadKg: z.number().min(0).max(1000),
+  groupId: id.nullable(),
+  status: z.enum(['active', 'paused', 'finished']),
+  queue: z
+    .array(z.object({ profileId: id, status: z.enum(['waiting', 'testing', 'done', 'skipped']) }))
+    .max(500),
+  board: z.object({
+    metric: z.string().max(80).nullable(),
+    testType: testTypeSchema.nullable(),
+    aggregate: z.enum(['best', 'last', 'mean']),
+  }),
+  createdAt: isoDateTime,
+  updatedAt: isoDateTime,
+  finishedAt: isoDateTime.nullable(),
+});
+
 export type LoginInput = z.infer<typeof loginInput>;
 export type SetupInput = z.infer<typeof setupInput>;
 export type UserCreateInput = z.infer<typeof userCreateInput>;
@@ -134,6 +154,7 @@ export type UserPatchInput = z.infer<typeof userPatchInput>;
 export type TestInput = z.infer<typeof testInput>;
 export type TestPatchInput = z.infer<typeof testPatchInput>;
 export type ProfileInput = z.infer<typeof profileInput>;
+export type SessionInput = z.infer<typeof sessionInput>;
 
 /** Antwort von `GET /api/auth/me` */
 export interface MeDTO {
