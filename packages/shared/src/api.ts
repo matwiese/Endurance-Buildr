@@ -65,6 +65,7 @@ export const profileInput = z.object({
   allowPhotoVideo: z.boolean(),
   guardianConsent: z.boolean(),
   healthConsentAt: isoDateTime.nullable(),
+  healthConsentVersion: z.string().max(40).nullable().optional(),
   groupIds: z.array(id).min(1).max(50),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,

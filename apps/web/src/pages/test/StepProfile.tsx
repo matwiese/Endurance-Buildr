@@ -1,6 +1,7 @@
 import { TEST_TYPE_INFO } from '@buildr/core';
 import type { GroupDTO, ProfileDTO, TestRecord } from '@buildr/shared';
 import { useEffect, useMemo, useState } from 'react';
+import { ConsentCard } from '../../components/ConsentCard.tsx';
 import { ProfileForm, emptyProfile } from '../../components/ProfileForm.tsx';
 import { Banner, Button, Card, Modal } from '../../components/ui.tsx';
 import { useMetricFormat, useT } from '../../i18n/hooks.ts';
@@ -141,7 +142,7 @@ export function StepProfile({ onNext }: { onNext: () => void }) {
           <Button
             variant="primary"
             size="lg"
-            disabled={!wf.profile && !wf.guest}
+            disabled={(!wf.profile && !wf.guest) || (!!wf.profile && !wf.profile.healthConsentAt)}
             onClick={onNext}
             data-testid="next-button"
           >
@@ -149,6 +150,10 @@ export function StepProfile({ onNext }: { onNext: () => void }) {
           </Button>
         </div>
       </Card>
+
+      {wf.profile && !wf.profile.healthConsentAt && (
+        <ConsentCard profile={wf.profile} onGranted={(p) => wf.setProfile(p)} />
+      )}
 
       {creating && (
         <Modal title={t('profile.new')} onClose={() => setCreating(false)} wide>

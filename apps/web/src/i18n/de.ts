@@ -707,6 +707,25 @@ export const de = {
   'norm.band.average': 'im Normbereich',
   'norm.band.higher': 'über der Norm',
   'norm.band.much_higher': 'deutlich über der Norm',
+  'consent.missing':
+    'Für {name} liegt keine Einwilligung zur Verarbeitung von Gesundheitsdaten (Art. 9 DSGVO) vor. Ohne Einwilligung darf nicht getestet werden.',
+  'consent.grant': 'Einwilligung erfassen',
+  'consent.hint': 'Die Einwilligung wird mit Zeitpunkt und Fassung ({version}) gespeichert.',
+  'consent.version': 'Fassung {version}',
+  'consent.outdated': 'ältere Fassung',
+  'privacy.title': 'Datenschutz (DSGVO)',
+  'privacy.hint':
+    'Auskunft und Datenübertragbarkeit (Art. 15/20): alle zu dieser Person gespeicherten Daten als JSON, die Kennzahlen als CSV. Der Export wird protokolliert.',
+  'privacy.export.json': 'Alle Daten exportieren (JSON)',
+  'privacy.export.csv': 'Kennzahlen (CSV)',
+  'privacy.export.busy': 'Export läuft …',
+  'privacy.export.local':
+    'Der Server war nicht erreichbar bzw. ist nicht aktiv – exportiert wurden nur die Daten dieses Geräts.',
+  'privacy.export.failed': 'Export fehlgeschlagen.',
+  'privacy.delete': 'Person und alle Daten endgültig löschen',
+  'privacy.delete.title': 'Person endgültig löschen',
+  'privacy.delete.confirm':
+    '{name} samt aller Tests, Messwerte und Roh-Aufnahmen endgültig löschen? Das kann nicht rückgängig gemacht werden.',
 } as const;
 
 export type MessageKey = keyof typeof de;

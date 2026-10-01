@@ -6,7 +6,7 @@ import {
   detectDelimiter,
   type Delimiter,
 } from '@buildr/core';
-import type { GroupDTO, ProfileDTO, Sex } from './model.ts';
+import { CONSENT_VERSION, type GroupDTO, type ProfileDTO, type Sex } from './model.ts';
 import { validateProfile } from './validation.ts';
 
 /**
@@ -251,6 +251,17 @@ function mergeValue<T>(incoming: T | null, existing: T | null): T | null {
     : existing;
 }
 
+/** Vergleichsform eines Profils: ohne Zeitstempel, optionale Felder vereinheitlicht, Schlüssel sortiert (ältere Profile kennen neuere Felder nicht). */
+function comparable(p: ProfileDTO): string {
+  const norm: Record<string, unknown> = {
+    ...p,
+    healthConsentVersion: p.healthConsentVersion ?? null,
+    updatedAt: '',
+    createdAt: '',
+  };
+  return JSON.stringify(norm, Object.keys(norm).sort());
+}
+
 /** Plant einen Import (Trockenlauf): parst, prüft, ordnet Duplikaten zu – schreibt nichts. */
 export function planProfileImport(text: string, opts: PlanOptions): ImportPlan {
   const body = stripBom(text);
@@ -387,6 +398,14 @@ export function planProfileImport(text: string, opts: PlanOptions): ImportPlan {
           : healthConsent === false
             ? null
             : (match?.healthConsentAt ?? null),
+      healthConsentVersion:
+        healthConsent === true
+          ? match?.healthConsentAt
+            ? (match.healthConsentVersion ?? null)
+            : CONSENT_VERSION
+          : healthConsent === false
+            ? null
+            : (match?.healthConsentVersion ?? null),
       groupIds: mergedGroups,
       createdAt: match?.createdAt ?? opts.now,
       updatedAt: opts.now,
@@ -412,9 +431,7 @@ export function planProfileImport(text: string, opts: PlanOptions): ImportPlan {
     else if (match) {
       if (!updateExisting) status = 'unchanged';
       else {
-        const same =
-          JSON.stringify({ ...candidate, updatedAt: '', createdAt: '' }) ===
-          JSON.stringify({ ...match, updatedAt: '', createdAt: '' });
+        const same = comparable(candidate) === comparable(match);
         status = same ? 'unchanged' : 'update';
       }
     } else status = 'new';

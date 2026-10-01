@@ -1,4 +1,4 @@
-import type { GroupDTO, ProfileDTO } from '@buildr/shared';
+import { CONSENT_VERSION, type GroupDTO, type ProfileDTO } from '@buildr/shared';
 import { uid } from '../lib/uid.ts';
 
 const NAMES = [
@@ -50,6 +50,7 @@ export function demoProfiles(group: GroupDTO, now = new Date().toISOString()): P
     allowPhotoVideo: false,
     guardianConsent: false,
     healthConsentAt: now,
+    healthConsentVersion: CONSENT_VERSION,
     groupIds: [group.id],
     createdAt: now,
     updatedAt: now,

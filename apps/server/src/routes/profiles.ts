@@ -26,6 +26,7 @@ export const profileDto = (r: ProfileRow, groupIds: string[]): ProfileDTO => ({
   allowPhotoVideo: r.allowPhotoVideo,
   guardianConsent: r.guardianConsent,
   healthConsentAt: r.healthConsentAt?.toISOString() ?? null,
+  healthConsentVersion: r.healthConsentVersion,
   groupIds,
   createdAt: r.createdAt.toISOString(),
   updatedAt: r.updatedAt.toISOString(),
@@ -201,6 +202,7 @@ export const profileRoutes =
         allowPhotoVideo: input.allowPhotoVideo,
         guardianConsent: input.guardianConsent,
         healthConsentAt: input.healthConsentAt ? new Date(input.healthConsentAt) : null,
+        healthConsentVersion: input.healthConsentAt ? (input.healthConsentVersion ?? null) : null,
         updatedAt,
       };
       try {

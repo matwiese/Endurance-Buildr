@@ -705,4 +705,23 @@ export const en: Record<MessageKey, string> = {
   'norm.band.average': 'within norm',
   'norm.band.higher': 'above norm',
   'norm.band.much_higher': 'well above norm',
+  'consent.missing':
+    'There is no consent on file for {name} to process health data (Art. 9 GDPR). Testing is not allowed without consent.',
+  'consent.grant': 'Record consent',
+  'consent.hint': 'Consent is stored with timestamp and version ({version}).',
+  'consent.version': 'Version {version}',
+  'consent.outdated': 'older version',
+  'privacy.title': 'Privacy (GDPR)',
+  'privacy.hint':
+    'Right of access and data portability (Art. 15/20): all data stored about this person as JSON, the metrics as CSV. The export is logged.',
+  'privacy.export.json': 'Export all data (JSON)',
+  'privacy.export.csv': 'Metrics (CSV)',
+  'privacy.export.busy': 'Exporting …',
+  'privacy.export.local':
+    'The server was not reachable or is not active – only the data on this device was exported.',
+  'privacy.export.failed': 'Export failed.',
+  'privacy.delete': 'Permanently delete person and all data',
+  'privacy.delete.title': 'Delete person permanently',
+  'privacy.delete.confirm':
+    'Permanently delete {name} including all tests, metrics and raw recordings? This cannot be undone.',
 };

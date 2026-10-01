@@ -9,6 +9,7 @@ import type { Db } from './db/client.ts';
 import { HttpError } from './http.ts';
 import { auditRoutes } from './routes/audit.ts';
 import { authRoutes } from './routes/auth.ts';
+import { exportRoutes } from './routes/export.ts';
 import { metricRoutes } from './routes/metrics.ts';
 import { normRoutes } from './routes/norms.ts';
 import { profileRoutes } from './routes/profiles.ts';
@@ -18,6 +19,7 @@ import { sessionRoutes } from './routes/sessions.ts';
 import { syncRoutes } from './routes/sync.ts';
 import { testRoutes } from './routes/tests.ts';
 import { userRoutes } from './routes/users.ts';
+import { SECURITY_HEADERS } from './security.ts';
 import type { BlobStore } from './storage/blobStore.ts';
 
 export interface AppContext {
@@ -50,9 +52,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   );
 
   app.addHook('onRequest', async (req, reply) => {
-    reply.header('X-Content-Type-Options', 'nosniff');
-    reply.header('Referrer-Policy', 'no-referrer');
-    reply.header('X-Frame-Options', 'DENY');
+    for (const [k, v] of Object.entries(SECURITY_HEADERS)) reply.header(k, v);
     if (!req.url.startsWith('/api/')) return;
     reply.header('Cache-Control', 'no-store');
     // CSRF (zusätzlich zu SameSite=Lax): Cookie-authentifizierte Schreibzugriffe nur vom eigenen Ursprung
@@ -108,6 +108,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       await api.register(userRoutes(ctx));
       await api.register(referenceRoutes(ctx));
       await api.register(profileRoutes(ctx));
+      await api.register(exportRoutes(ctx));
       await api.register(testRoutes(ctx));
       await api.register(recordingRoutes(ctx));
       await api.register(sessionRoutes(ctx));
@@ -120,7 +121,16 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   );
 
   if (config.WEB_DIST && existsSync(config.WEB_DIST)) {
-    await app.register(fastifyStatic, { root: config.WEB_DIST, wildcard: false });
+    await app.register(fastifyStatic, {
+      root: config.WEB_DIST,
+      wildcard: false,
+      // gehashte Build-Dateien ewig cachen, Einstiegsseite und Service Worker immer prüfen lassen
+      setHeaders: (res, path) =>
+        res.header(
+          'Cache-Control',
+          /[\\/]assets[\\/]/.test(path) ? 'public, max-age=31536000, immutable' : 'no-cache',
+        ),
+    });
   }
   return app;
 }

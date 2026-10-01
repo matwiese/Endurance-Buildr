@@ -1,5 +1,5 @@
 import { TEST_TYPE_INFO, TEST_TYPES, getMetric, type TestType } from '@buildr/core';
-import { buildProgress, type Aggregate } from '@buildr/shared';
+import { CONSENT_VERSION, buildProgress, type Aggregate } from '@buildr/shared';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { LineChart } from '../../components/Charts.tsx';
@@ -7,11 +7,17 @@ import { ProfileForm } from '../../components/ProfileForm.tsx';
 import { Banner, Button, Card, Chip, Modal } from '../../components/ui.tsx';
 import { useRefData } from '../../hub/hooks.ts';
 import { useActiveNorms } from '../../hub/norms.ts';
-import { saveProfile } from '../../hub/services.ts';
+import {
+  buildPersonExport,
+  personExportFilename,
+  personResultsCsv,
+  type PersonExport,
+} from '../../hub/personExport.ts';
+import { removeProfile, saveProfile, serverMode } from '../../hub/services.ts';
 import { useTests } from '../../hub/testsData.ts';
 import { useMetricFormat, useT } from '../../i18n/hooks.ts';
 import type { MessageKey } from '../../i18n/index.ts';
-import { ageYears, formatDate } from '../../lib/format.ts';
+import { ageYears, download, formatDate } from '../../lib/format.ts';
 import { defaultMetricFor, metricOptionsFor } from '../../session/metrics.ts';
 import { useRole } from '../../state/auth.ts';
 
@@ -33,6 +39,10 @@ export function ProfilePage() {
   const [metric, setMetric] = useState('');
   const [aggregate, setAggregate] = useState<Aggregate>('best');
   const [baselineN, setBaselineN] = useState(3);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ tone: 'info' | 'warn'; text: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [typed, setTyped] = useState('');
 
   const types = useMemo(() => TEST_TYPES.filter((x) => tests.some((tt) => tt.testType === x)), [tests]);
   const activeType: TestType | null = (type && types.includes(type) ? type : types[0]) ?? null;
@@ -68,6 +78,31 @@ export function ProfilePage() {
     );
   }
   const age = ageYears(profile.dateOfBirth);
+  const runExport = async (kind: 'json' | 'csv') => {
+    setBusy(true);
+    setNotice(null);
+    try {
+      const exp: PersonExport = await buildPersonExport(profile, data.groups);
+      if (kind === 'json')
+        download(
+          personExportFilename(profile, 'json'),
+          JSON.stringify(exp, null, 2),
+          'application/json;charset=utf-8',
+        );
+      else
+        download(personExportFilename(profile, 'csv'), personResultsCsv(exp, lang), 'text/csv;charset=utf-8');
+      if (exp.source === 'local' && serverMode())
+        setNotice({ tone: 'warn', text: t('privacy.export.local') });
+    } catch {
+      setNotice({ tone: 'warn', text: t('privacy.export.failed') });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const doDelete = async () => {
+    await removeProfile(profile.id);
+    navigate('/hub/athletes');
+  };
   const last = progress?.points[progress.points.length - 1];
   const norm = progress?.norm;
   const bandSd = norm && norm.mean !== null && norm.sd !== null ? { mean: norm.mean, sd: norm.sd } : null;
@@ -107,6 +142,11 @@ export function ProfilePage() {
           <Chip tone={profile.healthConsentAt ? 'ok' : 'warn'}>
             {t('profiles.col.consent')}:{' '}
             {profile.healthConsentAt ? t('profiles.consent.yes') : t('profiles.consent.no')}
+            {profile.healthConsentAt &&
+              ` · ${t('consent.version', { version: profile.healthConsentVersion ?? '?' })} · ${formatDate(profile.healthConsentAt, lang)}`}
+            {profile.healthConsentAt &&
+              profile.healthConsentVersion !== CONSENT_VERSION &&
+              ` (${t('consent.outdated')})`}
           </Chip>
         </div>
       </Card>
@@ -289,6 +329,55 @@ export function ProfilePage() {
           </table>
         </div>
       </Card>
+
+      <Card title={t('privacy.title')}>
+        <p className="mb-3 text-sm text-muted">{t('privacy.hint')}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button disabled={busy} onClick={() => void runExport('json')} data-testid="pp-export-json">
+            {busy ? t('privacy.export.busy') : `⭳ ${t('privacy.export.json')}`}
+          </Button>
+          <Button disabled={busy} onClick={() => void runExport('csv')} data-testid="pp-export-csv">
+            ⭳ {t('privacy.export.csv')}
+          </Button>
+          {role === 'admin' && (
+            <Button variant="danger" onClick={() => setDeleting(true)} data-testid="pp-delete">
+              {t('privacy.delete')}
+            </Button>
+          )}
+        </div>
+        {notice && (
+          <div className="mt-3" data-testid="pp-notice">
+            <Banner tone={notice.tone}>{notice.text}</Banner>
+          </div>
+        )}
+      </Card>
+
+      {deleting && (
+        <Modal title={t('privacy.delete.title')} onClose={() => setDeleting(false)}>
+          <p className="mb-3">{t('privacy.delete.confirm', { name: profile.name })}</p>
+          <label className="label" htmlFor="pp-del-word">
+            {t('profiles.delete.type', { word: t('profiles.delete.word') })}
+          </label>
+          <input
+            id="pp-del-word"
+            className="input mb-4"
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            data-testid="pp-delete-word"
+          />
+          <div className="flex justify-end gap-3">
+            <Button onClick={() => setDeleting(false)}>{t('common.cancel')}</Button>
+            <Button
+              variant="danger"
+              disabled={typed.trim().toLocaleUpperCase() !== t('profiles.delete.word')}
+              onClick={() => void doDelete()}
+              data-testid="pp-delete-confirm"
+            >
+              {t('profiles.delete')}
+            </Button>
+          </div>
+        </Modal>
+      )}
 
       {editing && (
         <Modal title={t('profiles.edit')} onClose={() => setEditing(false)} wide>

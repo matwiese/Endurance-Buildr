@@ -1,5 +1,5 @@
 import type { GroupDTO, ProfileDTO, Sex } from '@buildr/shared';
-import { validateProfile } from '@buildr/shared';
+import { CONSENT_VERSION, validateProfile } from '@buildr/shared';
 import { useMemo, useState } from 'react';
 import { useT } from '../i18n/hooks.ts';
 import type { MessageKey } from '../i18n/index.ts';
@@ -177,7 +177,13 @@ export function ProfileForm({
         <Toggle
           label={t('profile.consent.health')}
           checked={!!p.healthConsentAt}
-          onChange={(v) => set('healthConsentAt', v ? new Date().toISOString() : null)}
+          onChange={(v) =>
+            setP((s) => ({
+              ...s,
+              healthConsentAt: v ? new Date().toISOString() : null,
+              healthConsentVersion: v ? CONSENT_VERSION : null,
+            }))
+          }
         />
         {has('consent') && <p className="text-sm text-danger">{err('health_consent_required')}</p>}
         {minor && (

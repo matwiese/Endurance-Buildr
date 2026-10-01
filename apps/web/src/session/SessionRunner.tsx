@@ -1,6 +1,7 @@
 import type { SessionDTO } from '@buildr/shared';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ConsentCard } from '../components/ConsentCard.tsx';
 import { StatusBar } from '../components/StatusBar.tsx';
 import { StepBar } from '../components/StepBar.tsx';
 import { Banner, Button, Card, Chip, Modal } from '../components/ui.tsx';
@@ -314,7 +315,10 @@ export function SessionRunner({ simSpeed = 1 }: { simSpeed?: number }) {
                   onSelect={(s) => wf.setStep(s)}
                   compact
                 />
-                <main aria-label={t(`step.${wf.step}` as MessageKey)}>
+                {!profile.healthConsentAt && (
+                  <ConsentCard profile={profile} onGranted={(p) => wf.setProfile(p)} />
+                )}
+                <main aria-label={t(`step.${wf.step}` as MessageKey)} hidden={!profile.healthConsentAt}>
                   {wf.step === 'weigh' && <StepWeigh onNext={next} />}
                   {wf.step === 'record' && <StepRecord simSpeed={simSpeed} />}
                   {wf.step === 'review' && <StepReview onNext={next} onAgain={() => wf.setStep('record')} />}

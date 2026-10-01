@@ -141,6 +141,7 @@ export const profiles = pgTable(
     allowPhotoVideo: boolean('allow_photo_video').notNull().default(false),
     guardianConsent: boolean('guardian_consent').notNull().default(false),
     healthConsentAt: ts('health_consent_at'),
+    healthConsentVersion: text('health_consent_version'),
     createdAt: ts('created_at').notNull(),
     /** vom Client gesetzt (letzter Schreiber gewinnt) */
     updatedAt: ts('updated_at').notNull(),

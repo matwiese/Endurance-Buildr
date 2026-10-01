@@ -561,3 +561,69 @@ describe('Normsets und Berichte', () => {
     await s.close();
   });
 });
+
+describe('DSGVO: Auskunft, Einwilligung', () => {
+  it('Personen-Export enthält Profil, Tests, Kennzahlen, Aufnahmen-Verweise, Sessions und Protokoll; wird protokolliert und ist gruppengeschützt', async () => {
+    const s = await makeServer();
+    const admin = await setupAdmin(s);
+    const ref = await makeGroups(admin);
+    const p = profileBody([ref.groupIds[0]!], { name: 'Export Eva', healthConsentVersion: '2026-10' });
+    const other = profileBody([ref.groupIds[1]!], { name: 'Anderer' });
+    for (const x of [p, other]) await admin.put(`/api/profiles/${x.id}`, x);
+    const u = await buildUpload(p.id, { jumps: 2 });
+    await uploadAll(admin, u);
+    const uo = await buildUpload(other.id, { jumps: 1, seed: 8 });
+    await uploadAll(admin, uo);
+
+    const res = await admin.get(`/api/profiles/${p.id}/export`);
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-disposition']).toContain('attachment');
+    const body = res.json();
+    expect(body).toMatchObject({
+      format: 'buildr-force-person-export',
+      version: 1,
+      profile: { name: 'Export Eva', healthConsentVersion: '2026-10' },
+    });
+    expect(body.tests.map((t: { id: string }) => t.id)).toEqual([u.test.id]);
+    expect(body.tests[0].reps).toHaveLength(u.test.reps.length);
+    expect(Object.keys(body.tests[0].reps[0].metrics).length).toBeGreaterThan(5);
+    expect(body.recordings).toHaveLength(1);
+    expect(body.recordings[0]).toMatchObject({ id: u.recordingId, format: 'BFB1' });
+    expect(JSON.stringify(body)).not.toContain('Anderer'); // keine Fremddaten
+    expect(body.auditEvents.map((e: { action: string }) => e.action)).toEqual(
+      expect.arrayContaining(['profile.create', 'test.create']),
+    );
+    const audit = (await admin.get('/api/audit?limit=50')).json() as Array<{
+      action: string;
+      entityId: string;
+    }>;
+    expect(audit.some((a) => a.action === 'profile.export' && a.entityId === p.id)).toBe(true);
+
+    // eingeschränkter Nutzer ohne Zugriff → 404; Betrachter darf exportieren (Leserecht)
+    const scoped = await addUser(s, admin, 'sc@example.test', 'tester', {
+      groupScope: 'restricted',
+      access: [{ groupId: ref.groupIds[1]!, access: 'read' }],
+    });
+    expect((await scoped.get(`/api/profiles/${p.id}/export`)).statusCode).toBe(404);
+    expect((await scoped.get(`/api/profiles/${other.id}/export`)).statusCode).toBe(200);
+    const viewer = await addUser(s, admin, 'vw@example.test', 'viewer');
+    expect((await viewer.get(`/api/profiles/${p.id}/export`)).statusCode).toBe(200);
+    await s.close();
+  });
+
+  it('Einwilligungsfassung wird gespeichert und nur zusammen mit dem Zeitpunkt (ohne Einwilligung → null)', async () => {
+    const s = await makeServer();
+    const admin = await setupAdmin(s);
+    const ref = await makeGroups(admin);
+    const a = profileBody([ref.groupIds[0]!], { healthConsentVersion: '2026-10' });
+    await admin.put(`/api/profiles/${a.id}`, a);
+    expect((await admin.get(`/api/profiles/${a.id}`)).json().healthConsentVersion).toBe('2026-10');
+    const b = profileBody([ref.groupIds[0]!], { healthConsentAt: null, healthConsentVersion: '2026-10' });
+    await admin.put(`/api/profiles/${b.id}`, b);
+    expect((await admin.get(`/api/profiles/${b.id}`)).json()).toMatchObject({
+      healthConsentAt: null,
+      healthConsentVersion: null,
+    });
+    await s.close();
+  });
+});

@@ -40,6 +40,8 @@ export interface ProfileDTO {
   guardianConsent: boolean;
   /** Zeitpunkt der Einwilligung in die Verarbeitung von Gesundheitsdaten (Art. 9 DSGVO) */
   healthConsentAt: string | null;
+  /** Fassung des Einwilligungstextes, der zugestimmt wurde (siehe CONSENT_VERSION) */
+  healthConsentVersion?: string | null;
   /** mindestens eine Gruppe (Pflicht) */
   groupIds: string[];
   createdAt: string;
@@ -131,6 +133,9 @@ export interface SessionDTO {
   updatedAt: string;
   finishedAt: string | null;
 }
+
+/** Fassung des Einwilligungstextes (Art. 9 DSGVO); bei inhaltlicher Änderung erhöhen → Einwilligungen sind dann als „ältere Fassung“ erkennbar. */
+export const CONSENT_VERSION = '2026-10';
 
 export const ANALYSIS_VERSION = '1.0.0';
 
