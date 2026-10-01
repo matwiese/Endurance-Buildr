@@ -20,6 +20,8 @@ export interface OutboxItem {
   /** frühester nächster Versuch (ms seit Epoche) */
   nextAttemptAt: number;
   lastError?: string;
+  /** dauerhaft fehlgeschlagen (4xx): wird nicht automatisch wiederholt, nur über „Erneut versuchen“ */
+  dead?: boolean;
   createdAt: number;
 }
 

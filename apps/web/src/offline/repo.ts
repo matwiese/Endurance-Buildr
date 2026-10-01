@@ -9,6 +9,32 @@ import type {
 } from '@buildr/shared';
 import { getDb, type OutboxItem, type OutboxKind } from './db.ts';
 
+type SimpleStoreName = 'categories' | 'groups' | 'tagTypes' | 'tags';
+
+/** Einfacher Speicher für Stammdaten mit `id`-Schlüssel. */
+function simpleStore<T extends { id: string }>(name: SimpleStoreName) {
+  return {
+    async list(): Promise<T[]> {
+      return (await (await getDb()).getAll(name)) as unknown as T[];
+    },
+    async get(id: string): Promise<T | undefined> {
+      return (await (await getDb()).get(name, id)) as unknown as T | undefined;
+    },
+    async put(v: T): Promise<void> {
+      await (await getDb()).put(name, v as never);
+    },
+    async remove(id: string): Promise<void> {
+      await (await getDb()).delete(name, id);
+    },
+    async replaceAll(list: T[]): Promise<void> {
+      const tx = (await getDb()).transaction(name, 'readwrite');
+      await tx.store.clear();
+      for (const v of list) await tx.store.put(v as never);
+      await tx.done;
+    },
+  };
+}
+
 /** Lokale Datenschicht (IndexedDB). Die Sync-Schicht (M5) spiegelt sie mit dem Server. */
 export const localRepo = {
   profiles: {
@@ -32,38 +58,10 @@ export const localRepo = {
       await tx.done;
     },
   },
-  categories: {
-    async list(): Promise<CategoryDTO[]> {
-      return (await getDb()).getAll('categories');
-    },
-    async put(c: CategoryDTO): Promise<void> {
-      await (await getDb()).put('categories', c);
-    },
-  },
-  groups: {
-    async list(): Promise<GroupDTO[]> {
-      return (await getDb()).getAll('groups');
-    },
-    async put(g: GroupDTO): Promise<void> {
-      await (await getDb()).put('groups', g);
-    },
-  },
-  tagTypes: {
-    async list(): Promise<TagTypeDTO[]> {
-      return (await getDb()).getAll('tagTypes');
-    },
-    async put(t: TagTypeDTO): Promise<void> {
-      await (await getDb()).put('tagTypes', t);
-    },
-  },
-  tags: {
-    async list(): Promise<TagDTO[]> {
-      return (await getDb()).getAll('tags');
-    },
-    async put(t: TagDTO): Promise<void> {
-      await (await getDb()).put('tags', t);
-    },
-  },
+  categories: simpleStore<CategoryDTO>('categories'),
+  groups: simpleStore<GroupDTO>('groups'),
+  tagTypes: simpleStore<TagTypeDTO>('tagTypes'),
+  tags: simpleStore<TagDTO>('tags'),
   tests: {
     async list(): Promise<TestRecord[]> {
       const all = await (await getDb()).getAll('tests');
@@ -114,6 +112,27 @@ export const localRepo = {
     async remove(id: number): Promise<void> {
       await (await getDb()).delete('outbox', id);
     },
+  },
+  /**
+   * Beim Abmelden/Kontowechsel: Zwischenspeicher leeren, aber nichts Ungesendetes verlieren
+   * (Tests/Aufnahmen mit offenem Upload sowie Profile mit offener Änderung bleiben).
+   */
+  async wipeCaches(): Promise<void> {
+    const db = await getDb();
+    const outbox = await db.getAll('outbox');
+    const pendingTests = new Set(outbox.filter((o) => o.kind === 'test').map((o) => o.entityId));
+    const pendingProfiles = new Set(outbox.filter((o) => o.kind === 'profile').map((o) => o.entityId));
+    const keepRecordings = new Set<string>();
+    for (const t of await db.getAll('tests')) {
+      if (pendingTests.has(t.id)) keepRecordings.add(t.recordingId);
+      else await db.delete('tests', t.id);
+    }
+    for (const r of await db.getAllKeys('recordings'))
+      if (!keepRecordings.has(r)) await db.delete('recordings', r);
+    for (const p of await db.getAll('profiles'))
+      if (!pendingProfiles.has(p.id)) await db.delete('profiles', p.id);
+    for (const store of ['categories', 'groups', 'tagTypes', 'tags'] as const) await db.clear(store);
+    await db.delete('kv', 'syncCursor');
   },
   kv: {
     async get<T>(key: string): Promise<T | undefined> {

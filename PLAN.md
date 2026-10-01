@@ -35,10 +35,12 @@ Status: ☐ offen · ◐ in Arbeit · ☑ fertig. Nach jedem Meilenstein: Tests 
 - **Ergebnis**: Playwright (`e2e/tests`): Haupt-Workflow, Live (60 fps bei 2 × 1000 Hz, Latenz ≈ 33 ms, Re-Zero während der Aufnahme, Pause/Fortsetzen),
   Review (Relabel, Bereich markieren, Hop „Beste 5“, Löschen/Rückgängig, Speichern → Outbox). Web-Unit-Tests: Engine, Store, Review-Komponente, i18n-Parität.
 
-## M5 – Server, DB, Auth, Sync ☐
+## M5 – Server, DB, Auth, Sync ☑
 
 - Fastify + Drizzle (PostgreSQL / PGlite), Mandanten, Rollen, Gruppen-Scoping, Blob-Speicher, Sync-Queue mit Idempotenz, Offline-first.
 - **Abnahme**: API-Integrationstests; Offline-Test → Reconnect → Upload.
+- **Ergebnis**: 29 Server-Tests (PGlite **und** PostgreSQL 16: `TEST_DATABASE_URL=… pnpm test`), Sync-Engine-Integrationstest (echter Server ↔ IndexedDB:
+  offline → Upload, verlorene Antwort, Backoff, 4xx, 401, Pull-Merge), Playwright (Login/Rollen/lokaler Modus, Offline → automatischer Upload). `docs/api.md`.
 
 ## M6 – Profile/Gruppen/Tags/CSV ☐
 

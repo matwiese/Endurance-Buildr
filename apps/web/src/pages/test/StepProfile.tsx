@@ -8,6 +8,8 @@ import { ageYears, formatDateTime } from '../../lib/format.ts';
 import { summarize } from '../../lib/summary.ts';
 import { ensureDefaultGroup } from '../../model/seed.ts';
 import { localRepo } from '../../offline/repo.ts';
+import { useAuth } from '../../state/auth.ts';
+import { useSyncState } from '../../sync/index.ts';
 import { tilesFor, useSettings } from '../../state/settings.ts';
 import { useWorkflow } from '../../state/workflow.ts';
 
@@ -23,14 +25,18 @@ export function StepProfile({ onNext }: { onNext: () => void }) {
   const [creating, setCreating] = useState(false);
   const [history, setHistory] = useState<{ profile: ProfileDTO; tests: TestRecord[] } | null>(null);
 
+  const authStatus = useAuth((a) => a.status);
+  const syncedAt = useSyncState().lastSyncAt;
   const load = async () => {
-    await ensureDefaultGroup();
+    // lokaler Modus: Standardgruppe selbst anlegen; mit Server kommen Gruppen aus dem Abgleich
+    if (authStatus === 'local') await ensureDefaultGroup();
     setProfiles(await localRepo.profiles.list());
     setGroups(await localRepo.groups.list());
   };
   useEffect(() => {
     void load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- neu laden nach Anmeldung/Abgleich
+  }, [authStatus, syncedAt]);
 
   const shown = useMemo(
     () =>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useT } from '../i18n/hooks.ts';
-import { localRepo } from '../offline/repo.ts';
+import { syncEngine, useSyncState } from '../sync/index.ts';
 import { useLive } from '../state/live.ts';
 import { Dot } from './ui.tsx';
 
@@ -9,22 +9,15 @@ export function StatusBar() {
   const { t } = useT();
   const s = useLive();
   const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine);
-  const [queue, setQueue] = useState(0);
+  const sync = useSyncState();
   useEffect(() => {
     const on = () => setOnline(true);
     const off = () => setOnline(false);
     window.addEventListener('online', on);
     window.addEventListener('offline', off);
-    let alive = true;
-    const poll = () =>
-      localRepo.outbox
-        .count()
-        .then((n) => alive && setQueue(n))
-        .catch(() => undefined);
-    poll();
-    const id = setInterval(poll, 2000);
+    void syncEngine.refreshCounts();
+    const id = setInterval(() => void syncEngine.refreshCounts(), 2000);
     return () => {
-      alive = false;
       clearInterval(id);
       window.removeEventListener('online', on);
       window.removeEventListener('offline', off);
@@ -62,10 +55,22 @@ export function StatusBar() {
         {t('status.latency')} {s.latencyMs ? `${Math.round(s.latencyMs)} ms` : '–'}
       </span>
       <span className="ml-auto flex items-center gap-4">
-        <span className={online ? 'text-muted' : 'font-semibold text-warn'}>
-          {online ? t('status.online') : t('status.offline')}
+        <span
+          className={online && !sync.offline ? 'text-muted' : 'font-semibold text-warn'}
+          data-testid="status-online"
+          title={sync.offline ? t('sync.offline') : undefined}
+        >
+          {online && !sync.offline ? t('status.online') : t('status.offline')}
         </span>
-        <span title={t('status.queue')}>⇪ {queue}</span>
+        <span
+          title={t('status.queue')}
+          className={sync.failed ? 'font-semibold text-danger' : sync.pending ? 'text-warn' : ''}
+          data-testid="status-queue"
+          data-pending={sync.pending}
+          data-failed={sync.failed}
+        >
+          ⇪ {sync.pending + sync.failed}
+        </span>
       </span>
     </div>
   );

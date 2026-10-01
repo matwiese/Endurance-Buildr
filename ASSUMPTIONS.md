@@ -31,8 +31,9 @@ Push in ein öffentliches Repository prüfen**, ob die Daten dort liegen dürfen
 - **i18n**: kleines, typisiertes Wörterbuch-System (de/en, Standard de) statt i18next; ein Test erzwingt Schlüssel-Parität.
 - **Plot**: eigener Canvas-2D-Renderer (Min/Max-Dezimierung pro Pixelspalte) statt uPlot, um Phasenflächen, Marker und
   Ringpuffer-Streaming ohne Library-Hacks zu zeichnen.
-- **Blob-Format** `BFB1`: Header + quantisierte (1 mN) Delta-/Zigzag-Varint-Kanäle + Kompression `deflate` (browsernativ per
-  `CompressionStream`) oder `zstd` (Server, `node:zlib`, Web dekodiert mit `fzstd`). Quantisierung 1 mN liegt > 1000× unter dem Sensorrauschen.
+- **Blob-Format** `BFB1` (`docs/api.md`): Header + quantisierte (1 mN) Delta-/Zigzag-Varint-Kanäle + CRC-32; Kompression `deflate-raw`
+  (browsernativ per `CompressionStream`, Server `node:zlib`) – bewusst ohne zstd (keine Zusatzabhängigkeit im Browser; bei rauschdominierten
+  Rohdaten bringt zstd gegenüber deflate nur wenige Prozent). Quantisierung 1 mN liegt > 1000× unter dem Sensorrauschen.
 - **Aufnahme vs. Test**: Eine Aufnahme (ein Blob) kann mehrere Tests (je ein erkannter Typ) erzeugen; die Tests teilen sich
   das Blob, `Rep.startIdx/endIdx` indizieren hinein. Eine Neutestung erzeugt immer neue Tests/Blobs.
 - **Zero-Offsets** werden bei der Aufnahme angewendet; gespeichert werden genullte Kräfte + Offsets in den Metadaten.
@@ -66,7 +67,14 @@ Push in ein öffentliches Repository prüfen**, ob die Daten dort liegen dürfen
 - Normdaten: keine mitgeliefert; nur Import eigener Normsets (CSV) mit Alters-/Geschlechts-/Sport-Strata.
 - Rollen: `admin` (alles), `tester` (Tests aufnehmen, Profile bearbeiten), `viewer` (lesen). Gruppen-Scoping: Nutzer mit
   `groupScope = restricted` sehen/bearbeiten nur Profile, die in einer ihnen zugewiesenen Gruppe (read/write) liegen.
-- Auth: E-Mail/Passwort (scrypt), opake Session-Tokens in httpOnly-Cookie (SameSite=Lax); Mandant = Organisation, jede Abfrage org-gescoped.
+- Auth: E-Mail/Passwort (scrypt N=2¹⁵, Parameter im Hash), opake Session-Tokens (nur SHA-256 gespeichert) in httpOnly-Cookie (SameSite=Lax,
+  Secure in Produktion), Origin-Prüfung gegen CSRF, Login-Drosselung je IP+E-Mail und je IP. Mandant = Organisation, jede Abfrage org-gescoped.
+  Erstinstallation per Wizard (`/api/auth/setup`, nur solange kein Nutzer existiert) oder `BOOTSTRAP_ADMIN_*`; weitere Organisationen per CLI.
+- Offline: Die Erstanmeldung braucht den Server. Danach läuft die App mit zwischengespeicherter Identität auch ohne Netz weiter (Tests,
+  Profile, Speichern in IndexedDB → Outbox). Wer „ohne Server“ startet, arbeitet im lokalen Modus ohne Upload. Beim Abmelden/Kontowechsel werden die
+  Zwischenspeicher geleert, **ungesendete** Tests/Profile bleiben erhalten (kein stiller Datenverlust).
+- Konflikte: Profile = letzter Schreiber gewinnt (Client-`updatedAt`, Uhrabweichung wird in Kauf genommen); Tests sind unveränderlich
+  (gleicher Inhalt idempotent, abweichender → 409), Nachbearbeitung nur online über `PATCH`.
 - DSGVO: Art.-9-Einwilligung pro Profil (Zeitstempel/Version), Foto/Video-Einwilligung unter 18 nur mit Erziehungsberechtigten-Einwilligung,
   Export (JSON+CSV) und Löschung (Hard-Delete inkl. Blobs) pro Person, Audit-Log (wer/was/wann, ohne Messwerte).
 

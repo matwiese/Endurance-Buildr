@@ -56,6 +56,7 @@ export default tseslint.config(
       ],
     },
   },
+  { files: ['apps/server/src/cli.ts', 'apps/server/src/main.ts'], rules: { 'no-console': 'off' } },
   {
     files: ['**/*.test.ts', '**/*.test.tsx', 'e2e/**', 'scripts/**', 'packages/core/scripts/**'],
     rules: { 'no-console': 'off', '@typescript-eslint/no-explicit-any': 'off' },

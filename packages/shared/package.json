@@ -13,6 +13,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@buildr/core": "workspace:*"
-  }
+    "@buildr/core": "workspace:*",
+    "zod": "^4.6.5"
+  },
+  "sideEffects": false
 }

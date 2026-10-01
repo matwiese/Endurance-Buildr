@@ -26,7 +26,10 @@ pnpm test                 # alle Vitest-Suiten (core, device, server, web)
 pnpm typecheck && pnpm lint
 pnpm check                # typecheck + lint + test
 pnpm docs:metrics         # docs/metrics.md aus der Metrik-Registry neu erzeugen (Test prüft Aktualität)
-pnpm dev                  # Server (PGlite in .data/) + Web (Vite) parallel
+pnpm dev                  # Server (PGlite in .data/, Port 3000) + Web (Vite, Proxy /api) parallel; Erstanmeldung über den Wizard
+TEST_DATABASE_URL=postgres://… pnpm test   # Server-Suite gegen echtes PostgreSQL statt PGlite
+pnpm --filter @buildr/server cli …         # create-org / create-user / reset-password / list-orgs
+pnpm --filter @buildr/server db:generate   # Drizzle-Migration nach Schemaänderung (apps/server/drizzle)
 pnpm e2e                  # Playwright (startet Server+Web selbst)
 ```
 

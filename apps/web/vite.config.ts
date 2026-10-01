@@ -29,6 +29,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        // Referenz-Demodaten nur bei Bedarf laden (nicht vorab cachen)
+        globIgnores: ['**/forcedecks_*'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
