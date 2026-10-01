@@ -4,7 +4,7 @@ Kraftmessplatten-Testsystem für die Sprungdiagnostik – eigenes Produkt (Teal/
 
 Verbinden → Nullen → Wiegen → automatische Erkennung des Testtyps → Sofortergebnisse → Upload. Dazu Athleten-Hub (Profile, Gruppen, Tags, CSV),
 Gruppentest mit Live-Rangliste und Beamer-Ansicht, Verlauf/Berichte/Normwerte, Rollen (Admin/Tester/Betrachter), Mandanten, DSGVO-Funktionen.
-Ohne Hardware arbeitet alles mit dem eingebauten **Simulator** (physikbasierte Sprünge inkl. Fehlversuchen) oder der CSV-Wiedergabe.
+Ohne Hardware arbeitet alles mit dem eingebauten **Simulator** (physikbasierte Sprünge inkl. Fehlversuchen) oder der Datei-Wiedergabe (nur zum Ausprobieren: spielt eine CSV-Aufnahme wie ein Live-Gerät ab).
 
 |              |                                                                                                                                                      |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -68,7 +68,7 @@ Verfügung; Tests werden lokal gespeichert und beim nächsten Netz automatisch h
 
 Das Plattenprotokoll kommerzieller Hersteller ist proprietär und **nicht** Teil dieses Repos. Anbindung über das Interface `DeviceAdapter`: eigenen `FrameDecoder` schreiben,
 einen mitgelieferten Transport (WebSocket / Web Serial / Web Bluetooth) verwenden und in `apps/web/src/devices.ts` registrieren – Schritt für Schritt in
-[`docs/hardware-adapters.md`](docs/hardware-adapters.md). Bis dahin: Simulator und CSV-Wiedergabe.
+[`docs/hardware-adapters.md`](docs/hardware-adapters.md). Bis dahin: Simulator und Datei-Wiedergabe. **Eine direkte Verbindung zu echten VALD-ForceDecks-Platten ist derzeit nicht möglich** (proprietäres Protokoll, nicht enthalten).
 
 ## Qualitätssicherung
 
@@ -86,7 +86,7 @@ Playwright braucht Chromium (`pnpm --filter @buildr/e2e exec playwright install 
 
 ```
 packages/core     reine Signalverarbeitung, Metrik-Registry, Auto-Detect, Blob-Format, Simulator-Physik
-packages/device   DeviceAdapter, Simulator, CSV-Wiedergabe, Jitterbuffer, Transport-Stubs
+packages/device   DeviceAdapter, Simulator, Datei-Wiedergabe, Jitterbuffer, Transport-Stubs
 packages/shared   DTOs/Schemas, Validierung, Profil-CSV, Rangliste, Normen, Berichte
 apps/server       Fastify + Drizzle (PostgreSQL | PGlite), Auth, Rechte, Sync, Blobs, Audit
 apps/web          React-PWA (Live, Hub, Gruppentest, Berichte), Worker, IndexedDB, i18n

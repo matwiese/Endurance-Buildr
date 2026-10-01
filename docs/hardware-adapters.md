@@ -1,6 +1,6 @@
 # Hardware-Adapter: echte Messplatten anbinden
 
-Buildr Force kennt Messplatten nur über das Interface `DeviceAdapter` (`packages/device/src/types.ts`). Der Simulator, die CSV-Wiedergabe und
+Buildr Force kennt Messplatten nur über das Interface `DeviceAdapter` (`packages/device/src/types.ts`). Der Simulator, die Datei-Wiedergabe und
 alle echten Platten sind austauschbare Implementierungen davon – Analyse, Anzeige, Speicherung und Gruppentest sehen keinen Unterschied.
 
 > **Wichtig:** Das Protokoll kommerzieller Platten (z. B. VALD) ist proprietär. Dieses Repository enthält **keinen** Treiber dafür und erfindet
@@ -131,8 +131,9 @@ Fehler in `create()` bzw. `connect()` werden im Verbinden-Schritt angezeigt; die
 
 1. **Decoder-Test** (Vitest, ohne Hardware): Frames mit `encode…` erzeugen, zerstückelt einspeisen, CRC-Fehler und Überlauf testen – Vorlage:
    `packages/device/test/transports.test.ts` (SimpleFrameCodec, Adapter mit Fake-Socket) und `apps/web/test/adapters.test.tsx` (Registry → Verbinden → Daten im Ringpuffer, mit einer Fake-Gegenstelle).
-2. **Mitschnitt wiedergeben:** Rohdaten als CSV (`Time,Left,Right`, Dezimalpunkt oder -komma) speichern und über **Verbinden → CSV-Wiedergabe** abspielen – so lässt sich
-   die komplette Analyse reproduzierbar mit Echtdaten testen, ohne Platten.
+2. **Mitschnitt wiedergeben:** Rohdaten als CSV (`Time,Left,Right`, Dezimalpunkt oder -komma) speichern und über **Verbinden → Datei-Wiedergabe → Datei wählen** abspielen. Die Datei läuft
+   wie ein Live-Gerät durch die ganze Kette; für den Schritt **Nullen** muss sie deshalb mit einer Ruhephase **leerer Platten** (≥ 1 s) beginnen. Exportierte Einzelversuche
+   (Person steht schon auf den Platten) eignen sich daher nur zum Ansehen der Kurve, nicht für den kompletten Ablauf.
 3. **Am Gerät:** Verbinden → Nullen (Platten leer, ≥ 1 s ruhig) → Wiegen → Test. Kontrolle: Nullen meldet Offsets in der Größenordnung weniger Newton,
    das Körpergewicht stimmt mit einer Waage überein (±0,5 %), Paketverlust in der Statusleiste bleibt < 0,1 %.
 4. **Zeitverhalten:** Anzeige-Latenz (Statusleiste) soll < 100 ms bleiben; `reorderWindowUs` (Standard 20 ms) in `state/live.ts` nur erhöhen, wenn das Gerät stark umsortiert.
