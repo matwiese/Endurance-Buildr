@@ -1,0 +1,144 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-ok: var(--ok);
+  --color-plotbg: var(--plot-bg);
+  --color-plate-l: var(--left);
+  --color-plate-r: var(--right);
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Markenfarben (Teal/Bronze) – eigenes Design */
+:root,
+[data-theme='light'] {
+  --bg: #f4f1ea;
+  --surface: #ffffff;
+  --surface-2: #e9f0ee;
+  --text: #1e2625;
+  --muted: #5a6a67;
+  --border: #cfdcd8;
+  --primary: #2d7e78;
+  --primary-fg: #ffffff;
+  --accent: #9a6b3a;
+  --danger: #b3412f;
+  --warn: #9a6a12;
+  --ok: #2b7a52;
+  --plot-bg: #fbfdfc;
+  --left: #1f6fb8;
+  --right: #c2701a;
+  --sum: #1e2625;
+  color-scheme: light;
+}
+[data-theme='dark'] {
+  --bg: #0c2624;
+  --surface: #123a37;
+  --surface-2: #174744;
+  --text: #eef5f3;
+  --muted: #9cbbb5;
+  --border: #2c5d58;
+  --primary: #5fc4b8;
+  --primary-fg: #06231f;
+  --accent: #d9aa76;
+  --danger: #ff8f7a;
+  --warn: #f2bd60;
+  --ok: #72d6a2;
+  --plot-bg: #0a1f1d;
+  --left: #58a6ff;
+  --right: #f0a04b;
+  --sum: #eef5f3;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-12 select-none items-center justify-center gap-2 rounded-xl border border-line bg-surface px-5 py-2 text-base font-semibold text-text transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--surface-2);
+  }
+  .btn-primary {
+    @apply border-transparent bg-primary text-primary-fg;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--primary) 88%, black);
+  }
+  .btn-danger {
+    @apply border-transparent bg-danger text-white;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent;
+  }
+  .btn-lg {
+    @apply min-h-16 rounded-2xl px-8 text-xl;
+  }
+  .btn-sm {
+    @apply min-h-10 rounded-lg px-3 py-1 text-sm;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-surface p-4 shadow-sm;
+  }
+  .input {
+    @apply min-h-12 w-full rounded-xl border border-line bg-surface px-4 py-2 text-base text-text placeholder:text-muted;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-muted;
+  }
+  .chip {
+    @apply inline-flex min-h-8 items-center gap-1 rounded-full border border-line bg-surface2 px-3 py-0.5 text-sm;
+  }
+  .table-base {
+    @apply w-full border-collapse text-left text-sm;
+  }
+  .table-base th {
+    @apply border-b border-line px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+  .table-base td {
+    @apply border-b border-line px-3 py-2;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.text-left-plate {
+  color: var(--left);
+}
+.text-right-plate {
+  color: var(--right);
+}

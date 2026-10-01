@@ -25,3 +25,5 @@ export * from './cop.ts';
 export * from './balance.ts';
 export * from './iso.ts';
 export * from './config/iso-presets.ts';
+export * from './units.ts';
+export * from './config/tiles.ts';

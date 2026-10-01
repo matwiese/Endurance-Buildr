@@ -26,7 +26,7 @@ export type LiveEvent =
   | { type: 'zero'; ok: false; reason: ZeroFailReason | 'timeout'; during: LivePhase }
   | { type: 'weigh'; state: WeighState }
   | { type: 'weight'; massKg: number; source: 'weighed' | 'manual' | 'estimated' }
-  | { type: 'marker'; kind: 'takeoff' | 'landing' | 'impact'; idx: number }
+  | { type: 'marker'; kind: 'takeoff' | 'landing' | 'impact'; idx: number; ringIdx?: number }
   | { type: 'reps'; reps: RepResult[]; warnings: AnalysisWarning[] }
   | { type: 'progress'; samples: number; seconds: number }
   | { type: 'error'; code: 'weight_required' | 'not_zeroed' | 'bad_state'; message: string };
@@ -81,6 +81,8 @@ export class LiveAnalyzer {
   private cx = new GrowableF32();
   private cy = new GrowableF32();
   private hasCop = false;
+  /** Abbildung Aufnahme-Index → Marke (z. B. Ringpuffer-Index der Anzeige), vom Aufrufer je Chunk mitgegeben */
+  private tagSegs: Array<{ rec: number; tag: number; len: number }> = [];
   private breaks: number[] = [];
   private det: LiveDetector;
   private lastEmittedEnd = 0;
@@ -252,6 +254,7 @@ export class LiveAnalyzer {
     this.cx.clear();
     this.cy.clear();
     this.hasCop = false;
+    this.tagSegs = [];
     this.breaks = [];
     this.det.reset();
     this.lastEmittedEnd = 0;
@@ -321,13 +324,16 @@ export class LiveAnalyzer {
   }
 
   // ───────────── Datenfluss ─────────────
-  /** Rohsamples (ungenullt) eines Chunks. */
-  /** Rohsamples (ungenullt); `corners` optional: n×8 Eckenlasten [lFL,lFR,lBL,lBR,rFL,rFR,rBL,rBR] */
+  /**
+   * Rohsamples (ungenullt) eines Chunks; `corners` optional: n×8 Eckenlasten [lFL,lFR,lBL,lBR,rFL,rFR,rBL,rBR];
+   * `tag` = Position des Chunks in der Anzeige (Ringpuffer-Index) – Marker-Ereignisse tragen sie als `ringIdx` zurück.
+   */
   push(
     left: ArrayLike<number>,
     right: ArrayLike<number>,
     corners?: ArrayLike<number>,
     breakBefore = false,
+    tag?: number,
   ): void {
     const n = Math.min(left.length, right.length);
     if (n === 0) return;
@@ -355,12 +361,25 @@ export class LiveAnalyzer {
         this.breaks.push(this.rl.length);
         this.det.reset();
       }
-      this.recordChunk(zl, zr, corners);
+      this.recordChunk(zl, zr, corners, tag);
     }
   }
 
-  private recordChunk(zl: Float32Array, zr: Float32Array, corners?: ArrayLike<number>): void {
+  private tagOf(recIdx: number): number | undefined {
+    for (let i = this.tagSegs.length - 1; i >= 0; i--) {
+      const g = this.tagSegs[i]!;
+      if (recIdx >= g.rec) return recIdx - g.rec + g.tag;
+    }
+    return undefined;
+  }
+
+  private recordChunk(zl: Float32Array, zr: Float32Array, corners?: ArrayLike<number>, tag?: number): void {
     const start = this.rl.length;
+    if (tag !== undefined) {
+      const last = this.tagSegs[this.tagSegs.length - 1];
+      if (last && last.rec + last.len === start && last.tag + last.len === tag) last.len += zl.length;
+      else this.tagSegs.push({ rec: start, tag, len: zl.length });
+    }
     this.rl.push(zl);
     this.rr.push(zr);
     if (corners && corners.length >= zl.length * 8) {
@@ -386,7 +405,7 @@ export class LiveAnalyzer {
       // „Wiegen überspringen“: Masse aus der ruhigen Phase vor der ersten Bewegung bestimmen
       if (this.mass === null && (m.kind === 'takeoff' || m.kind === 'impact'))
         this.estimateMassBefore(Math.floor(m.idx));
-      this.emit({ type: 'marker', kind: m.kind, idx: m.idx });
+      this.emit({ type: 'marker', kind: m.kind, idx: m.idx, ringIdx: this.tagOf(m.idx) });
     }
     if (events.settled) this.analyzeRecent();
     if (this.rl.length - this.lastProgress >= this.opts.hz / 4) {

@@ -28,10 +28,12 @@ Status: ☐ offen · ◐ in Arbeit · ☑ fertig. Nach jedem Meilenstein: Tests 
 - Isometrics (Yank/5-SD, Presets), Balance (CoP, Ellipse), Land & Hold, Hop-Auswahl, SL-Varianten.
 - **Abnahme**: Alle Simulator-Testtypen werden korrekt erkannt; die 4 Referenzdateien → cmj / sj / sl_jump (L,R).
 
-## M4 – Live-UI ◐
+## M4 – Live-UI ☑
 
 - Vite/React/Tailwind/PWA/Zustand/TanStack Query/i18n; Live-Engine + Web Worker; Canvas-Plot; Workflow-Schrittleiste; Review; lokale Speicherung (IndexedDB).
 - **Abnahme**: Voller Workflow mit Simulator im Browser; Sofortergebnisse < 1 s nach Landung+Beruhigung.
+- **Ergebnis**: Playwright (`e2e/tests`): Haupt-Workflow, Live (60 fps bei 2 × 1000 Hz, Latenz ≈ 33 ms, Re-Zero während der Aufnahme, Pause/Fortsetzen),
+  Review (Relabel, Bereich markieren, Hop „Beste 5“, Löschen/Rückgängig, Speichern → Outbox). Web-Unit-Tests: Engine, Store, Review-Komponente, i18n-Parität.
 
 ## M5 – Server, DB, Auth, Sync ☐
 

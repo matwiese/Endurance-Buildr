@@ -1,0 +1,13 @@
+{
+  "name": "@buildr/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "shots": "playwright test --grep @shots"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}
