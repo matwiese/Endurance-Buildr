@@ -19,6 +19,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import type { AnalysisWarning } from '@buildr/core';
 import type {
+  NormRow,
   Role,
   SessionBoard,
   SessionQueueEntry,
@@ -370,4 +371,41 @@ export const auditLog = pgTable(
     details: jsonb('details').$type<Record<string, unknown>>(),
   },
   (t) => [index('audit_org_at_idx').on(t.orgId, t.at)],
+);
+
+export const normSets = pgTable(
+  'norm_sets',
+  {
+    id: uuid('id').primaryKey(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: ts('created_at').notNull().defaultNow(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [index('norm_sets_org_idx').on(t.orgId)],
+);
+
+export const normRows = pgTable(
+  'norm_rows',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    setId: uuid('set_id')
+      .notNull()
+      .references(() => normSets.id, { onDelete: 'cascade' }),
+    testType: text('test_type').notNull(),
+    metric: text('metric').notNull(),
+    sex: text('sex').$type<Sex>(),
+    ageMin: integer('age_min'),
+    ageMax: integer('age_max'),
+    sport: text('sport'),
+    n: integer('n'),
+    mean: doublePrecision('mean'),
+    sd: doublePrecision('sd'),
+    pct: jsonb('pct').$type<NormRow['pct']>().notNull().default({}),
+  },
+  (t) => [index('norm_rows_set_idx').on(t.setId, t.testType, t.metric)],
 );

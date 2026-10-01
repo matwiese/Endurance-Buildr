@@ -145,3 +145,47 @@ body {
 .text-right-plate {
   color: var(--right);
 }
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  :root,
+  [data-theme='dark'],
+  [data-theme='light'] {
+    --bg: #fff;
+    --surface: #fff;
+    --surface-2: #f2f2f2;
+    --text: #000;
+    --muted: #444;
+    --border: #999;
+    --primary: #1f5f5a;
+    --accent: #7a4f22;
+    --plot-bg: #fff;
+    --sum: #000;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  header,
+  nav,
+  .no-print,
+  [role='status'] {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .card {
+    box-shadow: none;
+    border-color: #999;
+  }
+  table {
+    break-inside: auto;
+  }
+  tr {
+    break-inside: avoid;
+  }
+}

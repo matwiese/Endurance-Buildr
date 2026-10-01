@@ -27,6 +27,8 @@ export interface Settings {
   plotWindowS: number;
   defaultHz: 200 | 500 | 1000;
   simulator: SimulatorSettings;
+  /** gewähltes Normset für Verlauf/Berichte (null = keine Norm) */
+  normSetId: string | null;
 }
 
 interface SettingsStore extends Settings {
@@ -47,6 +49,7 @@ export const DEFAULT_SETTINGS: Settings = {
   plotWindowS: 10,
   defaultHz: 1000,
   simulator: { bodyMass: 82, asymmetryPct: 0, jumpAbilityCm: 38, noiseN: 1 },
+  normSetId: null,
 };
 
 const safeStorage = {

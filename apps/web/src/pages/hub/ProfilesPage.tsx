@@ -1,5 +1,6 @@
 import { profilesToCsv, type ProfileDTO } from '@buildr/shared';
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Banner, Button, Card, Chip, Modal } from '../../components/ui.tsx';
 import { emptyProfile, ProfileForm } from '../../components/ProfileForm.tsx';
 import { bulkGroup, removeProfile, saveProfile } from '../../hub/services.ts';
@@ -289,7 +290,15 @@ export function ProfilesPage() {
                           onChange={() => toggle(p.id)}
                         />
                       </td>
-                      <td className="font-semibold">{p.name}</td>
+                      <td className="font-semibold">
+                        <Link
+                          to={`/hub/athletes/${p.id}`}
+                          className="hover:underline"
+                          data-testid={`profile-link-${p.name}`}
+                        >
+                          {p.name}
+                        </Link>
+                      </td>
                       <td className="tabular-nums">{age === null ? '–' : age}</td>
                       <td>{p.sex ? t(`profile.sex.${p.sex}` as 'profile.sex.f') : '–'}</td>
                       <td>{p.sport ?? '–'}</td>

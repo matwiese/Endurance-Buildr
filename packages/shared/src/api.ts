@@ -147,6 +147,34 @@ export const sessionInput = z.object({
   finishedAt: isoDateTime.nullable(),
 });
 
+export const normRowInput = z.object({
+  testType: testTypeSchema,
+  metric: z.string().min(1).max(80),
+  sex: sexSchema.nullable(),
+  ageMin: z.number().int().min(0).max(120).nullable(),
+  ageMax: z.number().int().min(0).max(120).nullable(),
+  sport: z.string().max(120).nullable(),
+  n: z.number().int().min(0).nullable(),
+  mean: finite.nullable(),
+  sd: finite.positive().nullable(),
+  pct: z.object({
+    5: finite.optional(),
+    10: finite.optional(),
+    25: finite.optional(),
+    50: finite.optional(),
+    75: finite.optional(),
+    90: finite.optional(),
+    95: finite.optional(),
+  }),
+});
+
+export const normSetInput = z.object({
+  id,
+  name: z.string().trim().min(1).max(160),
+  description: z.string().max(2000).nullable(),
+  rows: z.array(normRowInput).min(1).max(20_000),
+});
+
 export type LoginInput = z.infer<typeof loginInput>;
 export type SetupInput = z.infer<typeof setupInput>;
 export type UserCreateInput = z.infer<typeof userCreateInput>;
@@ -155,6 +183,7 @@ export type TestInput = z.infer<typeof testInput>;
 export type TestPatchInput = z.infer<typeof testPatchInput>;
 export type ProfileInput = z.infer<typeof profileInput>;
 export type SessionInput = z.infer<typeof sessionInput>;
+export type NormSetInput = z.infer<typeof normSetInput>;
 
 /** Antwort von `GET /api/auth/me` */
 export interface MeDTO {

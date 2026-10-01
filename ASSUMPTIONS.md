@@ -90,6 +90,18 @@ Push in ein öffentliches Repository prüfen**, ob die Daten dort liegen dürfen
 - Simulator im Gruppentest: Körpermasse aus dem Profil, Sprungvermögen (22–48 cm) und Seitenverhältnis deterministisch aus der Profil-ID.
 - Sessions sind **keine** Pflichtobjekte eines Tests (`sessionId` optional); Löschen einer Session lässt die Tests bestehen.
 
+## Hub: Verlauf, Berichte, Normen
+
+- Verlauf je Athlet: je Test wird die Kennzahl über die eingeschlossenen Wiederholungen aggregiert (Bester/Mittel/Letzter); **Baseline = Mittel der ersten N Tests**
+  (N einstellbar, Standard 3) – bei weniger als 2 Tests wird keine Änderung angezeigt. Änderung = (letzter − Baseline) / |Baseline| · 100.
+- Berichte: Zeitraum (30/90/365 Tage, alle, frei), Gruppen, Testtyp, **höchstens 20 Kennzahlen**, Wertung Bester/Mittel/Letzter je Athlet im Zeitraum.
+  Darstellungen: Wert · z-Score (Team: über die Athleten des Berichts, SD mit n−1) · z-Score (Norm) · % Änderung gegenüber frei wählbarem Vergleichszeitraum (Mittel der
+  Wiederholungen darin). Teamstatistik (Mittel/SD/Min/Max) bezieht sich immer auf Rohwerte. Athleten in mehreren Gruppen zählen im Gruppenvergleich in jeder Gruppe.
+- PDF-Export = Druckansicht des Browsers (`@media print`, helles Farbschema, ohne Navigation) – kein serverseitiger PDF-Renderer.
+- Testdetail-Bearbeitung: hochgeladene Tests werden über `PATCH` (online) geändert, noch nicht hochgeladene lokal (der Upload sendet den bearbeiteten Stand);
+  Löschen nur Administratoren.
+- Normwerte siehe `docs/norms.md`.
+
 ## Genauigkeit (gemessen, `packages/core/test/accuracy.test.ts`)
 
 Monte-Carlo-Läufe mit physikalisch simulierten Sprüngen (Masse 55–110 kg, 18–60 cm, variierte Tempo/Entlastung/Asymmetrie, Rauschen

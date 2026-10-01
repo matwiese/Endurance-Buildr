@@ -55,7 +55,12 @@ Status: ☐ offen · ◐ in Arbeit · ☑ fertig. Nach jedem Meilenstein: Tests 
 - Live-Rangliste (Testtyp/Kennzahl/Wertung wählbar), Beamer-/Vollbildansicht (auch zweites Fenster/anderer Rechner); Sessions werden über Outbox → Server synchronisiert.
 - **Abnahme (DoD)**: Playwright mit 10 simulierten Athleten inkl. Rangliste, Pause, Export, Beamer-Fenster und Serverabgleich (`e2e/tests/session.spec.ts`).
 
-## M8 – Hub-Reports, Normen, Export ☐
+## M8 – Hub-Reports, Normen, Export ☑
+
+- Athletenprofil mit Verlauf je Kennzahl (Baseline, % Änderung, Norm-Band, z-Score/Perzentil), Testliste/-filter, Testdetail (Rohkurve mit Phasen, Kennzahlen, Nachbearbeiten, Löschen).
+- Berichte: Zeitraum/Gruppen/Testtyp/≤ 20 Kennzahlen, Tabelle · Diagramm · Gruppenvergleich, z-Score (Team/Norm), % Änderung, CSV und PDF (Druck).
+- Normwerte: eigener CSV-Import mit Strata (Geschlecht/Alter/Sport), Prüfbericht, Server-Speicher + Offline-Cache (`docs/norms.md`).
+- **Abnahme**: shared-Unit-Tests (Normen/Berichte/Verlauf), Komponententests, Server-Tests, Playwright (`e2e/tests/reports.spec.ts` inkl. PDF und Rollen).
 
 ## M9 – Härtung ☐
 

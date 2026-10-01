@@ -8,6 +8,8 @@
     "shots": "playwright test --grep @shots"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0"
+    "@playwright/test": "^1.63.0",
+    "@buildr/core": "workspace:*",
+    "@buildr/shared": "workspace:*"
   }
 }

@@ -26,6 +26,8 @@ mit `issues`. Alle Abfragen sind auf die Organisation des Nutzers beschränkt; G
 | `GET /sessions?status&limit` · `GET /sessions/:id`             | test.read            | Gruppentests (eingeschränkte Nutzer sehen nur eigene)                                                                     |
 | `PUT /sessions/:id` · `DELETE /sessions/:id`                   | test.write           | Idempotent, letzter Schreiber gewinnt (`updatedAt`); Warteschlange/Status/Rangliste-Auswahl. Löschen lässt Tests bestehen |
 | `GET /sync/pull?since=<rev>`                                   | profile.read         | Stammdaten-Delta (Profile, Gruppen, Tags, Löschungen), `cursor` für den nächsten Aufruf                                   |
+| `GET /norms` · `GET /norms/:id`                                | angemeldet           | Eigene Normsets der Organisation (Liste / mit Zeilen)                                                                     |
+| `PUT /norms/:id` · `DELETE /norms/:id`                         | admin                | Normset anlegen/ersetzen (Zeilen komplett), löschen                                                                       |
 | `GET /metrics`                                                 | angemeldet           | Metrik-Definitionen (aus der Registry des Kerns)                                                                          |
 | `GET /audit?limit&before`                                      | admin                | Audit-Log (wer/was/wann, keine Messwerte)                                                                                 |
 

@@ -18,7 +18,7 @@ import {
   testTags,
   tests,
 } from '../db/schema.ts';
-import { HttpError, notFound, paramId, parse, requireCan } from '../http.ts';
+import { HttpError, UUID_RE, notFound, paramId, parse, requireCan } from '../http.ts';
 import { assertProfileAccess, groupIdsOfProfile } from './profiles.ts';
 
 /** Deterministische Serialisierung (sortierte Schlüssel) für den Inhalts-Hash. */
@@ -151,6 +151,8 @@ async function assertTestAccess(db: Db, p: Principal, row: TestRow, mode: 'read'
 const listQuery = z.object({
   profileId: z.uuid().optional(),
   sessionId: z.uuid().optional(),
+  /** nur Tests von Athleten dieser Gruppen (Komma-getrennte UUIDs) */
+  groupIds: z.string().max(2000).optional(),
   testType: z.string().max(400).optional(),
   from: z.iso.datetime({ offset: true }).optional(),
   to: z.iso.datetime({ offset: true }).optional(),
@@ -170,6 +172,16 @@ export const testRoutes =
       const where: SQL[] = [];
       if (q.profileId) where.push(eq(tests.profileId, q.profileId));
       if (q.sessionId) where.push(eq(tests.sessionId, q.sessionId));
+      if (q.groupIds) {
+        const ids = q.groupIds.split(',').filter(Boolean);
+        if (!ids.every((x) => UUID_RE.test(x))) throw new HttpError(400, 'invalid_id');
+        where.push(
+          sql`exists (select 1 from ${profileGroups} pgf where pgf.profile_id = ${tests.profileId} and pgf.group_id in (${sql.join(
+            ids.map((g) => sql`${g}`),
+            sql`, `,
+          )}))`,
+        );
+      }
       if (q.testType) where.push(inArray(tests.testType, q.testType.split(',').filter(Boolean)));
       if (q.from) where.push(gte(tests.createdAt, new Date(q.from)));
       if (q.to) where.push(lte(tests.createdAt, new Date(q.to)));

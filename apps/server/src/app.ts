@@ -10,6 +10,7 @@ import { HttpError } from './http.ts';
 import { auditRoutes } from './routes/audit.ts';
 import { authRoutes } from './routes/auth.ts';
 import { metricRoutes } from './routes/metrics.ts';
+import { normRoutes } from './routes/norms.ts';
 import { profileRoutes } from './routes/profiles.ts';
 import { recordingRoutes } from './routes/recordings.ts';
 import { referenceRoutes } from './routes/reference.ts';
@@ -112,6 +113,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
       await api.register(sessionRoutes(ctx));
       await api.register(syncRoutes(ctx));
       await api.register(metricRoutes(ctx));
+      await api.register(normRoutes(ctx));
       await api.register(auditRoutes(ctx));
     },
     { prefix: '/api' },

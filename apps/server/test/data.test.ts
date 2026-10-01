@@ -475,3 +475,89 @@ describe('Gruppensitzungen', () => {
     await s.close();
   });
 });
+
+describe('Normsets und Berichte', () => {
+  it('Normset anlegen/ersetzen/löschen (nur Admin), Validierung, Mandantentrennung; Tests nach Gruppen filtern', async () => {
+    const s = await makeServer();
+    const admin = await setupAdmin(s);
+    const tester = await addUser(s, admin, 't@example.test', 'tester');
+    const row = {
+      testType: 'cmj',
+      metric: 'jump_height_impmom',
+      sex: 'f',
+      ageMin: 18,
+      ageMax: 25,
+      sport: null,
+      n: 100,
+      mean: 30,
+      sd: 4,
+      pct: { 10: 25, 50: 30, 90: 35 },
+    };
+    const id = randomUUID();
+    const body = { id, name: 'Eigene Norm', description: 'Testdaten', rows: [row] };
+    expect((await tester.put(`/api/norms/${id}`, body)).statusCode).toBe(403);
+    expect((await admin.put(`/api/norms/${id}`, body)).statusCode).toBe(201);
+    expect(
+      (await admin.put(`/api/norms/${id}`, { ...body, rows: [row, { ...row, sex: 'm', mean: 35 }] })).json(),
+    ).toMatchObject({ rowCount: 2 });
+    const got = (await tester.get(`/api/norms/${id}`)).json();
+    expect(got.rows).toHaveLength(2);
+    expect(got.rows[0]).toMatchObject({
+      testType: 'cmj',
+      sex: 'f',
+      mean: 30,
+      sd: 4,
+      pct: { 10: 25, 50: 30, 90: 35 },
+    });
+    expect((await tester.get('/api/norms')).json()).toMatchObject([{ id, name: 'Eigene Norm', rowCount: 2 }]);
+    // Validierung
+    expect(
+      (await admin.put(`/api/norms/${id}`, { ...body, rows: [{ ...row, metric: 'gibt_es_nicht' }] })).json()
+        .error,
+    ).toBe('unknown_metric');
+    expect(
+      (await admin.put(`/api/norms/${id}`, { ...body, rows: [{ ...row, ageMin: 30, ageMax: 20 }] })).json()
+        .error,
+    ).toBe('age_range');
+    expect((await admin.put(`/api/norms/${id}`, { ...body, rows: [{ ...row, sd: 0 }] })).statusCode).toBe(
+      400,
+    );
+    expect((await admin.put(`/api/norms/${id}`, { ...body, rows: [] })).statusCode).toBe(400);
+    // fremde Organisation
+    const { createOrganizationWithAdmin } = await import('../src/routes/auth.ts');
+    await createOrganizationWithAdmin(
+      { config: s.config, db: s.handle.db, blobs: s.blobs, dbKind: 'pglite' },
+      { organization: 'B', name: 'B', email: 'b@org-b.test', password: 'passwort-b-1234' },
+    );
+    const lb = await client(s).post('/api/auth/login', {
+      email: 'b@org-b.test',
+      password: 'passwort-b-1234',
+    });
+    const other = client(s, lb.cookies.map((c) => `${c.name}=${c.value}`).join('; '));
+    expect((await other.get('/api/norms')).json()).toEqual([]);
+    expect((await other.get(`/api/norms/${id}`)).statusCode).toBe(404);
+    expect((await other.del(`/api/norms/${id}`)).statusCode).toBe(404);
+    expect((await admin.del(`/api/norms/${id}`)).statusCode).toBe(204);
+    expect((await admin.get(`/api/norms/${id}`)).statusCode).toBe(404);
+
+    // Tests nach Gruppen filtern
+    const ref = await makeGroups(admin);
+    const a = profileBody([ref.groupIds[0]!], { name: 'Anna' });
+    const b = profileBody([ref.groupIds[1]!], { name: 'Ben' });
+    for (const p of [a, b]) await admin.put(`/api/profiles/${p.id}`, p);
+    const ua = await buildUpload(a.id, { jumps: 1, seed: 1 });
+    const ub = await buildUpload(b.id, { jumps: 1, seed: 2 });
+    await uploadAll(admin, ua);
+    await uploadAll(admin, ub);
+    const byGroup = async (g: string) =>
+      ((await admin.get(`/api/tests?groupIds=${g}&withReps=0`)).json() as Array<{ id: string }>).map(
+        (t) => t.id,
+      );
+    expect(await byGroup(ref.groupIds[0]!)).toEqual([ua.test.id]);
+    expect((await byGroup(`${ref.groupIds[0]},${ref.groupIds[1]}`)).sort()).toEqual(
+      [ua.test.id, ub.test.id].sort(),
+    );
+    expect((await admin.get('/api/tests?groupIds=nicht-uuid')).statusCode).toBe(400);
+    await s.close();
+  });
+});
