@@ -75,8 +75,15 @@ Push in ein öffentliches Repository prüfen**, ob die Daten dort liegen dürfen
   Zwischenspeicher geleert, **ungesendete** Tests/Profile bleiben erhalten (kein stiller Datenverlust).
 - Konflikte: Profile = letzter Schreiber gewinnt (Client-`updatedAt`, Uhrabweichung wird in Kauf genommen); Tests sind unveränderlich
   (gleicher Inhalt idempotent, abweichender → 409), Nachbearbeitung nur online über `PATCH`.
-- DSGVO: Art.-9-Einwilligung pro Profil (Zeitstempel/Version), Foto/Video-Einwilligung unter 18 nur mit Erziehungsberechtigten-Einwilligung,
-  Export (JSON+CSV) und Löschung (Hard-Delete inkl. Blobs) pro Person, Audit-Log (wer/was/wann, ohne Messwerte).
+- DSGVO: Art.-9-Einwilligung pro Profil (Zeitstempel + Fassung `CONSENT_VERSION`, aktuell `2026-10`), Foto/Video-Einwilligung unter 18 nur mit Erziehungsberechtigten-Einwilligung,
+  Export (JSON+CSV) und Löschung (Hard-Delete inkl. Blobs) pro Person, Audit-Log (wer/was/wann, ohne Messwerte). Die Einwilligung ist beim **Anlegen/Import optional**,
+  wird aber **vor jedem Test** verlangt (Sperre im Einzel- und Gruppentest), damit Profile vorab angelegt werden können. Automatische Aufbewahrungsfristen sind nicht eingebaut (Betreiberpflicht, `docs/gdpr.md`).
+  Alle Rollen dürfen Daten ihrer sichtbaren Personen exportieren (Auskunft); Löschen nur Administratoren.
+- Sicherheits-Header: CSP mit `script-src 'self'` (kein Inline-Skript), `style-src 'unsafe-inline'` (Inline-Styles der Diagramme), `connect-src 'self' ws: wss:` (WebSocket-Platten im lokalen Netz).
+  Kamera ist in der Permissions-Policy für den eigenen Ursprung erlaubt (spätere Kamera-Synchronisation), Mikrofon/Standort gesperrt.
+- Demo-Aufnahmen (`reference/*.csv`) werden im Bundle auf Zeit/Links/Rechts + Gewicht/Frequenz reduziert; Personen-Kennung, Seriennummern und Herstellerspalten sind nicht enthalten.
+- Docker-Dateien (`Dockerfile`, `docker-compose.yml`) sind nicht gebaut/getestet (in der Entwicklungsumgebung gab es keinen Docker-Daemon).
+- Nicht umgesetzt: Kamera-Sync (MediaRecorder) und Mehr-Plattenpaar-Schnellmodus (optional laut Aufgabe).
 
 ## Gruppentest und Rangliste
 

@@ -7,7 +7,7 @@ import {
   type ProfileDTO,
 } from '@buildr/shared';
 import { useMemo, useRef, useState } from 'react';
-import { Banner, Button, Modal } from '../../components/ui.tsx';
+import { Banner, Button, Modal, ScrollArea } from '../../components/ui.tsx';
 import { refAdmin, saveProfiles } from '../../hub/services.ts';
 import { useT } from '../../i18n/hooks.ts';
 import type { MessageKey } from '../../i18n/index.ts';
@@ -221,7 +221,7 @@ export function ImportDialog({
                   {t('import.newGroups', { names: plan.summary.newGroups.join(', ') })}
                 </p>
               )}
-              <div className="max-h-72 overflow-auto rounded-xl border border-line">
+              <ScrollArea className="max-h-72 overflow-auto rounded-xl border border-line">
                 <table className="table-base" data-testid="import-table">
                   <thead>
                     <tr>
@@ -257,7 +257,7 @@ export function ImportDialog({
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollArea>
               {plan.rows.length > MAX_PREVIEW && (
                 <p className="mt-1 text-xs text-muted">… {plan.rows.length - MAX_PREVIEW}</p>
               )}

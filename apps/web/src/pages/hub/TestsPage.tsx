@@ -1,7 +1,7 @@
 import { TEST_TYPES, TEST_TYPE_INFO } from '@buildr/core';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Banner, Card, Chip } from '../../components/ui.tsx';
+import { Banner, Card, Chip, ScrollArea } from '../../components/ui.tsx';
 import { useRefData } from '../../hub/hooks.ts';
 import { useTests } from '../../hub/testsData.ts';
 import { useT } from '../../i18n/hooks.ts';
@@ -110,7 +110,7 @@ export function TestsPage() {
             {t('tests.empty')}
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <ScrollArea className="overflow-x-auto">
             <table className="table-base" data-testid="tests-table">
               <thead>
                 <tr>
@@ -120,7 +120,9 @@ export function TestsPage() {
                   <th scope="col">{t('pp.col.reps')}</th>
                   <th scope="col">{t('pp.col.tags')}</th>
                   <th scope="col">{t('pp.col.status')}</th>
-                  <th scope="col" />
+                  <th scope="col">
+                    <span className="sr-only">{t('common.actions')}</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -157,7 +159,7 @@ export function TestsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollArea>
         )}
         {pages > 1 && (
           <div className="mt-3 flex items-center justify-center gap-3">

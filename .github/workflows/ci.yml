@@ -55,3 +55,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @buildr/e2e exec playwright install --with-deps chromium
       - run: pnpm e2e
+      - run: pnpm e2e:prod
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-artifacts
+          path: |
+            e2e/.artifacts/*.png
+            e2e/.artifacts/results*/
+          if-no-files-found: ignore

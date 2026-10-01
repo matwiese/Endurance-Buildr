@@ -1,18 +1,64 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { NavLink, Navigate, Route, Routes, useMatch } from 'react-router-dom';
+import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react';
+import { NavLink, Navigate, Route, Routes, useLocation, useMatch } from 'react-router-dom';
 import { Banner, Button } from './components/ui.tsx';
 import { useT } from './i18n/hooks.ts';
+import type { MessageKey } from './i18n/index.ts';
 import { localRepo } from './offline/repo.ts';
-import { HubHome } from './pages/hub/HubHome.tsx';
-import { BeamerBoard } from './session/BeamerBoard.tsx';
-import { SessionRunner } from './session/SessionRunner.tsx';
-import { SessionsPage } from './session/SessionsPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
-import { SettingsPage } from './pages/SettingsPage.tsx';
 import { TestWorkflow } from './pages/test/TestWorkflow.tsx';
 import { canTest, useAuth } from './state/auth.ts';
 import { useSettings } from './state/settings.ts';
 import { syncEngine, useSyncState } from './sync/index.ts';
+
+// Hub, Gruppentest, Beamer und Einstellungen werden erst beim Aufruf geladen (kleinerer Start der Aufnahme-Ansicht)
+const HubHome = lazy(() => import('./pages/hub/HubHome.tsx').then((m) => ({ default: m.HubHome })));
+const BeamerBoard = lazy(() => import('./session/BeamerBoard.tsx').then((m) => ({ default: m.BeamerBoard })));
+const SessionRunner = lazy(() =>
+  import('./session/SessionRunner.tsx').then((m) => ({ default: m.SessionRunner })),
+);
+const SessionsPage = lazy(() =>
+  import('./session/SessionsPage.tsx').then((m) => ({ default: m.SessionsPage })),
+);
+const SettingsPage = lazy(() =>
+  import('./pages/SettingsPage.tsx').then((m) => ({ default: m.SettingsPage })),
+);
+
+const HUB_SECTIONS: Record<string, MessageKey> = {
+  athletes: 'nav.profiles',
+  tests: 'nav.tests',
+  reports: 'nav.reports',
+  norms: 'nav.norms',
+  groups: 'nav.groups',
+  tags: 'nav.tags',
+  admin: 'nav.admin',
+};
+
+/** Seitenname der aktuellen Route (für Dokumenttitel und die Hauptüberschrift, die in der Oberfläche unsichtbar bleibt). */
+function usePageName(): { name: string; hasOwnHeading: boolean } {
+  const { t } = useT();
+  const { pathname } = useLocation();
+  const parts = pathname.split('/').filter(Boolean);
+  const area = parts[0] ?? 'test';
+  if (area === 'hub') {
+    const section = HUB_SECTIONS[parts[1] ?? 'athletes'];
+    return { name: `${t('nav.hub')} · ${t(section ?? 'nav.profiles')}`, hasOwnHeading: false };
+  }
+  if (area === 'session') return { name: t('nav.session'), hasOwnHeading: parts.length > 1 };
+  if (area === 'settings') return { name: t('nav.settings'), hasOwnHeading: true };
+  return { name: t('nav.test'), hasOwnHeading: false };
+}
+
+/** Dokumenttitel je Seite (WCAG 2.4.2) und – wo die Seite keine eigene h1 hat – eine unsichtbare Hauptüberschrift. */
+function PageHeading({ authenticated }: { authenticated: boolean }) {
+  const { t } = useT();
+  const { name, hasOwnHeading } = usePageName();
+  const title = authenticated ? `${name} · ${t('app.name')}` : t('app.name');
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
+  if (hasOwnHeading) return null;
+  return <h1 className="sr-only">{authenticated ? name : t('app.name')}</h1>;
+}
 
 function SyncBadge() {
   const { t } = useT();
@@ -58,7 +104,7 @@ function Header() {
   const auth = useAuth();
   const canRun = useAuth(canTest);
   const link = ({ isActive }: { isActive: boolean }) =>
-    `rounded-lg px-4 py-2 font-semibold ${isActive ? 'bg-primary text-primary-fg' : 'hover:bg-surface2'}`;
+    `inline-flex min-h-11 items-center rounded-lg px-4 py-2 font-semibold ${isActive ? 'bg-primary text-primary-fg' : 'hover:bg-surface2'}`;
 
   const logout = async () => {
     const open = (await localRepo.outbox.count()) > 0;
@@ -161,6 +207,7 @@ function RecorderRoute({ children }: { children: ReactNode }) {
 const SPEED = Number(new URLSearchParams(window.location.search).get('speed') ?? 1) || 1;
 
 export function App() {
+  const { t } = useT();
   const lang = useSettings((s) => s.lang);
   const theme = useSettings((s) => s.theme);
   const status = useAuth((s) => s.status);
@@ -179,9 +226,13 @@ export function App() {
   const boardView = useMatch('/session/:id/board');
   return (
     <div className="flex min-h-full flex-col" data-auth={status}>
+      <a href="#main" className="skip-link">
+        {t('a11y.skip')}
+      </a>
       {!boardView && <Header />}
       <SyncRunner />
-      <div className="flex-1">
+      <main id="main" className="flex-1" tabIndex={-1}>
+        <PageHeading authenticated={status === 'authenticated' || status === 'local'} />
         {status === 'loading' ? (
           <div className="p-8 text-center text-muted" role="status">
             …
@@ -189,39 +240,47 @@ export function App() {
         ) : status === 'anonymous' ? (
           <LoginPage />
         ) : (
-          <Routes>
-            <Route path="/" element={<Navigate to="/test" replace />} />
-            <Route
-              path="/test"
-              element={
-                <RecorderRoute>
-                  <TestWorkflow simSpeed={SPEED} />
-                </RecorderRoute>
-              }
-            />
-            <Route
-              path="/session"
-              element={
-                <RecorderRoute>
-                  <SessionsPage />
-                </RecorderRoute>
-              }
-            />
-            <Route
-              path="/session/:id"
-              element={
-                <RecorderRoute>
-                  <SessionRunner simSpeed={SPEED} />
-                </RecorderRoute>
-              }
-            />
-            <Route path="/session/:id/board" element={<BeamerBoard />} />
-            <Route path="/hub/*" element={<HubHome />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/test" replace />} />
-          </Routes>
+          <Suspense
+            fallback={
+              <div className="p-8 text-center text-muted" role="status">
+                …
+              </div>
+            }
+          >
+            <Routes>
+              <Route path="/" element={<Navigate to="/test" replace />} />
+              <Route
+                path="/test"
+                element={
+                  <RecorderRoute>
+                    <TestWorkflow simSpeed={SPEED} />
+                  </RecorderRoute>
+                }
+              />
+              <Route
+                path="/session"
+                element={
+                  <RecorderRoute>
+                    <SessionsPage />
+                  </RecorderRoute>
+                }
+              />
+              <Route
+                path="/session/:id"
+                element={
+                  <RecorderRoute>
+                    <SessionRunner simSpeed={SPEED} />
+                  </RecorderRoute>
+                }
+              />
+              <Route path="/session/:id/board" element={<BeamerBoard />} />
+              <Route path="/hub/*" element={<HubHome />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/test" replace />} />
+            </Routes>
+          </Suspense>
         )}
-      </div>
+      </main>
     </div>
   );
 }

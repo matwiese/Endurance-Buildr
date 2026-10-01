@@ -1,7 +1,7 @@
 import { profilesToCsv, type ProfileDTO } from '@buildr/shared';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Banner, Button, Card, Chip, Modal } from '../../components/ui.tsx';
+import { Banner, Button, Card, Chip, Modal, ScrollArea } from '../../components/ui.tsx';
 import { emptyProfile, ProfileForm } from '../../components/ProfileForm.tsx';
 import { bulkGroup, removeProfile, saveProfile } from '../../hub/services.ts';
 import { useRefData } from '../../hub/hooks.ts';
@@ -73,7 +73,7 @@ export function ProfilesPage() {
   const sortBtn = (key: SortKey, label: string) => (
     <button
       type="button"
-      className="font-semibold uppercase tracking-wide"
+      className="min-h-11 min-w-11 px-1 font-semibold uppercase tracking-wide"
       onClick={() => setSort((s) => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : 1 }))}
     >
       {label}
@@ -234,7 +234,7 @@ export function ProfilesPage() {
         ) : rows.length === 0 ? (
           <p className="py-8 text-center text-muted">{t('profiles.noMatch')}</p>
         ) : (
-          <div className="overflow-x-auto">
+          <ScrollArea className="overflow-x-auto">
             <table className="table-base" data-testid="profiles-table">
               <thead>
                 <tr>
@@ -269,7 +269,9 @@ export function ProfilesPage() {
                   </th>
                   <th scope="col">{t('profiles.col.groups')}</th>
                   <th scope="col">{t('profiles.col.consent')}</th>
-                  <th scope="col" />
+                  <th scope="col">
+                    <span className="sr-only">{t('common.actions')}</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -331,7 +333,7 @@ export function ProfilesPage() {
                 })}
               </tbody>
             </table>
-          </div>
+          </ScrollArea>
         )}
         {pages > 1 && (
           <div className="mt-3 flex items-center justify-center gap-3">

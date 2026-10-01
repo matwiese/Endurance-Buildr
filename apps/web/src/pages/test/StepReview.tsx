@@ -1,7 +1,7 @@
 import { TEST_TYPES, TEST_TYPE_INFO, getMetric, type TestType } from '@buildr/core';
 import { useMemo, useState } from 'react';
 import { RepResults, typeLabel } from '../../components/RepResults.tsx';
-import { Banner, Button, Card, Chip, Modal, Toggle } from '../../components/ui.tsx';
+import { Banner, Button, Card, Chip, Modal, ScrollArea, Toggle } from '../../components/ui.tsx';
 import { useMetricFormat, useT } from '../../i18n/hooks.ts';
 import { analyzeViaEngine } from '../../lib/analyze.ts';
 import { repAnnotations, repPhaseRegions, type AnnotKey } from '../../lib/repDetail.ts';
@@ -167,7 +167,7 @@ export function StepReview({ onNext, onAgain }: { onNext: () => void; onAgain: (
                   >
                     <button
                       type="button"
-                      className="w-full text-left"
+                      className="min-h-11 w-full text-left"
                       onClick={() => wf.select(r.key)}
                       data-testid={`rep-${i}`}
                     >
@@ -351,11 +351,13 @@ export function StepReview({ onNext, onAgain }: { onNext: () => void; onAgain: (
                   n: grouped.get(selected.type)!.filter((r) => r.included && !r.leadIn).length,
                 })}
               >
-                <div className="overflow-x-auto">
+                <ScrollArea className="overflow-x-auto">
                   <table className="table-base">
                     <thead>
                       <tr>
-                        <th />
+                        <th scope="col">
+                          <span className="sr-only">{t('pp.metric')}</span>
+                        </th>
                         <th>{t('results.mean')}</th>
                         <th>{t('results.sd')}</th>
                         <th>{t('results.best')}</th>
@@ -374,7 +376,7 @@ export function StepReview({ onNext, onAgain }: { onNext: () => void; onAgain: (
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </ScrollArea>
               </Card>
             )}
           {selected && selected.warnings.length > 0 && (

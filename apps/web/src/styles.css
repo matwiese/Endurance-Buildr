@@ -30,10 +30,11 @@
   --text: #1e2625;
   --muted: #5a6a67;
   --border: #cfdcd8;
-  --primary: #2d7e78;
+  --primary: #276f6a;
   --primary-fg: #ffffff;
   --accent: #9a6b3a;
   --danger: #b3412f;
+  --danger-fg: #ffffff;
   --warn: #9a6a12;
   --ok: #2b7a52;
   --plot-bg: #fbfdfc;
@@ -53,6 +54,7 @@
   --primary-fg: #06231f;
   --accent: #d9aa76;
   --danger: #ff8f7a;
+  --danger-fg: #2a0a05;
   --warn: #f2bd60;
   --ok: #72d6a2;
   --plot-bg: #0a1f1d;
@@ -90,7 +92,8 @@ body {
     background: color-mix(in srgb, var(--primary) 88%, black);
   }
   .btn-danger {
-    @apply border-transparent bg-danger text-white;
+    @apply border-transparent bg-danger;
+    color: var(--danger-fg);
   }
   .btn-ghost {
     @apply border-transparent bg-transparent;
@@ -187,5 +190,30 @@ body {
   }
   tr {
     break-inside: avoid;
+  }
+}
+
+/* Sprunglink zum Inhalt: nur bei Tastaturfokus sichtbar */
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  z-index: 100;
+  border-radius: 0.5rem;
+  background: var(--primary);
+  color: var(--primary-fg);
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+/* Touch-Geräte: auch kleine Schaltflächen erreichen 44 px (WCAG 2.5.5, Praxis auf dem Tablet) */
+@media (pointer: coarse) {
+  .btn-sm,
+  .btn-xs {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
   }
 }

@@ -2,7 +2,7 @@ import { TEST_TYPES, TEST_TYPE_INFO, getMetric, type TestType } from '@buildr/co
 import { normTemplateCsv, planNormImport, type NormSetDTO } from '@buildr/shared';
 import { useMemo, useRef, useState } from 'react';
 import { ConfirmDialog } from '../../components/NameDialog.tsx';
-import { Banner, Button, Card, Chip, Field, Modal } from '../../components/ui.tsx';
+import { Banner, Button, Card, Chip, Field, Modal, ScrollArea } from '../../components/ui.tsx';
 import { deleteNormSet, loadNormSet, saveNormSet, useNormSets } from '../../hub/norms.ts';
 import { useMetricFormat, useT } from '../../i18n/hooks.ts';
 import type { MessageKey } from '../../i18n/index.ts';
@@ -185,7 +185,7 @@ export function NormsPage() {
                 <p className="mb-2 font-semibold" data-testid="norm-summary">
                   {t('norms.summary', { valid: plan.valid.length, invalid: plan.invalid })}
                 </p>
-                <div className="max-h-72 overflow-auto rounded-xl border border-line">
+                <ScrollArea className="max-h-72 overflow-auto rounded-xl border border-line">
                   <table className="table-base" data-testid="norm-preview">
                     <thead>
                       <tr>
@@ -214,7 +214,7 @@ export function NormsPage() {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </ScrollArea>
               </section>
             )}
             <div className="flex justify-end">
@@ -233,7 +233,7 @@ export function NormsPage() {
 
       {viewing && (
         <Modal title={viewing.name} onClose={() => setViewing(null)} wide>
-          <div className="max-h-96 overflow-auto rounded-xl border border-line">
+          <ScrollArea className="max-h-96 overflow-auto rounded-xl border border-line">
             <table className="table-base" data-testid="norm-rows">
               <thead>
                 <tr>
@@ -261,7 +261,7 @@ export function NormsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollArea>
         </Modal>
       )}
       {toDelete && (

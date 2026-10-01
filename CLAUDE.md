@@ -9,11 +9,12 @@ packages/core     Reine, deterministische Signalverarbeitung. KEINE UI-/Framewor
                   types · config · stats · zero · weigh · quiet · onset · flight · kinematics · phases · metrics/ (Registry)
                   detect/ (Segmentierung, Merkmale, Regeln) · iso · balance · analyze · live (LiveAnalyzer) · blob · csv · norms · synth
 packages/device   DeviceAdapter-Interface, SimulatorAdapter, FileReplayAdapter, JitterBuffer, WebSerial/WebSocket/WebBluetooth-Stubs
-apps/server       Fastify + Drizzle (PostgreSQL | PGlite lokal), Auth/Rollen/Mandanten, Sync-API, Blobs, Audit
+packages/shared   DTOs/zod-Schemas, Validierung, Profil-CSV, Rangliste, Normen, Berichte (reine Funktionen, Server + Web)
+apps/server       Fastify + Drizzle (PostgreSQL | PGlite lokal), Auth/Rollen/Mandanten, Sync-API, Blobs, Audit, Export
 apps/web          React + Vite + Tailwind + Zustand + TanStack Query, PWA, i18n de/en, Worker (LiveAnalyzer), Canvas-Plot
-e2e               Playwright-Haupt-Workflow
+e2e               Playwright: Workflow, Live, Review, Sync, Hub, Gruppentest, Berichte, DSGVO, a11y (axe); tests-prod/ = gebauter Build
 reference/        VALD-Rohdaten (Wahrheit bei Abweichungen) – siehe reference/README.md
-docs/             metrics.md (generiert!), hardware-adapters.md, architecture.md, gdpr.md
+docs/             metrics.md (generiert!), api.md, norms.md, hardware-adapters.md, architecture.md, gdpr.md, performance.md
 ```
 
 Abhängigkeitsrichtung: `core` ← `device` ← `web`; `core` ← `server`. `core` importiert nichts anderes.
@@ -30,7 +31,9 @@ pnpm dev                  # Server (PGlite in .data/, Port 3000) + Web (Vite, Pr
 TEST_DATABASE_URL=postgres://… pnpm test   # Server-Suite gegen echtes PostgreSQL statt PGlite
 pnpm --filter @buildr/server cli …         # create-org / create-user / reset-password / list-orgs
 pnpm --filter @buildr/server db:generate   # Drizzle-Migration nach Schemaänderung (apps/server/drizzle)
-pnpm e2e                  # Playwright (startet Server+Web selbst)
+pnpm e2e                  # Playwright (startet Server+Web selbst; frische PGlite je Lauf)
+pnpm e2e:prod             # Playwright gegen den gebauten Build, vom Server ausgeliefert (CSP, Service Worker, Offline-Start)
+node scripts/make-icons.mjs  # PWA-PNG-Icons aus den SVGs neu erzeugen
 ```
 
 ## Konventionen
@@ -45,6 +48,10 @@ pnpm e2e                  # Playwright (startet Server+Web selbst)
 - Eine Neutestung erzeugt IMMER ein neues Test-Objekt – nie überschreiben.
 - Alle Server-Abfragen sind per `organizationId` gescoped; Rechteprüfung zentral in `server/src/auth/permissions.ts`.
 - Tests: Vitest, Dateien `*.test.ts` neben/unter `test/`. Neue Metrik ⇒ Einheitentest + Doku-Neuerzeugung.
+- Neue Texte: Schlüssel in `i18n/de.ts` (Quelle) **und** `en.ts`; Tests erzwingen Parität und Verwendung. Seiten brauchen eine h1 (App ergänzt eine unsichtbare), Tabellen in `ScrollArea`,
+  Schaltflächen ≥ 44 px auf Touch (`pointer: coarse`). Der axe-E2E (`a11y.spec.ts`) muss in hell und dunkel ohne Befunde laufen.
+- Eigene Plattentreiber: `apps/web/src/devices.ts` + `live/adapters.ts` (siehe `docs/hardware-adapters.md`) – nie ein Herstellerprotokoll „raten“.
+- Demo-Aufnahmen aus `reference/` werden beim Bauen (Vite-Plugin `buildr-demo-recordings`) auf Zeit/L/R reduziert – keine Kennungen im Bundle.
 - Commits: ein Commit pro Meilenstein (plus Zwischen-Commits), Nachricht im Imperativ, Deutsch oder Englisch konsistent (hier: Englisch).
 
 ## Referenz-Konventionen (aus /reference verifiziert)

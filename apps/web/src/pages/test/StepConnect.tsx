@@ -1,18 +1,25 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Banner, Button, Card, Field } from '../../components/ui.tsx';
 import { useT } from '../../i18n/hooks.ts';
+import { getAdapter, listAdapters, subscribeAdapters } from '../../live/adapters.ts';
 import { useLive } from '../../state/live.ts';
 import { useSettings } from '../../state/settings.ts';
 import { useWorkflow } from '../../state/workflow.ts';
 
-type Source = 'simulator' | 'replay' | 'websocket' | 'serial' | 'bluetooth';
+type Source = 'simulator' | 'replay' | 'websocket' | 'serial' | 'bluetooth' | `custom:${string}`;
 
-// Referenz-Aufnahmen (CSV) werden lazy mitgebündelt – für Demo und Wiedergabe-Tests
+// Referenz-Aufnahmen (CSV) werden lazy mitgebündelt – für Demo und Wiedergabe-Tests; das Vite-Plugin „demo“
+// (vite.config.ts) reduziert sie auf Zeit/Links/Rechts, Gewicht und Frequenz (keine Personen-/Geräte-Kennungen).
 const DEMOS = import.meta.glob('../../../../../reference/*.csv', {
-  query: '?raw',
+  query: '?demo',
   import: 'default',
 }) as Record<string, () => Promise<string>>;
-const demoName = (path: string): string => path.split('/').pop()!.replace('.csv', '');
+const demoName = (path: string): string =>
+  path
+    .split('/')
+    .pop()!
+    .replace(/\.csv$/, '')
+    .replace(/^forcedecks_/, '');
 
 const SPEEDS = [1, 2, 5, 10];
 
@@ -29,12 +36,21 @@ export function StepConnect({ onConnected }: { onConnected: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const connected = live.connection === 'connected';
 
+  // eigene Treiber (src/devices.ts) ersetzen die Platzhalter-Einträge
+  const [, bump] = useState(0);
+  useEffect(() => subscribeAdapters(() => bump((n) => n + 1)), []);
+  const custom = listAdapters();
   const sources: Array<{ id: Source; title: string; desc?: string; stub?: boolean }> = [
     { id: 'simulator', title: t('connect.simulator'), desc: t('connect.simulator.desc') },
     { id: 'replay', title: t('connect.replay'), desc: t('connect.replay.desc') },
-    { id: 'websocket', title: t('connect.websocket'), stub: true },
-    { id: 'serial', title: t('connect.serial'), stub: true },
-    { id: 'bluetooth', title: t('connect.bluetooth'), stub: true },
+    ...custom.map((a) => ({ id: `custom:${a.id}` as Source, title: a.label, desc: a.description })),
+    ...(custom.length
+      ? []
+      : ([
+          { id: 'websocket', title: t('connect.websocket'), stub: true },
+          { id: 'serial', title: t('connect.serial'), stub: true },
+          { id: 'bluetooth', title: t('connect.bluetooth'), stub: true },
+        ] as const)),
   ];
 
   const connect = async () => {
@@ -43,7 +59,11 @@ export function StepConnect({ onConnected }: { onConnected: () => void }) {
     try {
       if (source === 'simulator')
         await live.connectSimulator({ hz, mode: wf.mode, load: wf.externalLoadKg, speed });
-      else if (source === 'replay') {
+      else if (source.startsWith('custom:')) {
+        const factory = getAdapter(source.slice('custom:'.length));
+        if (!factory) throw new Error('adapter');
+        await live.connectAdapter(await factory.create(), { mode: wf.mode, load: wf.externalLoadKg });
+      } else if (source === 'replay') {
         const loader = DEMOS[demo];
         if (!loader) throw new Error('no file');
         await live.connectReplay(await loader(), demoName(demo), { mode: wf.mode, speed });
@@ -98,7 +118,15 @@ export function StepConnect({ onConnected }: { onConnected: () => void }) {
         </div>
       </Card>
 
-      <Card title={source === 'simulator' ? t('connect.athlete') : t('connect.demoFile')}>
+      <Card
+        title={
+          source === 'simulator'
+            ? t('connect.athlete')
+            : source === 'replay'
+              ? t('connect.demoFile')
+              : t('connect.device')
+        }
+      >
         {source === 'simulator' && (
           <>
             <div className="grid grid-cols-2 gap-x-3">

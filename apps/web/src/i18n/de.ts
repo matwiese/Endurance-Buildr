@@ -32,6 +32,7 @@ export const de = {
   'common.seconds': 's',
   'common.error': 'Fehler',
   'common.retry': 'Erneut versuchen',
+  'common.actions': 'Aktionen',
   'common.confirm': 'Bestätigen',
 
   'step.connect': 'Gerät',
@@ -707,11 +708,14 @@ export const de = {
   'norm.band.average': 'im Normbereich',
   'norm.band.higher': 'über der Norm',
   'norm.band.much_higher': 'deutlich über der Norm',
+  'connect.device': 'Messplatten',
   'consent.missing':
     'Für {name} liegt keine Einwilligung zur Verarbeitung von Gesundheitsdaten (Art. 9 DSGVO) vor. Ohne Einwilligung darf nicht getestet werden.',
   'consent.grant': 'Einwilligung erfassen',
   'consent.hint': 'Die Einwilligung wird mit Zeitpunkt und Fassung ({version}) gespeichert.',
   'consent.version': 'Fassung {version}',
+  'a11y.table': 'Tabelle (scrollbar)',
+  'a11y.skip': 'Zum Inhalt springen',
   'consent.outdated': 'ältere Fassung',
   'privacy.title': 'Datenschutz (DSGVO)',
   'privacy.hint':

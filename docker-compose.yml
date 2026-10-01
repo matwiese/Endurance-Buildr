@@ -1,0 +1,37 @@
+# Buildr Force mit PostgreSQL. Start: docker compose up -d --build   (Hinweis: in der Entwicklungsumgebung nicht ausgeführt)
+# Erstanmeldung: http://localhost:3000 → Einrichtungs-Assistent, oder BOOTSTRAP_* unten setzen.
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: buildr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: buildr
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U buildr']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgres://buildr:${POSTGRES_PASSWORD:-change-me}@db:5432/buildr
+      # Ohne HTTPS-Proxy muss das Secure-Flag des Cookies aus sein; hinter TLS entfernen/auf true setzen.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # BOOTSTRAP_ORG: Mein Verein
+      # BOOTSTRAP_ADMIN_EMAIL: admin@example.org
+      # BOOTSTRAP_ADMIN_PASSWORD: mindestens-10-zeichen
+    volumes:
+      - blobs:/data
+volumes:
+  db-data:
+  blobs:

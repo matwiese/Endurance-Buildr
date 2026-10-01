@@ -318,7 +318,7 @@ export function SessionRunner({ simSpeed = 1 }: { simSpeed?: number }) {
                 {!profile.healthConsentAt && (
                   <ConsentCard profile={profile} onGranted={(p) => wf.setProfile(p)} />
                 )}
-                <main aria-label={t(`step.${wf.step}` as MessageKey)} hidden={!profile.healthConsentAt}>
+                <section aria-label={t(`step.${wf.step}` as MessageKey)} hidden={!profile.healthConsentAt}>
                   {wf.step === 'weigh' && <StepWeigh onNext={next} />}
                   {wf.step === 'record' && <StepRecord simSpeed={simSpeed} />}
                   {wf.step === 'review' && <StepReview onNext={next} onAgain={() => wf.setStep('record')} />}
@@ -329,7 +329,7 @@ export function SessionRunner({ simSpeed = 1 }: { simSpeed?: number }) {
                       onNewAthlete={() => void nextAthlete()}
                     />
                   )}
-                </main>
+                </section>
               </>
             )}
           </div>

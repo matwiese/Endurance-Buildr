@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { LineChart } from '../../components/Charts.tsx';
 import { ProfileForm } from '../../components/ProfileForm.tsx';
-import { Banner, Button, Card, Chip, Modal } from '../../components/ui.tsx';
+import { Banner, Button, Card, Chip, Modal, ScrollArea } from '../../components/ui.tsx';
 import { useRefData } from '../../hub/hooks.ts';
 import { useActiveNorms } from '../../hub/norms.ts';
 import {
@@ -274,7 +274,7 @@ export function ProfilePage() {
       </Card>
 
       <Card title={`${t('pp.history')} · ${t('pp.points', { n: tests.length })}`}>
-        <div className="overflow-x-auto">
+        <ScrollArea className="overflow-x-auto">
           <table className="table-base" data-testid="pp-history">
             <thead>
               <tr>
@@ -283,7 +283,9 @@ export function ProfilePage() {
                 <th scope="col">{t('pp.col.reps')}</th>
                 <th scope="col">{activeMetric ? label(activeMetric) : t('pp.col.value')}</th>
                 <th scope="col">{t('pp.col.status')}</th>
-                <th scope="col" />
+                <th scope="col">
+                  <span className="sr-only">{t('common.actions')}</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -327,7 +329,7 @@ export function ProfilePage() {
               })}
             </tbody>
           </table>
-        </div>
+        </ScrollArea>
       </Card>
 
       <Card title={t('privacy.title')}>

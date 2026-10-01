@@ -16,7 +16,7 @@ import {
 } from '@buildr/shared';
 import { useMemo, useState } from 'react';
 import { BarChart } from '../../components/Charts.tsx';
-import { Banner, Button, Card, Chip } from '../../components/ui.tsx';
+import { Banner, Button, Card, Chip, ScrollArea } from '../../components/ui.tsx';
 import { useRefData } from '../../hub/hooks.ts';
 import { useActiveNorms, useNormSets } from '../../hub/norms.ts';
 import { useTests } from '../../hub/testsData.ts';
@@ -382,7 +382,7 @@ export function ReportsPage() {
             {t('rep.empty')}
           </p>
         ) : view === 'table' ? (
-          <div className="overflow-x-auto">
+          <ScrollArea className="overflow-x-auto">
             <table className="table-base" data-testid="rep-table">
               <thead>
                 <tr>
@@ -449,7 +449,7 @@ export function ReportsPage() {
                 {t('rep.mode.value')}
               </p>
             )}
-          </div>
+          </ScrollArea>
         ) : (
           <div className="grid gap-3">
             <label className="no-print grid w-72 gap-1 text-sm">
@@ -482,7 +482,7 @@ export function ReportsPage() {
                   format={groupFmt}
                   ariaLabel={`${t('rep.view.groups')}: ${chartKey ? label(chartKey) : ''}`}
                 />
-                <div className="overflow-x-auto">
+                <ScrollArea className="overflow-x-auto">
                   <table className="table-base" data-testid="rep-groups-table">
                     <thead>
                       <tr>
@@ -516,7 +516,7 @@ export function ReportsPage() {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </ScrollArea>
               </>
             )}
           </div>

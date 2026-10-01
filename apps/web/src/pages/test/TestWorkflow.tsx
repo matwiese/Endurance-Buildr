@@ -35,7 +35,7 @@ export function TestWorkflow({ simSpeed = 1 }: { simSpeed?: number }) {
     >
       <StepBar steps={STEPS} current={wf.step} done={done} onSelect={go} />
       <StatusBar />
-      <main aria-label={t(`step.${wf.step}` as 'step.connect')}>
+      <section aria-label={t(`step.${wf.step}` as 'step.connect')}>
         {wf.step === 'connect' && <StepConnect onConnected={next} />}
         {wf.step === 'testType' && <StepTestType onNext={next} />}
         {wf.step === 'profile' && <StepProfile onNext={next} />}
@@ -57,7 +57,7 @@ export function TestWorkflow({ simSpeed = 1 }: { simSpeed?: number }) {
             }}
           />
         )}
-      </main>
+      </section>
     </div>
   );
 }

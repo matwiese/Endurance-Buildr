@@ -5,12 +5,12 @@ was die Software technisch dafür bereitstellt. Es ersetzt keine Rechtsberatung 
 
 ## Was wo gespeichert wird
 
-| Ort                  | Inhalt                                                                      | Hinweis                                                                                     |
-| -------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Ort                  | Inhalt                                                                      | Hinweis                                                                                       |
+| -------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Browser (IndexedDB)  | Profile, Tests, Roh-Aufnahmen, Warteschlange                                | Offline-first; bleibt bis zum Upload erhalten. Beim Abmelden werden Zwischenspeicher geleert. |
-| Server (PostgreSQL)  | Profile, Tests, Wiederholungen, Kennzahlen, Sessions, Normsets, Protokoll   | Mandantengetrennt (`org_id`) und nach Gruppenrechten gefiltert.                             |
-| Server (Dateisystem) | Roh-Aufnahmen (BFB1, komprimiert, CRC-geprüft)                              | `DATA_DIR/blobs`, Schlüssel = Mandant/Aufnahme.                                             |
-| Protokoll (Audit)    | Wer hat wann was getan (Anmeldung, Export, Löschung …), **keine Messwerte** | Nur Administratoren; Profil-Auskunft enthält die Einträge zur Person.                       |
+| Server (PostgreSQL)  | Profile, Tests, Wiederholungen, Kennzahlen, Sessions, Normsets, Protokoll   | Mandantengetrennt (`org_id`) und nach Gruppenrechten gefiltert.                               |
+| Server (Dateisystem) | Roh-Aufnahmen (BFB1, komprimiert, CRC-geprüft)                              | `DATA_DIR/blobs`, Schlüssel = Mandant/Aufnahme.                                               |
+| Protokoll (Audit)    | Wer hat wann was getan (Anmeldung, Export, Löschung …), **keine Messwerte** | Nur Administratoren; Profil-Auskunft enthält die Einträge zur Person.                         |
 
 Es gibt **keine** Drittanbieter-Dienste, kein Tracking, keine externen Schriftarten oder CDNs im Betrieb. Die Kamera-Synchronisation (optional in der
 Aufgabenstellung) ist nicht implementiert – es werden keine Bild-/Videodaten erfasst. Das Profilfeld „Foto/Video erlaubt“ wird gespeichert, aber derzeit nicht verwendet.

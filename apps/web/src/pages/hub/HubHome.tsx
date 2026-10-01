@@ -47,9 +47,9 @@ function Shell() {
           </NavLink>
         ))}
       </nav>
-      <main className="min-w-0">
+      <div className="min-w-0">
         <Outlet />
-      </main>
+      </div>
     </div>
   );
 }

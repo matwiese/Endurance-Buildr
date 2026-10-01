@@ -1,4 +1,5 @@
-import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { useEffect, useRef, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from 'react';
+import { useT } from '../i18n/hooks.ts';
 
 type Variant = 'default' | 'primary' | 'danger' | 'ghost';
 interface BtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -227,4 +228,14 @@ export function Dot({ tone }: { tone: 'ok' | 'warn' | 'danger' | 'off' }) {
   const c =
     tone === 'ok' ? 'bg-ok' : tone === 'warn' ? 'bg-warn' : tone === 'danger' ? 'bg-danger' : 'bg-muted';
   return <span className={`inline-block h-2.5 w-2.5 rounded-full ${c}`} aria-hidden />;
+}
+
+/** Scrollbarer Bereich (Tabellen): per Tastatur fokussierbar und benannt (WCAG 2.1.1). */
+export function ScrollArea({ className = '', children, ...rest }: HTMLAttributes<HTMLDivElement>) {
+  const { t } = useT();
+  return (
+    <div role="group" tabIndex={0} aria-label={t('a11y.table')} className={className} {...rest}>
+      {children}
+    </div>
+  );
 }

@@ -33,6 +33,7 @@ export const en: Record<MessageKey, string> = {
   'common.seconds': 's',
   'common.error': 'Error',
   'common.retry': 'Retry',
+  'common.actions': 'Actions',
   'common.confirm': 'Confirm',
 
   'step.connect': 'Device',
@@ -705,11 +706,14 @@ export const en: Record<MessageKey, string> = {
   'norm.band.average': 'within norm',
   'norm.band.higher': 'above norm',
   'norm.band.much_higher': 'well above norm',
+  'connect.device': 'Force plates',
   'consent.missing':
     'There is no consent on file for {name} to process health data (Art. 9 GDPR). Testing is not allowed without consent.',
   'consent.grant': 'Record consent',
   'consent.hint': 'Consent is stored with timestamp and version ({version}).',
   'consent.version': 'Version {version}',
+  'a11y.table': 'Table (scrollable)',
+  'a11y.skip': 'Skip to content',
   'consent.outdated': 'older version',
   'privacy.title': 'Privacy (GDPR)',
   'privacy.hint':

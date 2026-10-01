@@ -1,7 +1,7 @@
 import type { Role } from '@buildr/shared';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { ApiError, NetworkError, api } from '../../api/client.ts';
-import { Banner, Button, Card, Chip, Field, Modal } from '../../components/ui.tsx';
+import { Banner, Button, Card, Chip, Field, Modal, ScrollArea } from '../../components/ui.tsx';
 import { useRefData } from '../../hub/hooks.ts';
 import { useT } from '../../i18n/hooks.ts';
 import type { MessageKey } from '../../i18n/index.ts';
@@ -258,7 +258,7 @@ export function AdminPage() {
           </Button>
         }
       >
-        <div className="overflow-x-auto">
+        <ScrollArea className="overflow-x-auto">
           <table className="table-base" data-testid="users-table">
             <thead>
               <tr>
@@ -267,7 +267,9 @@ export function AdminPage() {
                 <th scope="col">{t('admin.user.role')}</th>
                 <th scope="col">{t('admin.user.scope')}</th>
                 <th scope="col">{t('admin.user.lastLogin')}</th>
-                <th scope="col" />
+                <th scope="col">
+                  <span className="sr-only">{t('common.actions')}</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -298,12 +300,12 @@ export function AdminPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollArea>
       </Card>
 
       <Card title={t('admin.audit')}>
         <p className="mb-2 text-xs text-muted">{t('admin.audit.hint')}</p>
-        <div className="max-h-96 overflow-auto rounded-xl border border-line">
+        <ScrollArea className="max-h-96 overflow-auto rounded-xl border border-line">
           <table className="table-base" data-testid="audit-table">
             <thead>
               <tr>
@@ -326,7 +328,7 @@ export function AdminPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollArea>
         {moreAudit && (
           <Button size="sm" className="mt-3" onClick={() => void loadMore()}>
             {t('admin.audit.more')}

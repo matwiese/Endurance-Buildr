@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiError, NetworkError, api } from '../../api/client.ts';
 import { ConfirmDialog } from '../../components/NameDialog.tsx';
-import { Banner, Button, Card, Chip, Field } from '../../components/ui.tsx';
+import { Banner, Button, Card, Chip, Field, ScrollArea } from '../../components/ui.tsx';
 import { useRefData } from '../../hub/hooks.ts';
 import { loadRecordingTrace, useTest } from '../../hub/testsData.ts';
 import { useMetricFormat, useT } from '../../i18n/hooks.ts';
@@ -251,7 +251,7 @@ export function TestDetailPage() {
         <Card
           title={`${t('td.metrics')} · ${t('td.rep', { n: rep.hopIndex ?? test.reps.indexOf(rep) + 1 })}`}
         >
-          <div className="overflow-x-auto">
+          <ScrollArea className="overflow-x-auto">
             <table className="table-base" data-testid="td-metrics">
               <tbody>
                 {[...new Set([...tileKeys, ...metricKeys])]
@@ -268,7 +268,7 @@ export function TestDetailPage() {
                   ))}
               </tbody>
             </table>
-          </div>
+          </ScrollArea>
         </Card>
       )}
 

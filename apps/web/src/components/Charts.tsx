@@ -62,7 +62,8 @@ export function LineChart({
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      role="img"
+      // mit anklickbaren Punkten ist die Grafik eine Gruppe (img dürfte keine fokussierbaren Kinder haben)
+      role={onPointClick ? 'group' : 'img'}
       aria-label={ariaLabel}
       className="w-full"
       data-testid="line-chart"

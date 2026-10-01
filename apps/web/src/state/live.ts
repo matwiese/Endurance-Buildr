@@ -12,7 +12,7 @@ import type { LiveMarker } from '../plot/LivePlot.tsx';
 import { analysisConfigFrom, useSettings } from './settings.ts';
 import type { TestType } from '@buildr/core';
 
-export type AdapterKind = 'simulator' | 'replay';
+export type AdapterKind = 'simulator' | 'replay' | 'custom';
 
 interface LiveStore {
   engine: LiveEngine | null;
@@ -45,6 +45,8 @@ interface LiveStore {
     speed?: number;
   }) => Promise<void>;
   connectReplay: (csv: string, name: string, o: { mode: 'auto' | TestType; speed?: number }) => Promise<void>;
+  /** Beliebigen `DeviceAdapter` (eigener Plattentreiber, siehe docs/hardware-adapters.md) verbinden. */
+  connectAdapter: (adapter: DeviceAdapter, o: { mode: 'auto' | TestType; load: number }) => Promise<void>;
   disconnect: () => Promise<void>;
   configure: (mode: 'auto' | TestType, load: number) => void;
   startZero: () => void;
@@ -184,6 +186,17 @@ export const useLive = create<LiveStore>((set, get) => {
       const engine = attach(adapter, 'replay', name, o.mode, 0, null);
       await engine.connect();
       if (adapter.weightKg) get().engine?.setMass(adapter.weightKg, 'manual');
+    },
+
+    connectAdapter: async (adapter, o) => {
+      await get().disconnect();
+      const engine = attach(adapter, 'custom', adapter.info.name, o.mode, o.load, null);
+      try {
+        await engine.connect();
+      } catch (e) {
+        await get().disconnect();
+        throw e;
+      }
     },
 
     disconnect: async () => {

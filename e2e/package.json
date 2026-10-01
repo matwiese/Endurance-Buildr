@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "test": "playwright test",
-    "shots": "playwright test --grep @shots"
+    "shots": "playwright test --grep @shots",
+    "test:prod": "playwright test -c playwright.prod.config.ts"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
+    "@axe-core/playwright": "^4.13.0",
     "@buildr/core": "workspace:*",
-    "@buildr/shared": "workspace:*"
+    "@buildr/shared": "workspace:*",
+    "@playwright/test": "^1.63.0"
   }
 }

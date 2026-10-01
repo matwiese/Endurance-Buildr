@@ -62,10 +62,16 @@ Status: ☐ offen · ◐ in Arbeit · ☑ fertig. Nach jedem Meilenstein: Tests 
 - Normwerte: eigener CSV-Import mit Strata (Geschlecht/Alter/Sport), Prüfbericht, Server-Speicher + Offline-Cache (`docs/norms.md`).
 - **Abnahme**: shared-Unit-Tests (Normen/Berichte/Verlauf), Komponententests, Server-Tests, Playwright (`e2e/tests/reports.spec.ts` inkl. PDF und Rollen).
 
-## M9 – Härtung ☐
+## M9 – Härtung ☑
 
-- DSGVO (Einwilligung, Export, Löschung, Audit), Performance (60 fps, < 100 ms), A11y, Playwright-E2E, README, Hardware-Adapter-Anleitung.
-- Optional: Kamera-Sync (MediaRecorder), Schnellmodus mit bis zu 4 Plattenpaaren.
+- **DSGVO:** Einwilligung (Art. 9) mit Zeitpunkt + Fassung, Sperre vor dem Test; Auskunft/Export je Person (JSON + CSV, protokolliert); Löschung je Person (Server inkl. Roh-Aufnahmen, Gerät, Warteschlange); Audit ohne Messwerte (`docs/gdpr.md`).
+- **Sicherheit/PWA:** CSP + Permissions-Policy + Cache-Header, PNG-Icons (192/512/maskable), Service Worker (Offline-Start), Demo-Aufnahmen ohne Kennungen im Bundle, Quellkarten nicht verlinkt.
+- **Performance:** Routen werden nachgeladen, Bibliotheks-Chunk, Rechenzeit-Budgets als Tests (`packages/core/test/perf.test.ts`, `apps/web/test/perf.test.ts`), Messwerte in `docs/performance.md`.
+- **Barrierefreiheit:** axe (WCAG 2.2 AA) hell/dunkel auf allen Hauptseiten, Gruppentest, Beamer, Dialogen; Landmarken, Überschriften, Sprunglink, Seitentitel, Kontraste, Tastatur-Scrollbereiche, Touch-Ziele ≥ 44 px.
+- **Hardware:** Adapter-Registry (`devices.ts`) + Anleitung (`docs/hardware-adapters.md`); Docker-Dateien (ungetestet, kein Daemon).
+- **Doku:** README (Start-/Betriebsanleitung), Architektur, Leistung, Datenschutz, Adapter-Guide.
+- **Abnahme:** `pnpm check` grün (392 Tests), Server-Suite auch auf PostgreSQL 16 (36 Tests), `pnpm e2e` (23 Tests inkl. a11y/DSGVO), `pnpm e2e:prod` (4 Tests).
+- **Nicht umgesetzt (optional):** Kamera-Sync (MediaRecorder), Schnellmodus mit bis zu 4 Plattenpaaren – bewusst weggelassen (keine Hardware zur Prüfung; Datenmodell/Adapter-Interface sind dafür offen).
 
 ## Definition of Done
 

@@ -1,7 +1,7 @@
 import { TEST_TYPES, getMetric } from '@buildr/core';
 import { computeLeaderboard, type ProfileDTO, type SessionDTO, type TestRecord } from '@buildr/shared';
 import { useMemo } from 'react';
-import { Button, Chip, Modal } from '../components/ui.tsx';
+import { Button, Chip, Modal, ScrollArea } from '../components/ui.tsx';
 import { useMetricFormat, useT } from '../i18n/hooks.ts';
 import type { MessageKey } from '../i18n/index.ts';
 import { download } from '../lib/format.ts';
@@ -61,7 +61,7 @@ export function SessionSummary({
       <p className="mb-3 font-semibold" data-testid="summary-progress">
         {t('session.summary.done', { done: p.done, total: p.total })}
       </p>
-      <div className="max-h-80 overflow-auto rounded-xl border border-line">
+      <ScrollArea className="max-h-80 overflow-auto rounded-xl border border-line">
         <table className="table-base" data-testid="summary-table">
           <thead>
             <tr>
@@ -69,7 +69,9 @@ export function SessionSummary({
               <th scope="col">{t('board.athlete')}</th>
               <th scope="col">{t('board.value')}</th>
               <th scope="col">{t('board.tests')}</th>
-              <th scope="col" />
+              <th scope="col">
+                <span className="sr-only">{t('common.actions')}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -93,7 +95,7 @@ export function SessionSummary({
             })}
           </tbody>
         </table>
-      </div>
+      </ScrollArea>
       <div className="mt-4 flex flex-wrap justify-end gap-3">
         <Button
           onClick={() =>
