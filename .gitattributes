@@ -1,0 +1,3 @@
+lsa-athletenmanagement/*.bat -text
+lsa-athletenmanagement/tools/*.ps1 -text
+lsa-athletenmanagement/start.sh text eol=lf

@@ -1,0 +1,5 @@
+{
+  "dataDir": "C:\\LSA-Athletenmanagement\\daten",
+  "port": 8420,
+  "bindAddress": "127.0.0.1"
+}

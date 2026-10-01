@@ -1,0 +1,16 @@
+{
+  "name": "lsa-athletenmanagement",
+  "version": "0.1.0",
+  "description": "LSA Athletenmanagement – lokaler Prototyp mit SQLite-Datenbank, Benutzer- und Rechteverwaltung",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js --open",
+    "server": "node --disable-warning=ExperimentalWarning server/index.js",
+    "test": "node --disable-warning=ExperimentalWarning --test"
+  }
+}
