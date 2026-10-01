@@ -330,7 +330,10 @@ describe('CSV-Export', () => {
     t1.reps[1]!.included = false;
     const t2 = test('t2', null, [{ jump_height_impmom: 40 }], '2026-10-01T10:01:00.000Z');
     const csv = sessionResultsCsv([t2, t1], people, 'de');
-    const lines = csv.replace(/^\uFEFF/, '').trim().split('\r\n');
+    const lines = csv
+      .replace(/^\uFEFF/, '')
+      .trim()
+      .split('\r\n');
     expect(lines[0]).toMatch(/^Athlet;Testtyp;Zeit;Wdh\.;/);
     expect(lines[0]).toContain('Sprunghöhe (Imp-Mom) [cm]');
     expect(lines).toHaveLength(3); // Kopf + 1 eingeschlossene Rep + Gast
