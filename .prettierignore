@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+reference
+docs/metrics.md
+pnpm-lock.yaml
+app.js
+styles.css
+download
+.data
