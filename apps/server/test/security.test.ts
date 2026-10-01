@@ -47,4 +47,16 @@ describe('Sicherheits-Header und statische Auslieferung', () => {
     expect([401, 404]).toContain(api404.statusCode); // unbekannte API-Pfade fallen nie auf die SPA zurück
     expect(api404.headers['content-type']).toContain('application/json');
   });
+
+  it('WEB_DIST: relative Pfade gelten ab INIT_CWD (pnpm-Startverzeichnis); fehlender Ordner → 404 statt 500', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'bf-root-'));
+    mkdirSync(join(root, 'apps', 'web', 'dist'), { recursive: true });
+    writeFileSync(join(root, 'apps', 'web', 'dist', 'index.html'), '<!doctype html><title>x</title>');
+    s = await makeServer({ INIT_CWD: root, WEB_DIST: 'apps/web/dist' });
+    expect((await s.app.inject({ method: 'GET', url: '/' })).statusCode).toBe(200);
+    await s.close();
+    s = await makeServer({ INIT_CWD: root, WEB_DIST: 'gibt-es-nicht' });
+    expect((await s.app.inject({ method: 'GET', url: '/' })).statusCode).toBe(404);
+    expect((await s.app.inject({ method: 'GET', url: '/api/health' })).statusCode).toBe(200);
+  });
 });

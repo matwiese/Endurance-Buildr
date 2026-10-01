@@ -47,7 +47,7 @@ WEB_DIST=apps/web/dist NODE_ENV=production COOKIE_SECURE=false \
   Für Mehrbenutzerbetrieb: `DATABASE_URL=postgres://user:pass@host:5432/buildr` (getestet mit PostgreSQL 16); Migrationen laufen beim Start automatisch.
 - **HTTPS:** Cookies sind in Produktion `Secure`. Hinter einem TLS-Proxy `TRUST_PROXY=true` setzen; nur im reinen LAN ohne TLS `COOKIE_SECURE=false`.
   Web Serial/Bluetooth und die Installation als PWA brauchen HTTPS (oder `localhost`).
-- **Konfiguration:** alle Variablen mit Erklärung in [`.env.example`](.env.example).
+- **Konfiguration:** alle Variablen mit Erklärung in [`.env.example`](.env.example). Relative Pfade (`DATA_DIR`, `BLOB_DIR`, `WEB_DIST`) gelten ab dem Verzeichnis, in dem der Befehl eingegeben wurde.
 - **Weitere Mandanten/Nutzer** (CLI): `pnpm --filter @buildr/server cli create-org|create-user|reset-password|list-orgs` (Aufruf ohne Argumente zeigt die Hilfe).
 - **Sicherung:** Datenbank (`pg_dump` bzw. Ordner `DATA_DIR/pg`) **und** Roh-Aufnahmen (`DATA_DIR/blobs`) sichern. Aufbewahrungsfristen: siehe [`docs/gdpr.md`](docs/gdpr.md).
 

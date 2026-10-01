@@ -41,6 +41,12 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     bodyLimit: 5 * 1024 * 1024,
   });
 
+  const serveWeb = !!config.WEB_DIST && existsSync(config.WEB_DIST);
+  if (config.WEB_DIST && !serveWeb)
+    app.log.warn(
+      `WEB_DIST=${config.WEB_DIST} existiert nicht – die Web-App wird nicht ausgeliefert (zuerst bauen: pnpm --filter @buildr/web build)`,
+    );
+
   await app.register(cookie);
   app.decorateRequest('principal', null);
 
@@ -97,7 +103,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
   app.setNotFoundHandler((req, reply) => {
     if (req.url.startsWith('/api/')) return reply.status(404).send({ error: 'not_found' });
     // SPA-Fallback (nur wenn die Web-App ausgeliefert wird)
-    if (config.WEB_DIST && req.method === 'GET') return reply.sendFile('index.html');
+    if (serveWeb && req.method === 'GET') return reply.sendFile('index.html');
     return reply.status(404).send({ error: 'not_found' });
   });
 
@@ -120,7 +126,7 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
     { prefix: '/api' },
   );
 
-  if (config.WEB_DIST && existsSync(config.WEB_DIST)) {
+  if (serveWeb && config.WEB_DIST) {
     await app.register(fastifyStatic, {
       root: config.WEB_DIST,
       wildcard: false,

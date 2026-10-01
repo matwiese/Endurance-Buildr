@@ -41,11 +41,14 @@ export type Config = Omit<z.infer<typeof schema>, 'COOKIE_SECURE' | 'BLOB_DIR'> 
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
   const c = schema.parse(env);
-  const dataDir = resolve(c.DATA_DIR);
+  // Relative Pfade gelten ab dem Verzeichnis, in dem der Befehl eingegeben wurde (pnpm setzt INIT_CWD) – nicht ab apps/server
+  const base = env['INIT_CWD'] ?? process.cwd();
+  const dataDir = resolve(base, c.DATA_DIR);
   return {
     ...c,
     DATA_DIR: dataDir,
-    BLOB_DIR: resolve(c.BLOB_DIR ?? `${dataDir}/blobs`),
+    BLOB_DIR: resolve(base, c.BLOB_DIR ?? `${dataDir}/blobs`),
+    WEB_DIST: c.WEB_DIST ? resolve(base, c.WEB_DIST) : undefined,
     COOKIE_SECURE: c.COOKIE_SECURE ?? c.NODE_ENV === 'production',
     allowedOrigins: c.ALLOWED_ORIGINS.split(',')
       .map((s) => s.trim())
