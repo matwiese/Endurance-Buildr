@@ -26,7 +26,7 @@ C:\LSA-Athletenmanagement\daten\
 
 * Anderen Ort wählen: `config.example.json` nach `config.json` kopieren und `dataDir` ändern (oder Umgebungsvariable `LSA_DATA_DIR`).
 * Ist der Ordner nicht beschreibbar, weicht das Programm auf `daten\` im Programmordner aus und zeigt das deutlich an (System → Datenspeicher).
-* **Sichern:** In der Anwendung unter *System → Jetzt Sicherung erstellen*, oder bei beendetem Programm den ganzen Datenordner kopieren. Beim Start wird zusätzlich täglich automatisch die Datenbank gesichert.
+* **Sichern:** In der Anwendung unter *System → Jetzt Sicherung erstellen*, oder bei beendetem Programm den ganzen Datenordner kopieren. Beim Start wird zusätzlich täglich automatisch die Datenbank gesichert; vor einem Programm-Update (Datenbank-Anpassung) entsteht automatisch eine Kopie `…_vor-update-vN`. Wiederherstellen: `RESTORE.bat`.
 * Die Daten enthalten Gesundheitsdaten Minderjähriger – auch im Prototyp: Laufwerk mit **BitLocker** verschlüsseln und den Datenordner nur für Ihr Windows-Konto zugänglich halten.
 
 ## Sicherheitsmodell (Kurzfassung)

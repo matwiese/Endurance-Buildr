@@ -239,3 +239,20 @@ test('Migration 5 auf bestehender Phase-4-Datenbank (Standardwerte werden ergän
     assert.equal(t5.db.get('SELECT COUNT(*) AS n FROM dpia').n, 6);
   } finally { await t5.stop(); }
 });
+
+test('Update auf neue Programmversion legt vorher automatisch eine Sicherheitskopie an', async () => {
+  const t6 = await startTestApp();
+  const dir = t6.dir;
+  let t7;
+  try {
+    await setupAdmin(t6);
+    downgrade(t6.db, 3);
+    t6.inst.server.close();
+    t6.db.close();
+    t7 = await startTestApp({ dataDir: dir });
+    const names = fs.readdirSync(path.join(dir, 'backups'));
+    assert.ok(names.some((n) => n.endsWith('vor-update-v3')), names.join(', '));
+    assert.equal(t7.db.version >= 5, true);
+    assert.equal(t7.db.get('SELECT COUNT(*) AS n FROM users').n, 1);
+  } finally { if (t7) await t7.stop(); fs.rmSync(dir, { recursive: true, force: true }); }
+});

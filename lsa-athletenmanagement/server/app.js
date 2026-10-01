@@ -15,7 +15,8 @@ import { register as registerEvents } from './routes/events.js';
 import { register as registerMedical } from './routes/medical.js';
 import { register as registerPsych } from './routes/psych.js';
 import { register as registerGovernance, ensureGovernanceDefaults } from './routes/governance.js';
-import { autoBackup } from './backup.js';
+import { autoBackup, createBackup } from './backup.js';
+import { MIGRATIONS } from './migrations.js';
 
 function makeLogger(config) {
   const file = path.join(config.logDir, 'server.log');
@@ -32,6 +33,10 @@ export async function createApp(config) {
   const log = makeLogger(config);
   const db = new Db(config.dbFile);
   const before = db.version;
+  // Vor einem Schema-Update (neue Programmversion) automatisch eine Sicherheitskopie der Datenbank anlegen
+  if (before > 0 && before < MIGRATIONS.length) {
+    try { const b = createBackup(db, config, { label: `vor-update-v${before}`, withDocs: false }); log.info(`Sicherheitskopie vor dem Update: ${b.name}`); } catch (e) { log.error('Sicherheitskopie vor dem Update fehlgeschlagen', e); }
+  }
   db.migrate();
   defaultSettings(db);
   ensureGovernanceDefaults(db);
