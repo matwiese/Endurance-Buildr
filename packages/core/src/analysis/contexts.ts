@@ -28,6 +28,7 @@ export interface MassInfo {
 const base = (
   t: TraceArrays,
   m: MassInfo,
+  cfg: AnalysisConfig,
   type: TestType,
   kin: Kinematics | null,
   ev: RepEvents,
@@ -41,6 +42,8 @@ const base = (
   bodyMass: m.bodyMass,
   externalLoadKg: m.loadKg,
   bw: (m.bodyMass + m.loadKg) * G,
+  thresholdN: cfg.flight.thresholdN,
+  takeoffCorrection: cfg.kinematics.takeoffCorrection,
   total: t.total,
   left: t.left,
   right: t.right,
@@ -140,7 +143,7 @@ export function buildPushOffContext(inp: PushOffInput): RepContext {
     };
   }
   const share = leftShareBefore(t, onset, 500, f1.takeoff);
-  return base(t, m, type, kin, ev, share, inp.singleLeg);
+  return base(t, m, cfg, type, kin, ev, share, inp.singleLeg);
 }
 
 // ───────────────────────────── Kontakt-Reps (DJ, Hop, Landung) ─────────────────────────────
@@ -234,7 +237,7 @@ export function buildContactContext(inp: ContactInput): RepContext {
     const tot = meanRange(t.total, a, b);
     return tot > 0 ? Math.min(1, Math.max(0, l / tot)) : 0.5;
   })();
-  return base(t, m, type, kin, ev, share, inp.singleLeg);
+  return base(t, m, cfg, type, kin, ev, share, inp.singleLeg);
 }
 
 /** Landestellen-Tiefe etc. (Hilfsfunktion für Tests/UI): minimale COM-Position im Kontakt (m, ≤ 0). */

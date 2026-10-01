@@ -126,7 +126,23 @@ function processBlock(
   block: Block,
   repCounter: { n: number },
   quietFrom: number,
-): { reps: RepResult[]; warnings: AnalysisWarning[] } {
+): { reps: RepResult[]; warnings: AnalysisWarning[]; occupied: { start: number; end: number } } {
+  const r = processBlockInner(c, block, repCounter, quietFrom);
+  return {
+    ...r,
+    occupied: {
+      start: block.kind === 'jump' ? (r.onset ?? block.startIdx) : block.startIdx,
+      end: block.endIdx,
+    },
+  };
+}
+
+function processBlockInner(
+  c: Ctx,
+  block: Block,
+  repCounter: { n: number },
+  quietFrom: number,
+): { reps: RepResult[]; warnings: AnalysisWarning[]; onset: number | null } {
   const { t, m, cfg } = c;
   const bw = (m.bodyMass + m.loadKg) * G;
   const reps: RepResult[] = [];
@@ -144,7 +160,7 @@ function processBlock(
     const on = detectOnset(t.total, t.hz, bw, cfg, block.from, f0.takeoffIdx + 1, quiet);
     if (!on) {
       warnings.push(warn('no_onset', 'warning', { at: f0.takeoffIdx }));
-      return { reps, warnings };
+      return { reps, warnings, onset: null };
     }
     onset = on.index;
   }
@@ -179,7 +195,7 @@ function processBlock(
       warnings: [warn('unclear_type', 'warning'), ...pre],
       included: true,
     });
-    return { reps, warnings };
+    return { reps, warnings, onset };
   }
 
   const info = TEST_TYPE_INFO[type];
@@ -193,9 +209,9 @@ function processBlock(
       ? [warn('low_confidence', 'info', { params: { confidence: +confidence.toFixed(2) } })]
       : [];
 
-  const mismatch = (): { reps: RepResult[]; warnings: AnalysisWarning[] } => {
+  const mismatch = (): { reps: RepResult[]; warnings: AnalysisWarning[]; onset: number | null } => {
     warnings.push(warn('type_mismatch', 'warning', { params: { type, blockKind: block.kind } }));
-    return { reps, warnings };
+    return { reps, warnings, onset };
   };
 
   if (family === 'cmj' || family === 'sj') {
@@ -210,7 +226,7 @@ function processBlock(
     const f2 = block.flights[1];
     if (block.kind !== 'jump' || !f1 || !f2 || onset === null) {
       warnings.push(warn('needs_two_flights', 'warning', { params: { flights: block.flights.length } }));
-      return { reps, warnings };
+      return { reps, warnings, onset };
     }
     const ctx = buildPushOffContext({ t, m, type, cfg, onset, f1, f2, blockEnd: block.endIdx, singleLeg });
     reps.push(makeRep(ctx, baseInfo(repCounter.n++), [...pre, ...lowConf], side));
@@ -285,7 +301,7 @@ function processBlock(
   } else {
     warnings.push(warn('not_implemented', 'error', { params: { type } }));
   }
-  return { reps, warnings };
+  return { reps, warnings, onset };
 }
 
 /** Erster Kontakt aus dem Stand ist nicht repräsentativ; bei > bestN Hops zählen nur die besten bestN (nach Metrik). */
@@ -370,12 +386,14 @@ export function analyzeRecording(trace: ForceTrace, opts: AnalyzeOptions = {}): 
 
   for (const [a, b] of segments) {
     const seg = segmentBlocks(total, trace.hz, bw, cfg, a, b);
+    const occupied: Array<{ start: number; end: number }> = [];
     for (const blk of seg.blocks) {
       const r = processBlock(c, blk, counter, a);
       reps.push(...r.reps);
       warnings.push(...r.warnings);
+      occupied.push(r.occupied);
     }
-    for (const att of findFailedAttempts(total, trace.hz, bw, cfg, seg.blocks, a, b))
+    for (const att of findFailedAttempts(total, trace.hz, bw, cfg, occupied, a, b))
       warnings.push(warn('failed_attempt', 'info', { at: att.start, params: { endIdx: att.end } }));
     if (!seg.blocks.length) warnings.push(warn('no_movement', 'info', { at: a }));
   }

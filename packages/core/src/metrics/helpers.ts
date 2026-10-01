@@ -36,9 +36,21 @@ export const cmOnly = (c: RepContext): void => {
   if (!c.ev.hasCM) throw new Error('keine Gegenbewegung');
 };
 
+/**
+ * Abhebegeschwindigkeit. Die 20-N-Kante liegt ε = 20 N / (Kraftabfall) vor F = 0; in ε wirkt a ≈ (10 N − BW)/m,
+ * ohne Korrektur wäre v um ≈ g·ε (≈ 1 cm/s ⇒ 0,3 cm Sprunghöhe) zu hoch.
+ */
 export function takeoffVelocity(c: RepContext): number {
   const e = jumpEv(c);
-  return velAt(kin(c), e.takeoff);
+  const v = velAt(kin(c), e.takeoff);
+  if (!c.takeoffCorrection) return v;
+  const i = Math.floor(e.takeoff);
+  const a = Math.max(0, i - 2);
+  const b = Math.min(c.total.length - 1, i + 1);
+  const slope = (c.total[a]! - c.total[b]!) / (b - a); // N pro Sample, fallend > 0
+  if (!(slope > 0)) return v;
+  const eps = Math.min(3, c.thresholdN / slope) / c.hz; // s
+  return v + ((c.thresholdN / 2 - c.bw) / c.mass) * eps;
 }
 
 export const heightFromVelocity = (v: number): number => (v * v) / (2 * G);

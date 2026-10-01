@@ -95,6 +95,10 @@ export interface RepContext {
   externalLoadKg: number;
   /** Gewichtskraft des Systems (N) = mass·g */
   bw: number;
+  /** Kontakt-/Flug-Schwelle (N) */
+  thresholdN: number;
+  /** Abhebegeschwindigkeit bei F = 0 extrapolieren (siehe config.kinematics.takeoffCorrection) */
+  takeoffCorrection: boolean;
   total: Float64Array;
   left: Float64Array;
   right: Float64Array;

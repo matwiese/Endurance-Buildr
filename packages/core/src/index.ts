@@ -18,3 +18,5 @@ export * from './analysis/index.ts';
 export * from './metrics/index.ts';
 export * from './csv/index.ts';
 export * from './metrics/doc.ts';
+export * from './synth/index.ts';
+export * from './live/index.ts';

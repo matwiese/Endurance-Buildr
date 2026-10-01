@@ -17,6 +17,9 @@ export interface AnalysisConfig {
     windowMs: number;
     sdN: number;
     sdRel: number;
+    /** max. Mittelwertdifferenz zwischen älterer und jüngerer Fensterhälfte (Rampe ≠ stabil) */
+    driftN: number;
+    driftRel: number;
     /** unter dieser Gesamtkraft gilt „niemand auf den Platten“ */
     minBodyForceN: number;
     /** zur Massenbestimmung gemittelte Stabil-Dauer (max.) */
@@ -72,6 +75,11 @@ export interface AnalysisConfig {
     bwSource: 'session' | 'local';
     /** zulässige Abweichung Ruhe-Mittel ↔ Session-Gewicht, sonst Warnung `weight_mismatch` */
     weightMismatchRel: number;
+    /**
+     * Abhebegeschwindigkeit am Zeitpunkt F = 0 statt an der 20-N-Kante (Korrektur ≈ g·20 N/Kraftabfall ≈ 1 cm/s ⇒ −0,3 cm).
+     * false = identisch zur Referenz-App (Wert an der Schwelle).
+     */
+    takeoffCorrection: boolean;
   };
   phases: {
     /** Gegenbewegung vorhanden, wenn v_min kleiner ODER Tiefe größer */
@@ -104,7 +112,15 @@ export interface AnalysisConfig {
 
 export const DEFAULT_ANALYSIS_CONFIG: AnalysisConfig = {
   zero: { windowMs: 1000, sdMaxN: 3, maxEmptyLoadN: 100, maxWaitMs: 5000 },
-  weigh: { windowMs: 1000, sdN: 6, sdRel: 0.01, minBodyForceN: 100, maxAveragingMs: 3000 },
+  weigh: {
+    windowMs: 1000,
+    sdN: 6,
+    sdRel: 0.01,
+    driftN: 6,
+    driftRel: 0.006,
+    minBodyForceN: 100,
+    maxAveragingMs: 3000,
+  },
   quiet: {
     windowMs: 1000,
     settleMs: 500,
@@ -134,7 +150,7 @@ export const DEFAULT_ANALYSIS_CONFIG: AnalysisConfig = {
     preTakeoffMinBw: 0.5,
     preTakeoffWindowMs: 50,
   },
-  kinematics: { bwSource: 'session', weightMismatchRel: 0.15 },
+  kinematics: { bwSource: 'session', weightMismatchRel: 0.15, takeoffCorrection: true },
   phases: { cmMinVelocity: -0.2, cmMinDepthM: 0.03 },
   landing: { windowMs: 500, stabilizationTolRel: 0.05, stabilizationHoldMs: 500 },
   rfd: { windowMs: 50 },

@@ -142,14 +142,16 @@ export function findFailedAttempts(
   hz: number,
   bw: number,
   cfg: AnalysisConfig,
-  blocks: Block[],
+  /** belegte Bereiche (Reps: Onset … Ende), in denen keine Fehlversuche gesucht werden */
+  occupied: Array<{ start: number; end: number }>,
   from = 0,
   to = total.length,
   minMs = 200,
 ): Array<{ start: number; end: number }> {
   const thr = Math.max(cfg.onset.thresholdN, 0.1 * bw);
   const minN = msToSamples(minMs, hz);
-  const out: Array<{ start: number; end: number }> = [];
+  const mergeN = msToSamples(150, hz);
+  const raw: Array<{ start: number; end: number; loaded: boolean }> = [];
   let i = from;
   while (i < to) {
     if (Math.abs(total[i]! - bw) <= thr) {
@@ -162,9 +164,22 @@ export function findFailedAttempts(
       if (total[i]! < cfg.flight.thresholdN) loaded = false;
       i++;
     }
-    const inBlock = blocks.some((b) => s < b.endIdx && i > b.from);
-    const bounded = s > from && i < to; // Anfang und Ende liegen im Band
-    if (loaded && bounded && !inBlock && i - s >= minN) out.push({ start: s, end: i });
+    raw.push({ start: s, end: i, loaded });
+  }
+  // Entlastungs- und Abdrucklappen eines Versuchs (kurzer Durchgang durch das BW-Band) zu einem Versuch verschmelzen
+  const merged: typeof raw = [];
+  for (const r of raw) {
+    const last = merged[merged.length - 1];
+    if (last && r.start - last.end <= mergeN) {
+      last.end = r.end;
+      last.loaded = last.loaded && r.loaded;
+    } else merged.push({ ...r });
+  }
+  const out: Array<{ start: number; end: number }> = [];
+  for (const r of merged) {
+    const inBlock = occupied.some((b) => r.start < b.end && r.end > b.start);
+    const bounded = r.start > from && r.end < to; // Anfang und Ende liegen im Band
+    if (r.loaded && bounded && !inBlock && r.end - r.start >= minN) out.push({ start: r.start, end: r.end });
   }
   return out;
 }

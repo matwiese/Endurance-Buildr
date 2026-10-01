@@ -69,3 +69,19 @@ Push in ein öffentliches Repository prüfen**, ob die Daten dort liegen dürfen
 - Auth: E-Mail/Passwort (scrypt), opake Session-Tokens in httpOnly-Cookie (SameSite=Lax); Mandant = Organisation, jede Abfrage org-gescoped.
 - DSGVO: Art.-9-Einwilligung pro Profil (Zeitstempel/Version), Foto/Video-Einwilligung unter 18 nur mit Erziehungsberechtigten-Einwilligung,
   Export (JSON+CSV) und Löschung (Hard-Delete inkl. Blobs) pro Person, Audit-Log (wer/was/wann, ohne Messwerte).
+
+## Genauigkeit (gemessen, `packages/core/test/accuracy.test.ts`)
+
+Monte-Carlo-Läufe mit physikalisch simulierten Sprüngen (Masse 55–110 kg, 18–60 cm, variierte Tempo/Entlastung/Asymmetrie, Rauschen
+1 N SD je Platte, Sway 1,5 N, Rocking 2 % BW, 60 Seeds je Abtastrate):
+
+| Größe                            | Ziel      | gemessen (1000 Hz) | gemessen (500 Hz) |
+| -------------------------------- | --------- | ------------------ | ----------------- |
+| Sprunghöhe Imp-Mom               | ±0,5 cm   | max. 0,15 cm       | ≤ 0,5 cm          |
+| Flugzeit, Takeoff, v=0           | ±2 ms     | max. 1,2 ms        | ≤ 4 ms            |
+| Kontraktions-/exzentrische Dauer | ±2 ms (*) | max. 4,3 ms        | ≤ 8 ms            |
+| Gegenbewegungstiefe              | –         | max. 3,5 mm        |                   |
+
+(\*) Onset-abhängige Zeiten sind rauschbegrenzt: die 20-N-Schwelle schneidet einen flachen Kraftanstieg; die Toleranz beträgt dort ±5 ms.
+Die Abhebegeschwindigkeit wird bei F = 0 statt an der 20-N-Kante bewertet (`kinematics.takeoffCorrection`, ≈ −0,3 cm); mit `false`
+entspricht sie exakt der Referenz-App (Regressionstest).

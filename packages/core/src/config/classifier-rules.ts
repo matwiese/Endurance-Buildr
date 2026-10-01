@@ -118,7 +118,7 @@ export const DEFAULT_CLASSIFIER: ClassifierConfig = {
       conditions: [
         { feature: 'startsUnloaded', op: '==', value: true, hard: true },
         { feature: 'flights', op: '>=', value: 1, margin: 0.4, hard: true },
-        { feature: 'flights', op: '<=', value: 1, margin: 0.4, weight: 1 },
+        { feature: 'flights', op: '<=', value: 1.5, margin: 0.5, weight: 1 },
         { feature: 'firstContactMs', op: '<=', value: 600, margin: 150, weight: 1 },
       ],
     },

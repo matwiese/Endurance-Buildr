@@ -29,13 +29,20 @@ export function meanRange(x: ArrayLike<number>, a: number, b: number): number {
   return trapzRange(x, a, b) / (b - a);
 }
 
-/** Maximum über die Samples im Bereich [a, b] (inkl. interpolierter Ränder) und dessen Index. */
+/**
+ * Maximum über die Samples im Bereich [a, b] (nur echte Messwerte; interpolierte Ränder nur, wenn kein Sample im Bereich
+ * liegt) und dessen Index. Spitzenwerte sind Messwerte – an Unstetigkeiten (Stufenprofile) würde Interpolation Werte erfinden.
+ */
 export function maxRange(x: ArrayLike<number>, a: number, b: number): { value: number; index: number } {
-  const lo = Math.max(0, a);
-  const hi = Math.min(x.length - 1, b);
-  let value = Math.max(interpAt(x, lo), interpAt(x, hi));
-  let index = interpAt(x, lo) >= interpAt(x, hi) ? lo : hi;
-  for (let i = Math.ceil(lo); i <= Math.floor(hi); i++) {
+  const i0 = Math.max(0, Math.ceil(a));
+  const i1 = Math.min(x.length - 1, Math.floor(b));
+  if (i1 < i0) {
+    const v = Math.max(interpAt(x, a), interpAt(x, b));
+    return { value: v, index: interpAt(x, a) >= interpAt(x, b) ? a : b };
+  }
+  let value = x[i0]!;
+  let index = i0;
+  for (let i = i0 + 1; i <= i1; i++) {
     if (x[i]! > value) {
       value = x[i]!;
       index = i;
@@ -45,11 +52,15 @@ export function maxRange(x: ArrayLike<number>, a: number, b: number): { value: n
 }
 
 export function minRange(x: ArrayLike<number>, a: number, b: number): { value: number; index: number } {
-  const lo = Math.max(0, a);
-  const hi = Math.min(x.length - 1, b);
-  let value = Math.min(interpAt(x, lo), interpAt(x, hi));
-  let index = interpAt(x, lo) <= interpAt(x, hi) ? lo : hi;
-  for (let i = Math.ceil(lo); i <= Math.floor(hi); i++) {
+  const i0 = Math.max(0, Math.ceil(a));
+  const i1 = Math.min(x.length - 1, Math.floor(b));
+  if (i1 < i0) {
+    const v = Math.min(interpAt(x, a), interpAt(x, b));
+    return { value: v, index: interpAt(x, a) <= interpAt(x, b) ? a : b };
+  }
+  let value = x[i0]!;
+  let index = i0;
+  for (let i = i0 + 1; i <= i1; i++) {
     if (x[i]! < value) {
       value = x[i]!;
       index = i;

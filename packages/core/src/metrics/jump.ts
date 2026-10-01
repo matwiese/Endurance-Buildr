@@ -613,8 +613,7 @@ defineMetric({
 
 // ───────────────────────────── Landung ─────────────────────────────
 function landingWindow(c: RepContext): { a: number; b: number } {
-  const e = jumpEv(c);
-  return { a: must(e.landing), b: must(e.landingEnd) };
+  return { a: must(c.ev.landing), b: must(c.ev.landingEnd) };
 }
 
 defineMetric({

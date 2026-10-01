@@ -113,10 +113,17 @@ describe.each(CASES)('Referenz $file', (c) => {
     expect(Math.abs(ft - (end - first + 1) / p.trace.hz)).toBeLessThan(0.0016);
   });
 
-  it('Abhebegeschwindigkeit stimmt mit der Referenz-Velocity am Takeoff überein', () => {
+  it('Abhebegeschwindigkeit: ohne Korrektur = Referenz-Velocity am Takeoff; mit Korrektur ≤ Referenz (g·ε, ≤ 3 ms)', () => {
     const tk = rep.events['takeoff']!;
     const vRef = interpAt(ref.velocity, tk);
-    expect(Math.abs(rep.metrics['takeoff_velocity']! - vRef)).toBeLessThan(0.006);
+    const raw = analyzeRecording(p.trace, {
+      bodyMassKg: p.weightKg,
+      config: { kinematics: { takeoffCorrection: false } },
+    }).reps[0]!;
+    expect(Math.abs(raw.metrics['takeoff_velocity']! - vRef)).toBeLessThan(0.006);
+    const v = rep.metrics['takeoff_velocity']!;
+    expect(v).toBeLessThanOrEqual(vRef + 1e-9);
+    expect(vRef - v).toBeLessThan(0.03);
   });
 
   it('Sprunghöhen: Imp-Mom und Flugzeit weichen < 3 cm voneinander ab, Tiefe = Referenz-Height bei v = 0', () => {
