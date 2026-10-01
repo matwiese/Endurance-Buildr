@@ -151,3 +151,11 @@ export const useAuth = create<AuthStore>((set, get) => ({
 /** Darf der Nutzer Tests aufnehmen/Profile ändern? (lokaler Modus: ja) */
 export const canTest = (s: Pick<AuthStore, 'status' | 'me'>): boolean =>
   s.status === 'local' || (s.status === 'authenticated' && s.me?.role !== 'viewer');
+
+export type EffectiveRole = 'admin' | 'tester' | 'viewer';
+
+/** Wirksame Rolle (lokaler Modus: volle Rechte auf den lokalen Daten; nicht angemeldet: nur lesen). */
+export const effectiveRole = (s: Pick<AuthStore, 'status' | 'me'>): EffectiveRole =>
+  s.status === 'local' ? 'admin' : s.status === 'authenticated' && s.me ? s.me.role : 'viewer';
+
+export const useRole = (): EffectiveRole => useAuth(effectiveRole);

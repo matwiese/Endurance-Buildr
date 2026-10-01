@@ -17,6 +17,7 @@ import {
 import { create } from 'zustand';
 import { uid } from '../lib/uid.ts';
 import { localRepo } from '../offline/repo.ts';
+import { useAuth } from './auth.ts';
 
 export type StepId = 'connect' | 'testType' | 'profile' | 'zero' | 'weigh' | 'record' | 'review' | 'save';
 export const STEPS: StepId[] = [
@@ -312,8 +313,10 @@ export const useWorkflow = create<WorkflowStore>((set, get) => ({
             hopIndex: r.hopIndex,
           })),
         };
-        await localRepo.tests.put(test);
-        await localRepo.outbox.add('test', test.id);
+        // lokaler Modus (ohne Server): kein Upload vorgesehen
+        const server = useAuth.getState().status !== 'local';
+        await localRepo.tests.put(server ? test : { ...test, status: 'local' });
+        if (server) await localRepo.outbox.add('test', test.id);
         tests.push(test);
       }
       set({ saved: tests });

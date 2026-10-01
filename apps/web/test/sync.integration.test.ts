@@ -8,6 +8,8 @@ import { BROWSER_CODEC } from '../src/sync/blob.ts';
 import { SyncEngine } from '../src/sync/engine.ts';
 import { resetDbForTests } from '../src/offline/db.ts';
 import { localRepo } from '../src/offline/repo.ts';
+import { createTagOffline } from '../src/hub/services.ts';
+import { useAuth } from '../src/state/auth.ts';
 import { useWorkflow } from '../src/state/workflow.ts';
 import { createServer, type Server } from '../../server/src/server.ts';
 import { MemoryBlobStore } from '../../server/src/storage/blobStore.ts';
@@ -109,6 +111,17 @@ describe('Sync-Engine gegen echten Server', () => {
     const saved = await wf.save();
     expect(saved.length).toBeGreaterThan(0);
     return saved;
+  };
+
+  /** wie saveLocalTest, aber behält die im Workflow gewählten Tags */
+  const saveLocalTestKeepTags = async (p: ProfileDTO) => {
+    const { recording, analysis } = makeRecording({ cmj: 1, seed: 77 });
+    const wf = useWorkflow.getState();
+    const tags = wf.tagIds;
+    wf.setProfile(p);
+    wf.finishRecording(recording, analysis);
+    for (const t of tags) if (!useWorkflow.getState().tagIds.includes(t)) wf.toggleTag(t);
+    return wf.save();
   };
 
   beforeAll(async () => {
@@ -301,6 +314,32 @@ describe('Sync-Engine gegen echten Server', () => {
     expect(await localRepo.recordings.get(unsent[0]!.recordingId)).toBeDefined();
     expect(await localRepo.groups.list()).toEqual([]);
     expect(await localRepo.kv.get('syncCursor')).toBeUndefined();
+  });
+
+  it('Offline angelegte Tags: Typ + Tag landen auf dem Server, Tests mit Tags werden danach akzeptiert', async () => {
+    useAuth.setState({ status: 'authenticated' });
+    await engine.run();
+    groupId = (await localRepo.groups.list())[0]!.id;
+    const p = profile('Tag Tina');
+    await localRepo.profiles.put(p);
+    await localRepo.outbox.add('profile', p.id);
+    const tag = (await createTagOffline('Phase', 'Vorsaison'))!;
+    useWorkflow.getState().resetAll();
+    useWorkflow.getState().toggleTag(tag.id);
+    net.online = false;
+    const saved = await saveLocalTestKeepTags(p);
+    // lokale Tags überleben einen Vollabgleich, solange sie nicht hochgeladen sind
+    net.online = true;
+    await localRepo.kv.set('syncCursor', 0);
+    expect((await engine.run()).pending).toBe(0);
+    const ref = await api.get<{ tags: Array<{ id: string }>; tagTypes: Array<{ name: string }> }>(
+      '/api/reference',
+    );
+    expect(ref.tags.map((t) => t.id)).toContain(tag.id);
+    expect(ref.tagTypes.map((t) => t.name)).toContain('Phase');
+    const srv = await api.get<Array<{ tagIds: string[] }>>(`/api/tests?profileId=${p.id}`);
+    expect(srv[0]!.tagIds).toEqual([tag.id]);
+    expect(saved.length).toBeGreaterThan(0);
   });
 
   it('Netzwerkfehler werden als NetworkError gemeldet', async () => {

@@ -42,7 +42,11 @@ Status: ☐ offen · ◐ in Arbeit · ☑ fertig. Nach jedem Meilenstein: Tests 
 - **Ergebnis**: 29 Server-Tests (PGlite **und** PostgreSQL 16: `TEST_DATABASE_URL=… pnpm test`), Sync-Engine-Integrationstest (echter Server ↔ IndexedDB:
   offline → Upload, verlorene Antwort, Backoff, 4xx, 401, Pull-Merge), Playwright (Login/Rollen/lokaler Modus, Offline → automatischer Upload). `docs/api.md`.
 
-## M6 – Profile/Gruppen/Tags/CSV ☐
+## M6 – Profile/Gruppen/Tags/CSV ☑
+
+- Hub: Athletenliste (Suche, Gruppenfilter, Sortierung, Seiten, Mehrfachauswahl, Sammelzuweisung, Löschen mit Bestätigungswort), Gruppen & Kategorien, Tag-Typen/Tags, Nutzerverwaltung + Audit-Log.
+- CSV-Import mit Spaltenzuordnung, Trockenlauf/Prüfbericht, Duplikaterkennung (Externe ID bzw. Name + Geburtsdatum → Update), Export im Round-Trip-Format (`packages/shared/src/profileCsv.ts`).
+- **Abnahme**: Unit-Tests (Parser/Plan/Round-Trip), Komponententests (Liste, Bulk, Rollen, Import), Playwright (Gruppen → Import → Re-Import → Bulk → Export → Löschen, Tags, Nutzer).
 
 ## M7 – Gruppensession + Leaderboard ☐
 

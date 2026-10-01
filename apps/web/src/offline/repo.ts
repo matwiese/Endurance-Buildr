@@ -8,6 +8,7 @@ import type {
   TestRecord,
 } from '@buildr/shared';
 import { getDb, type OutboxItem, type OutboxKind } from './db.ts';
+import { repoEvents } from './events.ts';
 
 type SimpleStoreName = 'categories' | 'groups' | 'tagTypes' | 'tags';
 
@@ -22,15 +23,18 @@ function simpleStore<T extends { id: string }>(name: SimpleStoreName) {
     },
     async put(v: T): Promise<void> {
       await (await getDb()).put(name, v as never);
+      repoEvents.bump();
     },
     async remove(id: string): Promise<void> {
       await (await getDb()).delete(name, id);
+      repoEvents.bump();
     },
     async replaceAll(list: T[]): Promise<void> {
       const tx = (await getDb()).transaction(name, 'readwrite');
       await tx.store.clear();
       for (const v of list) await tx.store.put(v as never);
       await tx.done;
+      repoEvents.bump();
     },
   };
 }
@@ -46,9 +50,11 @@ export const localRepo = {
     },
     async put(p: ProfileDTO): Promise<void> {
       await (await getDb()).put('profiles', p);
+      repoEvents.bump();
     },
     async remove(id: string): Promise<void> {
       await (await getDb()).delete('profiles', id);
+      repoEvents.bump();
     },
     async replaceAll(list: ProfileDTO[]): Promise<void> {
       const db = await getDb();
@@ -56,6 +62,7 @@ export const localRepo = {
       await tx.store.clear();
       for (const p of list) await tx.store.put(p);
       await tx.done;
+      repoEvents.bump();
     },
   },
   categories: simpleStore<CategoryDTO>('categories'),
@@ -76,9 +83,11 @@ export const localRepo = {
     },
     async put(t: TestRecord): Promise<void> {
       await (await getDb()).put('tests', t);
+      repoEvents.bump();
     },
     async remove(id: string): Promise<void> {
       await (await getDb()).delete('tests', id);
+      repoEvents.bump();
     },
   },
   recordings: {
@@ -133,6 +142,7 @@ export const localRepo = {
       if (!pendingProfiles.has(p.id)) await db.delete('profiles', p.id);
     for (const store of ['categories', 'groups', 'tagTypes', 'tags'] as const) await db.clear(store);
     await db.delete('kv', 'syncCursor');
+    repoEvents.bump();
   },
   kv: {
     async get<T>(key: string): Promise<T | undefined> {

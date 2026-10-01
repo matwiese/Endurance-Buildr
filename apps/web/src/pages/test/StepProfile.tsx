@@ -7,6 +7,7 @@ import { useMetricFormat, useT } from '../../i18n/hooks.ts';
 import { ageYears, formatDateTime } from '../../lib/format.ts';
 import { summarize } from '../../lib/summary.ts';
 import { ensureDefaultGroup } from '../../model/seed.ts';
+import { saveProfile } from '../../hub/services.ts';
 import { localRepo } from '../../offline/repo.ts';
 import { useAuth } from '../../state/auth.ts';
 import { useSyncState } from '../../sync/index.ts';
@@ -156,8 +157,7 @@ export function StepProfile({ onNext }: { onNext: () => void }) {
             groups={groups}
             onCancel={() => setCreating(false)}
             onSave={async (p) => {
-              await localRepo.profiles.put(p);
-              await localRepo.outbox.add('profile', p.id);
+              await saveProfile(p);
               setCreating(false);
               await load();
               wf.setProfile(p);

@@ -164,8 +164,16 @@ export class SyncEngine {
       }
       case 'test':
         return this.pushTest(item.entityId);
-      default:
-        return; // tag/tagType: Verwaltung läuft online im Hub
+      case 'tagType': {
+        const t = await repo.tagTypes.get(item.entityId);
+        if (t) await api.put(`/api/reference/tag-types/${t.id}`, t);
+        return;
+      }
+      case 'tag': {
+        const t = await repo.tags.get(item.entityId);
+        if (t) await api.put(`/api/reference/tags/${t.id}`, t);
+        return;
+      }
     }
   }
 
@@ -205,14 +213,19 @@ export class SyncEngine {
     const pendingProfiles = new Set(
       outbox.filter((o) => o.kind === 'profile' || o.kind === 'delete-profile').map((o) => o.entityId),
     );
+    const pendingTagTypes = new Set(outbox.filter((o) => o.kind === 'tagType').map((o) => o.entityId));
+    const pendingTags = new Set(outbox.filter((o) => o.kind === 'tag').map((o) => o.entityId));
 
     if (d.full) {
       const keep = (await repo.profiles.list()).filter((p) => pendingProfiles.has(p.id));
       await repo.profiles.replaceAll([...d.profiles.filter((p) => !pendingProfiles.has(p.id)), ...keep]);
       await repo.categories.replaceAll(d.categories);
       await repo.groups.replaceAll(d.groups);
-      await repo.tagTypes.replaceAll(d.tagTypes);
-      await repo.tags.replaceAll(d.tags);
+      // noch nicht hochgeladene lokale Tags/Tag-Typen bleiben erhalten
+      const keepTypes = (await repo.tagTypes.list()).filter((x) => pendingTagTypes.has(x.id));
+      const keepTags = (await repo.tags.list()).filter((x) => pendingTags.has(x.id));
+      await repo.tagTypes.replaceAll([...d.tagTypes.filter((x) => !pendingTagTypes.has(x.id)), ...keepTypes]);
+      await repo.tags.replaceAll([...d.tags.filter((x) => !pendingTags.has(x.id)), ...keepTags]);
     } else {
       for (const p of d.profiles) if (!pendingProfiles.has(p.id)) await repo.profiles.put(p);
       for (const c of d.categories) await repo.categories.put(c);

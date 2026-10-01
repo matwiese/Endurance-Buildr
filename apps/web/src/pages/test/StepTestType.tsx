@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Banner, Button, Card, Field, Toggle } from '../../components/ui.tsx';
 import { useT } from '../../i18n/hooks.ts';
 import type { MessageKey } from '../../i18n/index.ts';
-import { uid } from '../../lib/uid.ts';
+import { createTagOffline } from '../../hub/services.ts';
 import { localRepo } from '../../offline/repo.ts';
 import { useLive } from '../../state/live.ts';
 import { useWorkflow } from '../../state/workflow.ts';
@@ -49,18 +49,8 @@ export function StepTestType({ onNext }: { onNext: () => void }) {
   };
 
   const createTag = async () => {
-    const typeName = newType.trim();
-    const value = newValue.trim();
-    if (!typeName || !value) return;
-    let tt = tagTypes.find((x) => x.name.toLowerCase() === typeName.toLowerCase());
-    if (!tt) {
-      tt = { id: uid(), name: typeName };
-      await localRepo.tagTypes.put(tt);
-      await localRepo.outbox.add('tagType', tt.id);
-    }
-    const tag: TagDTO = { id: uid(), tagTypeId: tt.id, name: value };
-    await localRepo.tags.put(tag);
-    await localRepo.outbox.add('tag', tag.id);
+    const tag = await createTagOffline(newType, newValue);
+    if (!tag) return;
     wf.toggleTag(tag.id);
     setNewValue('');
     await reload();

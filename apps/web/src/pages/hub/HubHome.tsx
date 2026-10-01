@@ -1,16 +1,63 @@
-import { Card } from '../../components/ui.tsx';
+import { NavLink, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { useT } from '../../i18n/hooks.ts';
+import type { MessageKey } from '../../i18n/index.ts';
+import { useRole } from '../../state/auth.ts';
+import { AdminPage } from './AdminPage.tsx';
+import { GroupsPage } from './GroupsPage.tsx';
+import { ProfilesPage } from './ProfilesPage.tsx';
+import { TagsPage } from './TagsPage.tsx';
 
-/** Hub (Desktop): Verwaltung und Reports – wird in den Meilensteinen M6–M8 ausgebaut. */
-export function HubHome() {
+interface NavItem {
+  to: string;
+  label: MessageKey;
+  adminOnly?: boolean;
+}
+
+const ITEMS: NavItem[] = [
+  { to: 'athletes', label: 'nav.profiles' },
+  { to: 'groups', label: 'nav.groups' },
+  { to: 'tags', label: 'nav.tags' },
+  { to: 'admin', label: 'nav.admin', adminOnly: true },
+];
+
+function Shell() {
   const { t } = useT();
+  const role = useRole();
   return (
-    <div className="mx-auto max-w-5xl p-4">
-      <Card title={t('nav.hub')}>
-        <p className="text-muted">
-          {t('nav.profiles')} · {t('nav.sessions')} · {t('nav.tests')} · {t('nav.reports')} · {t('nav.norms')}
-        </p>
-      </Card>
+    <div className="mx-auto grid max-w-[1500px] gap-4 p-4 lg:grid-cols-[210px_1fr]" data-testid="hub">
+      <nav aria-label={t('nav.hub')} className="flex gap-1 lg:flex-col">
+        {ITEMS.filter((i) => !i.adminOnly || role === 'admin').map((i) => (
+          <NavLink
+            key={i.to}
+            to={`/hub/${i.to}`}
+            data-testid={`hub-nav-${i.to}`}
+            className={({ isActive }) =>
+              `rounded-xl px-4 py-3 font-semibold ${isActive ? 'bg-primary text-primary-fg' : 'hover:bg-surface2'}`
+            }
+          >
+            {t(i.label)}
+          </NavLink>
+        ))}
+      </nav>
+      <main className="min-w-0">
+        <Outlet />
+      </main>
     </div>
+  );
+}
+
+/** Hub: Verwaltung (Athleten, Gruppen, Tags, Nutzer) – Sessions/Tests/Reports/Normwerte folgen in M7/M8. */
+export function HubHome() {
+  return (
+    <Routes>
+      <Route element={<Shell />}>
+        <Route index element={<Navigate to="/hub/athletes" replace />} />
+        <Route path="athletes" element={<ProfilesPage />} />
+        <Route path="groups" element={<GroupsPage />} />
+        <Route path="tags" element={<TagsPage />} />
+        <Route path="admin" element={<AdminPage />} />
+        <Route path="*" element={<Navigate to="/hub/athletes" replace />} />
+      </Route>
+    </Routes>
   );
 }
