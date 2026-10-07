@@ -217,6 +217,8 @@ var KVCore = (function () {
     });
   }
 
+  /* Kurznamen für schmale Spalten (Tabellenköpfe, Durchgangs-Tabellen) */
+  var SHORT = { "CMJ|Jump Height (Imp-Mom)": "CMJ-Höhe", "SJ|Jump Height (Imp-Mom)": "SJ-Höhe", "SL-CMJ|L|Jump Height (Imp-Mom)": "SL-CMJ links", "SL-CMJ|R|Jump Height (Imp-Mom)": "SL-CMJ rechts" };
   /* Metrik-Definitionen für die Auswertungen (nur Kennwerte, zu denen es Werte gibt) */
   function metricDefs(table, names) {
     var seen = {}, defs = [];
@@ -228,10 +230,12 @@ var KVCore = (function () {
       ALL.forEach(function (p) {
         if (names.indexOf(p.name) < 0 || !seen[g + "||" + p.name]) return;
         var lsi = g === "LSI", asym = /Asymmetry/.test(p.name);
-        defs.push({
+        var d = {
           k: metricKey(g, p.name), t: lsi ? "Seitendifferenz " + p.name : p.name, u: lsi ? "%" : (asym ? "%" : p.unit), d: lsi ? 1 : p.dp,
           dir: lsi ? -1 : dirOf(p.name), g: GROUPS[g].label, pp: (lsi || asym || p.unit === "%") ? 1 : 0, jump: 1, jg: g, jn: p.name
-        });
+        };
+        if (SHORT[g + "|" + p.name]) d.s = SHORT[g + "|" + p.name];
+        defs.push(d);
       });
     });
     return defs;

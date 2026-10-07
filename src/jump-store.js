@@ -10,6 +10,10 @@ var KVStore = (function () {
   var DB = "kader_sprungspeicher", VER = 1, dbp = null, persistent = false;
   var mem = { results: new Map(), raw: new Map(), kv: new Map() };
   var STORES = ["results", "raw", "kv"];
+  var listeners = [];
+  /* Änderungen melden (z. B. für die automatische Sicherung in einen Ordner); Schlüssel mit „_“ am Anfang sind intern */
+  function emit(kind, key) { if (key && String(key)[0] === "_") return; listeners.forEach(function (f) { try { f(kind, key); } catch (e) {} }); }
+  function publicKv(k) { return String(k)[0] !== "_"; }
   var KEYPATH = { results: "id", raw: "id", kv: "key" };
 
   function open() {
@@ -60,6 +64,7 @@ var KVStore = (function () {
       }).catch(function () { persistent = false; return { persistent: false }; });
     },
     isPersistent: function () { return persistent; },
+    subscribe: function (fn) { listeners.push(fn); },
     results: function () { return Array.from(mem.results.values()); },
     result: function (id) { return mem.results.get(id) || null; },
     hasRaw: function (id) { return !persistent ? mem.raw.has(id) : null; },
@@ -68,6 +73,7 @@ var KVStore = (function () {
     saveJump: function (res, text) {
       mem.results.set(res.id, res);
       if (!persistent && text != null) mem.raw.set(res.id, text);
+      emit("results");
       return run(["results", "raw"], "readwrite", function (st) {
         st("results").put(res);
         if (text != null) st("raw").put({ id: res.id, text: text });
@@ -76,10 +82,12 @@ var KVStore = (function () {
     /* geänderte Ergebnisse (z. B. Art, „verwenden“) zurückschreiben */
     saveResults: function (list) {
       list.forEach(function (r) { mem.results.set(r.id, r); });
+      emit("results");
       return run(["results"], "readwrite", function (st) { list.forEach(function (r) { st("results").put(r); }); });
     },
     deleteJumps: function (ids) {
       ids.forEach(function (id) { mem.results.delete(id); mem.raw.delete(id); });
+      emit("results");
       return run(["results", "raw"], "readwrite", function (st) { ids.forEach(function (id) { st("results").delete(id); st("raw").delete(id); }); });
     },
     getRaw: function (id) {
@@ -96,12 +104,15 @@ var KVStore = (function () {
     },
 
     kvGet: function (key, dflt) { return mem.kv.has(key) ? mem.kv.get(key) : dflt; },
+    kvKeys: function () { return Array.from(mem.kv.keys()).filter(publicKv); },
     kvSet: function (key, value) {
       mem.kv.set(key, value);
+      emit("kv", key);
       return run(["kv"], "readwrite", function (st) { st("kv").put({ key: key, value: value }); }).catch(function () {});
     },
     kvDelete: function (key) {
       mem.kv.delete(key);
+      emit("kv", key);
       return run(["kv"], "readwrite", function (st) { st("kv").delete(key); }).catch(function () {});
     },
 
@@ -113,14 +124,15 @@ var KVStore = (function () {
     persist: function () { try { if (navigator.storage && navigator.storage.persist) return navigator.storage.persist().catch(function () { return false; }); } catch (e) {} return Promise.resolve(false); },
 
     /* Sicherung als Blob (JSON). withRaw: Rohkurven mitnehmen (deutlich größer). */
-    exportBlob: function (withRaw) {
-      var head = { format: "kader-sprungspeicher", version: 1, exported: new Date().toISOString(), withRaw: !!withRaw };
+    /* part: "kv" = nur Einstellungen/Vorlagen/Importe, "results" = nur Sprünge, sonst alles */
+    exportBlob: function (withRaw, part) {
+      var head = { format: "kader-sprungspeicher", version: 1, exported: new Date().toISOString(), withRaw: !!withRaw, part: part || "all" };
       var parts = ["{" + Object.keys(head).map(function (k) { return JSON.stringify(k) + ":" + JSON.stringify(head[k]); }).join(",") + ",\"kv\":{"];
       var first = true;
-      mem.kv.forEach(function (v, k) { parts.push((first ? "" : ",") + JSON.stringify(k) + ":" + JSON.stringify(v)); first = false; });
-      parts.push("},\"results\":[" + Array.from(mem.results.values()).map(function (r) { return JSON.stringify(r); }).join(",") + "]");
+      if (part !== "results") mem.kv.forEach(function (v, k) { if (!publicKv(k)) return; parts.push((first ? "" : ",") + JSON.stringify(k) + ":" + JSON.stringify(v)); first = false; });
+      parts.push("},\"results\":[" + (part === "kv" ? "" : Array.from(mem.results.values()).map(function (r) { return JSON.stringify(r); }).join(",")) + "]");
       if (!withRaw) { parts.push("}"); return Promise.resolve(new Blob(parts, { type: "application/json" })); }
-      var ids = Array.from(mem.results.keys()), i = 0, firstRaw = true;
+      var ids = part === "kv" ? [] : Array.from(mem.results.keys()), i = 0, firstRaw = true;
       parts.push(",\"raw\":[");
       function step() {
         if (i >= ids.length) { parts.push("]}"); return Promise.resolve(new Blob(parts, { type: "application/json" })); }
@@ -132,7 +144,8 @@ var KVStore = (function () {
     /* Sicherung einlesen: ergänzt/überschreibt Sprünge gleicher ID, Einstellungen werden übernommen */
     importObject: function (o) {
       if (!o || o.format !== "kader-sprungspeicher") return Promise.reject(new Error("Keine Sicherung des Sprungspeichers."));
-      var results = o.results || [], raw = o.raw || [], kv = o.kv || {};
+      var results = o.results || [], raw = o.raw || [], kv = {};
+      Object.keys(o.kv || {}).forEach(function (k) { if (publicKv(k)) kv[k] = o.kv[k]; });
       results.forEach(function (r) { mem.results.set(r.id, r); });
       Object.keys(kv).forEach(function (k) { mem.kv.set(k, kv[k]); });
       if (!persistent) raw.forEach(function (r) { mem.raw.set(r.id, r.text); });
@@ -140,11 +153,14 @@ var KVStore = (function () {
         results.forEach(function (r) { st("results").put(r); });
         raw.forEach(function (r) { st("raw").put(r); });
         Object.keys(kv).forEach(function (k) { st("kv").put({ key: k, value: kv[k] }); });
-      }).then(function () { return { results: results.length, raw: raw.length }; });
+      }).then(function () { emit("results"); emit("kv", "import"); return { results: results.length, raw: raw.length }; });
     },
+    /* löscht alle Daten (außer der Verknüpfung zum Sicherungsordner, Schlüssel mit „_“) */
     clearAll: function () {
-      mem.results.clear(); mem.raw.clear(); mem.kv.clear();
-      return run(["results", "raw", "kv"], "readwrite", function (st) { st("results").clear(); st("raw").clear(); st("kv").clear(); });
+      var keep = []; mem.kv.forEach(function (v, k) { if (!publicKv(k)) keep.push({ key: k, value: v }); });
+      mem.results.clear(); mem.raw.clear(); mem.kv.clear(); keep.forEach(function (x) { mem.kv.set(x.key, x.value); });
+      emit("results"); emit("kv", "clear");
+      return run(["results", "raw", "kv"], "readwrite", function (st) { st("results").clear(); st("raw").clear(); st("kv").clear(); keep.forEach(function (x) { st("kv").put(x); }); });
     }
   };
 })();

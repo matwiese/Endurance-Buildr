@@ -282,6 +282,7 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
       <div class="headright">
         <img id="logoTop" class="logo-top" alt="Leistungssport Austria">
         <div class="actions">
+        <label class="tplsel" title="Auswertungsvorlage: bestimmt, welche Kennwerte Einzelauswertung, Profilblatt, PDF und Excel zeigen"><span>Vorlage</span><select id="tplSel" onchange="KVApp.setActive(this.value)" aria-label="Auswertungsvorlage"></select></label>
         <button class="btn-p" onclick="exportXlsx()">Gesamtübersicht als Excel</button>
         <button class="btn-s" onclick="exportAllPdf()">Alle Profile in einem PDF</button>
         <button class="btn-s" onclick="saveSingles()">Einzel-PDFs in Ordner</button>
@@ -301,6 +302,7 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
       <button class="tab" id="tabQualitaet" role="tab" aria-selected="false" onclick="setTab('qualitaet')">Datenqualität</button>
       <button class="tab" id="tabSprung" role="tab" aria-selected="false" onclick="setTab('sprung')">Sprungdaten</button>
       <button class="tab" id="tabParameter" role="tab" aria-selected="false" onclick="setTab('parameter')">Parameter</button>
+      <button class="tab" id="tabTemplates" role="tab" aria-selected="false" onclick="setTab('templates')">Auswertungstemplates</button>
     </div>
   </div>
 </div>
@@ -393,6 +395,7 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
         <input type="file" id="pinOne" accept="image/*" class="hidden" onchange="loadOnePhoto(this)">
         <button class="btn-g" onclick="exportPdfByName(pickName)">Als PDF</button>
         <button class="btn-o" onclick="saveSingles([findPlayer(pickName)])" title="Speichert nur diese Person als eigene Datei">Diese in Ordner</button>
+        <a class="tplnote" id="tplNote" href="#" hidden onclick="setTab('templates');return false" title="Auswertungsvorlage ändern"></a>
       </div>
       <div id="single"></div>
     </section>
@@ -441,6 +444,13 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
     <section>
       <div class="sec-head"><h2>Parameter</h2><span class="note" id="kvParNote"></span></div>
       <div id="kvParam"></div>
+    </section>
+  </div>
+
+  <div id="viewTemplates" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Auswertungstemplates</h2><span class="note" id="kvTplNote"></span></div>
+      <div id="kvTpl"></div>
     </section>
   </div>
 
@@ -543,6 +553,24 @@ var METRICS=[
 ];
 var STATIC_METRICS=METRICS.slice();
 var MET={}; METRICS.forEach(function(m){MET[m.k]=m;});
+/* Aktive Auswertungsvorlage (Reiter „Auswertungstemplates“): bestimmt, was Einzelauswertung, Profilblatt, PDF und Excel zeigen.
+   AM() = Kennwerte der Vorlage (ohne Vorlage: alle), TB(x) = Baustein an/aus (spider, deviation, rank, runs). */
+function AM(){ return (window.KVApp&&KVApp.tplMetrics)?KVApp.tplMetrics(METRICS):METRICS; }
+function TB(x){ return (window.KVApp&&KVApp.tplBlock)?KVApp.tplBlock(x):true; }
+function inTpl(k){ var m=MET[k]; return !!m && AM().indexOf(m)>=0; }
+/* Spalten der Durchgangs-Tabellen: bevorzugte Tests (wie bisher), aufgefüllt mit weiteren Kennwerten der Vorlage */
+var RUN_PREF={ screen:["gew","fmsSum","swSum","cmj","fmaxRel","bz1rm","haeng"], pdf:["gew","fmsSum","cmj","fmaxRel","bz1rm","haeng"], sheet:["fmsSum","cmj","fmaxRel","bz1rm"] };
+var RUN_MORE=["swSum","sj","hbl","reakt","tap","hopL","hopR","j_cmj_jump_height_imp_mom","j_sj_jump_height_imp_mom"];
+var RUN_LAB={gew:"Masse",fmsSum:"Screen",swSum:"Rumpf",cmj:"CMJ",fmaxRel:"Fmax",bz1rm:"1-RM BZ",haeng:"Hängen"};
+function runLabel(m){ return (RUN_LAB[m.k]||m.s||m.t)+(m.u?" "+m.u:""); }
+function runCols(kind,max){
+  if(!TB("runs")) return [];
+  var am=AM(), out=[], add=function(k){ var m=MET[k]; if(m&&out.length<max&&out.indexOf(m)<0&&am.indexOf(m)>=0) out.push(m); };
+  RUN_PREF[kind].forEach(add); RUN_MORE.forEach(add);
+  am.forEach(function(m){ if(out.length<max&&out.indexOf(m)<0&&m.g!==ANTHRO&&m.dir!==undefined) out.push(m); });
+  return out;
+}
+function spiderAxes(){ return SPIDER.filter(inTpl); }
 /* Sprungkennwerte aus dem Sprungspeicher (VALD) kommen als zusätzliche Metriken dazu; Auswahl steht im Tab „Parameter“ */
 function setDynamicMetrics(defs){
   METRICS=STATIC_METRICS.concat(defs||[]);
@@ -586,6 +614,7 @@ COLDEF.forEach(function(c){
 });
 /* Messungen, die mit einer Qualitätsbewertung erfasst werden */
 var QUAL_KEYS=["hopL","hopR","liege"];
+function QK(){ return QUAL_KEYS.filter(inTpl); }   /* Qualitätsspalten nur für Tests der Vorlage */
 
 /* ---------- Helfer ---------- */
 var tmr;
@@ -833,7 +862,7 @@ function stats(){
 /* ---------- Navigation ---------- */
 function setTab(t){
   tab=t;
-  ["kader","leistung","einzel","entwicklung","uebersicht","qualitaet","sprung","parameter"].forEach(function(x){
+  ["kader","leistung","einzel","entwicklung","uebersicht","qualitaet","sprung","parameter","templates"].forEach(function(x){
     $("view"+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle("hidden",x!==t);
     $("tab"+x.charAt(0).toUpperCase()+x.slice(1)).setAttribute("aria-selected",x===t);
   });
@@ -1179,7 +1208,7 @@ function openSheet(name){
     $("ovl").classList.add("on"); return;
   }
   var groups={},go=[];
-  METRICS.forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  AM().forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
   var html=orderGroups(go).map(function(g){
     return '<div class="sub-h">'+esc(g)+'</div>'+groups[g].map(function(m){
       var v=p.val[m.k], rk=(m.dir!==0)?rankOf(p,m.k):null, qq=p.cur.q[m.k];
@@ -1190,12 +1219,13 @@ function openSheet(name){
         '<span class="mr '+rc+'">'+(rk?rk.r+"/"+rk.n:"—")+'</span></div>';
     }).join("")+(g===FMS?clrLine(p.cur):"");
   }).join("");
-  if(p.tests.length>1){
-    html+='<div class="sub-h">Einzelne Durchgänge — Screen / CMJ / Fmax rel. / 1-RM BZ</div>'+
+  var SC=runCols("sheet",4);
+  if(p.tests.length>1 && SC.length){
+    html+='<div class="sub-h">Einzelne Durchgänge — '+esc(SC.map(function(m){ return RUN_LAB[m.k]||m.s||m.t; }).join(" / "))+'</div>'+
       p.tests.map(function(t,i){
-        var c=function(k,d,u){ return '<span class="mv">'+(t[k]!=null?de(t[k],d)+" "+u:"—")+'</span>'; };
-        return '<div class="mrow" style="grid-template-columns:84px 1fr 1fr 1fr 1fr"><span style="color:#4A555F;font-size:12px">'+esc(testLabel(t,i))+
-          '</span>'+c("fmsSum",0,"Pkt")+c("cmj",1,"cm")+c("fmaxRel",1,"N/kg")+c("bz1rm",1,"kg")+'</div>';
+        var c=function(m){ return '<span class="mv">'+(t[m.k]!=null?de(t[m.k],m.d)+" "+esc(m.u):"—")+'</span>'; };
+        return '<div class="mrow" style="grid-template-columns:84px repeat('+SC.length+',1fr)"><span style="color:#4A555F;font-size:12px">'+esc(testLabel(t,i))+
+          '</span>'+SC.map(c).join("")+'</div>';
       }).join("");
   }
   html+='<p style="font-size:12px;color:#8B97A3;margin-top:12px">Rangspalte: Platz im gesamten Kader über alle mit Wert für diese Messung. Bei mehreren Durchgängen zählt der letzte.</p>';
@@ -1347,7 +1377,9 @@ function spFrac(k,v){
 }
 function spiderChart(p,g){
   var W=SPW,H=SPH,cx=W/2,cy=H/2+2,R=92,ZMAX=2.5,RIN=0.1, isZ=(spScale==="z");
-  var ax=SPIDER.map(function(k){ return {k:k,m:MET[k],z:zOf(p,k,g),v:p.val[k],st:groupStat(g,k)}; });
+  var axes=spiderAxes();
+  if(axes.length<3) return "";   /* ein Netz braucht mindestens drei Achsen */
+  var ax=axes.map(function(k){ return {k:k,m:MET[k],z:zOf(p,k,g),v:p.val[k],st:groupStat(g,k)}; });
   ax.forEach(function(a){
     a.pos = isZ ? a.z : spFrac(a.k,a.v);
     a.ref = a.st ? (isZ ? 0 : spFrac(a.k,a.st.mean)) : null;
@@ -1459,24 +1491,24 @@ function renderSingle(){
   }
 
   var gl=groupList(g).length;
-  var spider=spiderChart(p,g);
+  var spider=TB("spider")?spiderChart(p,g):"";
   var chart=spider?'<div class="panel spiderpanel"><div class="phead"><h3>Leistungsprofil</h3><span style="display:flex;gap:6px;flex-wrap:wrap">'+spScaleSelect()+refSelect(p)+'</span></div>'+
     '<div class="hint">'+spHint(g)+(refGroup==="auto"&&g!==autoRef(p)?' In der eigenen Bootsklasse gibt es zu wenige Werte, daher Vergleich gegen alle ('+gl+').':
      refGroup==="auto"?' Vergleichsgruppe automatisch nach Bootsklasse ('+gl+').':' Vergleichsgruppe: '+gl+' Athlet:innen.')+'</div>'+spider+'</div>':"";
 
   var groups={},go=[];
-  METRICS.forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  AM().forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
   var mkCard=function(gr,extra){
     return '<div class="panel"'+(extra||"")+'><h3>'+esc(gr)+'</h3><div class="hint">Regler zeigt die Lage zum '+esc(glabel(g))+
       ' \u2014 Mitte ist der Durchschnitt.</div>'+
-      groups[gr].map(function(m){ return metricSlider(p,m,g); }).join("")+(gr===FMS?clrLine(p.cur):"")+'</div>';
+      groups[gr].map(function(m){ return TB("deviation")?metricSlider(p,m,g):metricLine(p,m); }).join("")+(gr===FMS?clrLine(p.cur):"")+'</div>';
   };
   var anthro=groups[ANTHRO]?'<div class="anthro">'+mkCard(ANTHRO,' style="border-top-color:var(--gold)"')+'</div>':"";
   var cards=go.filter(function(gr){return gr!==ANTHRO;}).map(function(gr){ return mkCard(gr); }).join("");
 
   var runs="";
-  if(p.tests.length>1){
-    var RC=[["gew","Masse kg",1],["fmsSum","Screen Pkt",0],["swSum","Rumpf s",0],["cmj","CMJ cm",1],["fmaxRel","Fmax N/kg",1],["bz1rm","1-RM BZ kg",1],["haeng","H\u00e4ngen s",0]];
+  if(p.tests.length>1 && runCols("screen",7).length){
+    var RC=runCols("screen",7).map(function(m){ return [m.k,runLabel(m),m.d]; });
     runs='<div class="panel" style="grid-column:1/-1"><h3>Durchg\u00e4nge im Vergleich</h3>'+
       '<div class="hint">'+p.tests.length+' Messungen \u2014 die Werte oben stammen aus dem letzten Durchgang.</div>'+
       '<div style="overflow-x:auto"><table class="tst"><tr><th style="text-align:left">Durchgang</th>'+
@@ -1492,10 +1524,21 @@ function renderSingle(){
   }
   box.innerHTML=head+anthro+'<div class="mgrid">'+chart+cards+runs+'</div>';
 }
+/* Rangplatz im Kader als kleiner Zusatz (Baustein „Rang“ der Vorlage) */
+function rankTag(p,m){
+  if(!TB("rank")||m.dir===0) return "";
+  var rk=rankOf(p,m.k); return rk?' <span class="rnk" title="Platz im gesamten Kader">Platz '+rk.r+'/'+rk.n+'</span>':"";
+}
+/* Ohne Baustein „Vergleich zur Gruppe“: nur Name und Wert */
+function metricLine(p,m){
+  var qq=p.cur.q[m.k];
+  return '<div class="mline mlite"><span class="lbl">'+esc(m.t)+(m.u?' <span style="color:#8B97A3">'+esc(m.u)+'</span>':'')+
+    (qq?' <span class="qb">Q '+esc(qq)+'</span>':'')+rankTag(p,m)+'</span><span class="mv2">'+de(p.val[m.k],m.d)+'</span></div>';
+}
 function metricSlider(p,m,g){
   var v=p.val[m.k], d=devOf(p,m.k,g), st=groupStat(g,m.k), qq=p.cur.q[m.k];
   var lbl='<span class="lbl">'+esc(m.t)+(m.u?' <span style="color:#8B97A3">'+esc(m.u)+'</span>':'')+
-    (qq?' <span class="qb" title="Qualit\u00e4t der Ausf\u00fchrung">Q '+esc(qq)+'</span>':'')+'</span>';
+    (qq?' <span class="qb" title="Qualit\u00e4t der Ausf\u00fchrung">Q '+esc(qq)+'</span>':'')+rankTag(p,m)+'</span>';
   if(!d||!st||st.n<2){
     return '<div class="mline">'+lbl+'<span class="mv2">'+de(v,m.d)+'</span>'+
       '<span class="dev n">\u2014</span><span class="regwrap"><span class="reg"></span>'+
@@ -1855,20 +1898,20 @@ function buildTables(){
   players.forEach(function(p){
     kader.push([p.name,p.cls,p.kader,p.side,dobDe(p.dob),p.age,p.tests.length,p.cur.date?dobDe(p.cur.date):"",p.image||""]); });
 
-  var lh=["Name","Bootsklasse","Kader","Letzter Test"].concat(METRICS.map(mName));
+  var lh=["Name","Bootsklasse","Kader","Letzter Test"].concat(AM().map(mName));
   var leist=[lh];
   players.filter(function(p){return p.hasVal;}).forEach(function(p){
-    leist.push([p.name,p.cls,p.kader,p.cur.date?dobDe(p.cur.date):""].concat(METRICS.map(function(m){return p.val[m.k];}))); });
+    leist.push([p.name,p.cls,p.kader,p.cur.date?dobDe(p.cur.date):""].concat(AM().map(function(m){return p.val[m.k];}))); });
 
-  var rh=["Name","Testdatum","Bootsklasse","Kader","Clearing li","Clearing re"].concat(METRICS.map(mName)).concat(QUAL_KEYS.map(function(k){return "Qualität "+MET[k].t;}));
+  var rh=["Name","Testdatum","Bootsklasse","Kader","Clearing li","Clearing re"].concat(AM().map(mName)).concat(QK().map(function(k){return "Qualität "+MET[k].t;}));
   var roh=[rh];
   tests.slice().sort(function(a,b){ return a.name.localeCompare(b.name,"de")||((testKey(a)||0)-(testKey(b)||0)); }).forEach(function(t){
     roh.push([t.name,t.date?dobDe(t.date):"",t.cls||"",t.kader||"",clrTxt(t.clrL),clrTxt(t.clrR)]
-      .concat(METRICS.map(function(m){return t[m.k]==null?"":t[m.k];}))
-      .concat(QUAL_KEYS.map(function(k){return t.q[k]||"";}))); });
+      .concat(AM().map(function(m){return t[m.k]==null?"":t[m.k];}))
+      .concat(QK().map(function(k){return t.q[k]||"";}))); });
 
   var rank=[["Messung","Einheit","Richtung","1.","Wert","2.","Wert","3.","Wert","Ø Gesamt","n"]];
-  METRICS.forEach(function(m){
+  AM().forEach(function(m){
     if(m.dir===0) return;
     var l=withMetric(m.k,""); if(!l.length) return;
     var avg=l.reduce(function(a,p){return a+p.val[m.k];},0)/l.length;
@@ -1888,10 +1931,10 @@ function buildTables(){
     var row=players.filter(function(p){return (p.kader||"")===k;});
     km.push([k||"ohne Angabe"].concat(cl.map(function(c){ return row.filter(function(p){return p.cls===c;}).length; })).concat([row.length]));
   });
-  var cm=[["Bootsklasse","Anzahl","Ø Alter"].concat(METRICS.filter(function(m){return m.dir!==0;}).map(function(m){return "Ø "+mName(m);}))];
+  var cm=[["Bootsklasse","Anzahl","Ø Alter"].concat(AM().filter(function(m){return m.dir!==0;}).map(function(m){return "Ø "+mName(m);}))];
   cl.forEach(function(c){
     var l=players.filter(function(p){return p.cls===c;});
-    cm.push([c,l.length,+s.ageOf(l).toFixed(1)].concat(METRICS.filter(function(m){return m.dir!==0;}).map(function(m){
+    cm.push([c,l.length,+s.ageOf(l).toFixed(1)].concat(AM().filter(function(m){return m.dir!==0;}).map(function(m){
       var v=l.map(function(p){return p.val[m.k];}).filter(function(x){return x!=null;});
       return v.length?+(v.reduce(function(a,b){return a+b;},0)/v.length).toFixed(3):""; })));
   });
@@ -1917,11 +1960,11 @@ function exportXlsx(){
       XLSX.utils.book_append_sheet(wb,w,name); };
     var mc=function(n){ var a=[]; for(var i=0;i<n;i++) a.push({wch:13}); return a; };
     add(t.kader,"Kader",[{wch:28},{wch:14},{wch:14},{wch:8},{wch:13},{wch:7},{wch:14},{wch:12},{wch:32}]);
-    add(t.leist,"Leistung aktuell",[{wch:28},{wch:14},{wch:14},{wch:12}].concat(mc(METRICS.length)));
+    add(t.leist,"Leistung aktuell",[{wch:28},{wch:14},{wch:14},{wch:12}].concat(mc(AM().length)));
     add(t.rank,"Ranglisten",[{wch:28},{wch:10},{wch:18},{wch:26},{wch:9},{wch:26},{wch:9},{wch:26},{wch:9},{wch:10},{wch:5}]);
-    add(t.cm,"Bootsklassen",[{wch:16},{wch:8},{wch:8}].concat(mc(METRICS.length)));
+    add(t.cm,"Bootsklassen",[{wch:16},{wch:8},{wch:8}].concat(mc(AM().length)));
     add(t.km,"Kader x Bootsklasse",[{wch:18}].concat(mc(classes().length+1)));
-    add(t.roh,"Leistung Rohdaten",[{wch:28},{wch:12},{wch:14},{wch:14},{wch:11},{wch:11}].concat(mc(METRICS.length+QUAL_KEYS.length)));
+    add(t.roh,"Leistung Rohdaten",[{wch:28},{wch:12},{wch:14},{wch:14},{wch:11},{wch:11}].concat(mc(AM().length+QK().length)));
     add(t.kz,"Kennzahlen",[{wch:30},{wch:32}]);
     XLSX.writeFile(wb,"Segeln_Kadertest_Gesamtuebersicht_"+stamp()+".xlsx");
     toast("Excel gespeichert: 7 Blätter, inklusive Ranglisten und Bootsklassen-Mittelwerten.");
@@ -1932,14 +1975,18 @@ function exportXlsx(){
 /* Maße und Schriftgrößen des PDF an einer Stelle */
 var PDF={ rh:16.5, gh:14.5, fLabel:8.8, fValue:10.5, fDev:8.5, fScale:6.8, fGroup:8.8,
           trackY:4.8, scaleY:11.2, W:210, foot:277, top:40 };
+/* Zeilenhöhe: mit „Vergleich zur Gruppe“ Platz für Regler und Skala, sonst eine schlanke Zeile */
+function rowH(){ return TB("deviation")?PDF.rh:9.2; }
+function pdfCut(t,n){ t=String(t); return t.length>n?t.slice(0,n-1)+"\u2026":t; }
+function tplTag(){ return (window.KVApp&&!KVApp.tplIsAll())?"  \u00b7  Vorlage: "+KVApp.tplName():""; }
 function pdfTxt(s){ return String(s==null?"":s).replace(/\u2212/g,"-").replace(/\u2009/g," "); }
 function pdfMetricItems(p){
   var groups={},go=[],items=[];
-  METRICS.forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  AM().forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
   orderGroups(go).forEach(function(g){
     if(g===ANTHRO) return;
     items.push({h:true,t:g,hh:PDF.gh});
-    groups[g].forEach(function(m){ items.push({h:false,m:m,hh:PDF.rh}); });
+    groups[g].forEach(function(m){ items.push({h:false,m:m,hh:rowH()}); });
     if(g===FMS && (p.cur.clrL!=null||p.cur.clrR!=null)) items.push({h:false,clr:true,hh:9});
   });
   return items;
@@ -1974,6 +2021,12 @@ function pdfMetricRow(doc,p,m,g,x,y){
   doc.text(m.t+(m.u?" ("+m.u+")":"")+(qq?"  Q "+qq:""),x[0],y);
   doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fValue); doc.setTextColor(18,22,27);
   doc.text(de(v,m.d),x[1],y,{align:"right"});
+  var rk=(TB("rank")&&m.dir!==0)?rankOf(p,m.k):null;
+  if(!TB("deviation")){
+    if(rk){ doc.setFont("helvetica","normal"); doc.setFontSize(PDF.fDev); doc.setTextColor(120,131,142); doc.text("Platz "+rk.r+"/"+rk.n,x[2],y,{align:"right"}); }
+    doc.setDrawColor(236,239,242); doc.setLineWidth(0.2); doc.line(x[0],y+2.8,x[2],y+2.8);
+    return;
+  }
 
   var x0=x[0], x1=x[2], wdt=x1-x0, mid=x0+wdt/2, ty=y+PDF.trackY;
   if(!dv||!st||st.n<2){
@@ -2000,7 +2053,7 @@ function pdfMetricRow(doc,p,m,g,x,y){
   doc.setFont("helvetica","normal"); doc.setFontSize(PDF.fScale); doc.setTextColor(150,160,170);
   doc.text("-"+span+" "+dv.unit,x0,y+PDF.scaleY);
   doc.setTextColor(120,131,142);
-  doc.text("\u00d8 "+de(st.mean,meanD(m)),mid,y+PDF.scaleY,{align:"center"});
+  doc.text("\u00d8 "+de(st.mean,meanD(m))+(rk?"  \u00b7  Platz "+rk.r+"/"+rk.n:""),mid,y+PDF.scaleY,{align:"center"});
   doc.setTextColor(150,160,170);
   doc.text("+"+span+" "+dv.unit,x1,y+PDF.scaleY,{align:"right"});
 }
@@ -2055,18 +2108,20 @@ function pdfPageOne(doc,p,photo,chart,refG,total){
     sy+=8.6;
   });
 
-  doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fGroup); doc.setTextColor(201,138,4);
-  doc.text(ANTHRO.toUpperCase(),112,y);
-  doc.setDrawColor(205,212,219); doc.line(112,y+2,192,y+2);
-  var ay=y+10, AX=[112,170,192];
-  if(p.hasVal){
-    [MET.gr,MET.gew,MET.bmi].forEach(function(m){
-      if(p.val[m.k]==null) return;
-      pdfMetricRow(doc,p,m,refG,AX,ay); ay+=16.5;
-    });
-  } else {
-    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(110,120,130);
-    doc.text("Keine Messwerte vorhanden.",112,ay);
+  var antM=[MET.gr,MET.gew,MET.bmi].filter(function(m){ return inTpl(m.k); }), ay=y+10, AX=[112,170,192];
+  if(antM.length){
+    doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fGroup); doc.setTextColor(201,138,4);
+    doc.text(ANTHRO.toUpperCase(),112,y);
+    doc.setDrawColor(205,212,219); doc.line(112,y+2,192,y+2);
+    if(p.hasVal){
+      antM.forEach(function(m){
+        if(p.val[m.k]==null) return;
+        pdfMetricRow(doc,p,m,refG,AX,ay); ay+=TB("deviation")?16.5:rowH()+1;
+      });
+    } else {
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(110,120,130);
+      doc.text("Keine Messwerte vorhanden.",112,ay);
+    }
   }
 
   var cw=104, cy0=Math.max(sy,ay)+8, ch=cw*SPH/SPW;
@@ -2082,14 +2137,15 @@ function pdfPageOne(doc,p,photo,chart,refG,total){
     }catch(e){}
   } else ch=0;
 
-  if(p.tests.length>1){
+  var RCp=runCols("pdf",6);
+  if(p.tests.length>1 && RCp.length){
     var ty2=cy0+ch+14;
     if(ty2<PDF.foot-26){
       doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fGroup); doc.setTextColor(col[0],col[1],col[2]);
       doc.text("DURCHG\u00c4NGE IM VERGLEICH",18,ty2);
       doc.setDrawColor(205,212,219); doc.line(18,ty2+2,192,ty2+2);
-      var cols=[["Durchgang",18,"left"],["Masse kg",70,"right"],["Screen Pkt",94,"right"],["CMJ cm",118,"right"],
-                ["Fmax N/kg",144,"right"],["1-RM BZ kg",170,"right"],["H\u00e4ngen s",192,"right"]];
+      var xr=function(i){ return RCp.length>1?70+i*(122/(RCp.length-1)):192; };
+      var cols=[["Durchgang",18,"left"]].concat(RCp.map(function(m,i){ return [pdfCut(runLabel(m),RCp.length>5?13:16),xr(i),"right"]; }));
       var hy=ty2+8;
       doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(110,120,130);
       cols.forEach(function(c){ doc.text(c[0],c[1],hy,{align:c[2]}); });
@@ -2102,7 +2158,7 @@ function pdfPageOne(doc,p,photo,chart,refG,total){
         doc.setFont("helvetica",akt?"bold":"normal"); doc.setFontSize(9);
         doc.setTextColor(akt?46:60,akt?125:70,akt?79:80);
         doc.text(testLabel(t,i)+(akt?"  (aktuell)":""),18,ry);
-        var vals=[[t.gew,1,70],[t.fmsSum,0,94],[t.cmj,1,118],[t.fmaxRel,1,144],[t.bz1rm,1,170],[t.haeng,0,192]];
+        var vals=RCp.map(function(m,k){ return [t[m.k],m.d,xr(k)]; });
         doc.setFont("helvetica","bold"); doc.setTextColor(18,22,27);
         vals.forEach(function(a){
           if(a[0]==null){ doc.setTextColor(175,182,190); doc.text("-",a[2],ry,{align:"right"}); doc.setTextColor(18,22,27); }
@@ -2128,14 +2184,14 @@ function pdfPageN(doc,p,refG,cols,seite,total){
   doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(14);
   doc.text(p.name.toUpperCase(),18,14);
   doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(149,162,174);
-  doc.text("Leistungsdiagnostik  ·  letzter Testdurchgang  ·  Vergleich gegen "+glabel(refG),18,21);
+  doc.text("Leistungsdiagnostik  ·  letzter Testdurchgang"+(TB("deviation")?"  ·  Vergleich gegen "+glabel(refG):"")+tplTag(),18,21);
   var lc=(col[0]+col[1]+col[2]<200)?[91,132,177]:col;
   doc.setTextColor(lc[0],lc[1],lc[2]); doc.setFont("helvetica","bold"); doc.setFontSize(16);
   doc.text(p.cls||"",W-18,17,{align:"right"});
 
   if(!cols.length){
     doc.setFont("helvetica","normal"); doc.setFontSize(10.5); doc.setTextColor(110,120,130);
-    doc.text("Im letzten Durchgang sind keine Messwerte eingetragen.",18,PDF.top);
+    doc.text(p.hasVal?"F\u00fcr die gew\u00e4hlte Vorlage liegen keine Messwerte vor.":"Im letzten Durchgang sind keine Messwerte eingetragen.",18,PDF.top);
     pdfFoot(doc,p,seite,total); return;
   }
   var X=[[18,78,96],[112,172,190]];
@@ -2190,7 +2246,7 @@ function printFallback(list,phs,chs){
     var perf="";
     if(p.hasVal){
       var groups={},go=[];
-      METRICS.forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+      AM().forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
       perf=orderGroups(go).map(function(g){ return '<h2>'+esc(g).toUpperCase()+'</h2><table>'+groups[g].map(function(m){
         var rk=(m.dir!==0)?rankOf(p,m.k):null, qq=p.cur.q[m.k];
         return '<tr><td class="k">'+esc(mName(m))+(qq?" · Q "+esc(qq):"")+'</td><td class="v">'+de(p.val[m.k],m.d)+
@@ -2244,7 +2300,7 @@ function svgToPng(svg,W,H,scale){
 }
 function resolveCharts(list){
   return Promise.all(list.map(function(p){
-    if(!p.hasVal) return Promise.resolve(null);
+    if(!p.hasVal || !TB("spider")) return Promise.resolve(null);
     return svgToPng(spiderChart(p,effRef(p)),SPW,SPH,3);
   }));
 }

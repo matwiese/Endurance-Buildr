@@ -13,6 +13,7 @@ var KVApp = (function () {
     ready: false, persistent: false, dirty: false, busy: "",
     results: [], aliases: {}, excel: {}, table: [], defs: [], info: {},
     settings: { agg: "best", thr: 20, keepRaw: true, fillCmjSj: true, skipKnown: true },
+    templates: [], activeTpl: "tpl:alle", custom: [], imports: [], tplVer: 0,
     sel: new Set()
   };
   /* Erststart ohne gespeicherte Auswahl: kompakte Auswahl (gut lesbare Einzel-/Teamauswertung); VALD-Standard und „Alle“ im Tab „Parameter“ */
@@ -57,6 +58,68 @@ var KVApp = (function () {
   A.saveSettings = function () { ST.kvSet("settings", S.settings); };
   A.saveAliases = function () { ST.kvSet("aliases", S.aliases); };
 
+  /* ---------- Auswertungsvorlagen ---------- */
+  function allTemplates() { return KVTpl.builtins().concat(S.templates.map(function (t) { return KVTpl.normalize(t); })); }
+  A.templates = allTemplates;
+  A.findTemplate = function (id) { var l = allTemplates(); for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; };
+  var prepCache = { key: "", t: null };
+  A.activeTemplate = function () {
+    var key = S.activeTpl + "|" + S.tplVer;
+    if (prepCache.key !== key) { var t = A.findTemplate(S.activeTpl) || A.findTemplate("tpl:alle"); prepCache = { key: key, t: KVTpl.prepare(t) }; }
+    return prepCache.t;
+  };
+  var memo = { list: null, ver: "", out: null };
+  /* Filter für die Ausgaben (Einzelauswertung, Profilblatt, PDF, Excel): nur die Kennwerte der aktiven Vorlage */
+  A.tplMetrics = function (list) {
+    var t = A.activeTemplate(), ver = S.activeTpl + "|" + S.tplVer + "|" + list.length;
+    if (!t || t.kind === "all") return list;
+    if (memo.list === list && memo.ver === ver) return memo.out;
+    memo = { list: list, ver: ver, out: list.filter(function (m) { return KVTpl.includes(t, m); }) };
+    return memo.out;
+  };
+  A.tplBlock = function (name) { var t = A.activeTemplate(); return !t || t.blocks[name] !== false; };
+  A.tplName = function () { var t = A.activeTemplate(); return t ? t.name : ""; };
+  A.tplIsAll = function () { var t = A.activeTemplate(); return !t || t.kind === "all"; };
+  /* alle wählbaren Kennwerte: sportmotorisch (inkl. eigene Parameter) und Sprungkennwerte */
+  A.universe = function () {
+    return { metrics: STATIC_METRICS.map(function (m) { return m.k; }).concat(S.custom.map(function (m) { return m.k; })),
+      groups: KVTpl.JUMP_GROUPS.slice(), params: K.ALL.map(function (p) { return p.name; }) };
+  };
+  A.saveTemplates = function () { S.tplVer++; ST.kvSet("templates", S.templates); A.renderTplSelect(); };
+  A.setActive = function (id) {
+    if (!A.findTemplate(id)) id = "tpl:alle";
+    S.activeTpl = id; S.tplVer++; ST.kvSet("activeTemplate", id);
+    A.refresh(true); A.renderTplSelect();
+    if (tab === "templates" && A.renderTemplates) A.renderTemplates();
+  };
+  A.renderTplSelect = function () {
+    var sel = document.getElementById("tplSel"); if (!sel) return;
+    var b = KVTpl.builtins(), own = S.templates.slice().sort(function (x, y) { return x.name.localeCompare(y.name, "de"); });
+    sel.replaceChildren();
+    var og = function (label, list) { var g = document.createElement("optgroup"); g.label = label; list.forEach(function (t) { var o = document.createElement("option"); o.value = t.id; o.textContent = t.name; o.selected = t.id === S.activeTpl; g.append(o); }); return g; };
+    sel.append(og("Vorlagen", b)); if (own.length) sel.append(og("Meine Vorlagen", own));
+    sel.value = A.findTemplate(S.activeTpl) ? S.activeTpl : "tpl:alle";
+    var note = document.getElementById("tplNote");
+    if (note) { note.textContent = A.tplIsAll() ? "" : "Vorlage: " + A.tplName(); note.hidden = A.tplIsAll(); }
+  };
+
+  /* ---------- Zusatzdaten aus CSV (eigene Parameter und weitere Messwerte) ---------- */
+  A.addImport = function (rec, newDefs) {
+    newDefs.forEach(function (d) { if (!S.custom.some(function (x) { return x.k === d.k; })) S.custom.push(d); });
+    S.imports.push(rec);
+    ST.kvSet("custom", S.custom); ST.kvSet("imports", S.imports); S.tplVer++;
+  };
+  A.removeImport = function (id) { S.imports = S.imports.filter(function (x) { return x.id !== id; }); ST.kvSet("imports", S.imports); S.tplVer++; };
+  /* ein eigener Parameter samt seiner Werte (in allen Importen) und Erwähnung in Vorlagen entfernen */
+  A.removeCustom = function (key) {
+    S.custom = S.custom.filter(function (d) { return d.k !== key; });
+    S.imports.forEach(function (imp) { imp.rows.forEach(function (r) { delete r[key]; }); });
+    S.imports = S.imports.filter(function (imp) { return imp.rows.some(function (r) { return Object.keys(r).some(function (k) { return k !== "name" && k !== "date" && k !== "q"; }); }); });
+    S.templates.forEach(function (t) { t.metrics = (t.metrics || []).filter(function (k) { return k !== key; }); });
+    ST.kvSet("custom", S.custom); ST.kvSet("imports", S.imports); ST.kvSet("templates", S.templates); S.tplVer++;
+  };
+  A.saveCustom = function () { ST.kvSet("custom", S.custom); S.tplVer++; };
+
   /* ---------- Zuordnung VALD-Name → Name im Rohdatenblatt ---------- */
   function resolver(excel) {
     var canons = Object.keys(excel);
@@ -81,18 +144,46 @@ var KVApp = (function () {
   };
 
   /* ---------- Einmischen in die Testzeilen (Aufruf aus rebuildTests) ---------- */
+  /* CSV-Zusatzdaten in die Zeilen des Rohdatenblatts mischen (nach Name und Testtag; weitere Personen kommen als eigene Zeilen dazu) */
+  function mergeImports(rows) {
+    var info = { rows: 0, added: 0, unmatched: {} };
+    if (!S.imports.length) return info;
+    var hadBase = rows.length > 0, canons = {}, idx = {};
+    rows.forEach(function (r) { var c = K.canonName(r.name); if (c && !canons[c]) canons[c] = r.name; idx[c + "|" + dateKey(r.date)] = r; });
+    S.imports.forEach(function (imp) {
+      imp.rows.forEach(function (ir) {
+        var c = K.canonName(ir.name), al = S.aliases[c];
+        if (al && al !== OWN) c = K.canonName(al);
+        var hit = K.findMatch(c, Object.keys(canons)), key = hit || c, ik = key + "|" + dateKey(ir.date), row = idx[ik];
+        if (!row) {
+          row = { name: hit ? canons[hit] : ir.name, date: ir.date || "", q: {}, importOnly: true }; rows.push(row); idx[ik] = row; if (!hit) canons[c] = ir.name; info.added++;
+          if (!hit && hadBase) info.unmatched[ir.name] = (info.unmatched[ir.name] || 0) + 1;
+        }
+        Object.keys(ir).forEach(function (k) {
+          if (k === "name" || k === "date" || k === "q" || ir[k] == null) return;
+          if (!imp.overwrite && row[k] != null) return;   /* Blattwerte bleiben, außer der Import ist zum Überschreiben gedacht */
+          row[k] = ir[k];
+        });
+        info.rows++;
+      });
+    });
+    return info;
+  }
   A.mergeRows = function (rows) {
-    var excel = {};
+    var imp = mergeImports(rows), excel = {};
     rows.forEach(function (r) { var c = K.canonName(r.name); if (c && !excel[c]) excel[c] = r.name; });
     S.excel = excel;
     var hadExcel = Object.keys(excel).length > 0;
-    var names = selNames(), need = names.slice(); if (need.indexOf(K.BEST_KEY) < 0) need.push(K.BEST_KEY);
+    var names = selNames();
+    var tpl = A.activeTemplate();   /* die Sprungkennwerte der aktiven Vorlage stehen immer zur Verfügung, auch wenn sie im Reiter „Parameter“ nicht angehakt sind */
+    if (tpl && tpl.kind === "list") tpl.jump.params.forEach(function (n) { if (K.BYNAME[n] && names.indexOf(n) < 0) names.push(n); });
+    var need = names.slice(); if (need.indexOf(K.BEST_KEY) < 0) need.push(K.BEST_KEY);
     var table = K.buildTable(S.results, { agg: S.settings.agg, names: need, resolve: resolver(excel) });
     var defs = K.metricDefs(table, names), keep = {}; defs.forEach(function (d) { keep[d.k] = 1; });
-    S.table = table; S.defs = defs; setDynamicMetrics(defs);
+    S.table = table; S.defs = defs; setDynamicMetrics(S.custom.concat(defs));
     var idx = {};
     rows.forEach(function (r) { idx[K.canonName(r.name) + "|" + dateKey(r.date)] = r; });   /* bei doppelten Zeilen gewinnt die untere */
-    var info = { matched: 0, added: 0, filled: [], diffs: [] };
+    var info = { matched: 0, added: 0, filled: [], diffs: [], imp: imp };
     table.forEach(function (e) {
       var k = e.key + "|" + dateKey(e.date), row = idx[k];
       if (!row) { row = { name: e.athlete, date: e.date, q: {}, jumpOnly: true }; rows.push(row); idx[k] = row; info.added++; } else info.matched++;
@@ -117,30 +208,37 @@ var KVApp = (function () {
   /* ---------- Daten ändern → Auswertung neu aufbauen ---------- */
   /* quiet: die Ansicht der Tabs „Sprungdaten“/„Parameter“ nicht neu aufbauen (z. B. beim Anhaken von Kennwerten) */
   A.refresh = function (quiet) {
-    if (typeof DEMO !== "undefined" && DEMO && S.results.some(K.usable)) { DEMO = false; FILE = "Sprungspeicher (VALD)"; BASE_ROWS = []; }
+    if (typeof DEMO !== "undefined" && DEMO && (S.results.some(K.usable) || S.imports.length)) { DEMO = false; FILE = S.results.length ? "Sprungspeicher (VALD)" : "CSV-Import"; BASE_ROWS = []; }
     S.dirty = !quiet; rebuildTests(); render();
   };
   A.afterRender = function () {
     if (!S.dirty) return; S.dirty = false;
     if (tab === "sprung" && A.renderSprung) A.renderSprung();
     if (tab === "parameter" && A.renderParams) A.renderParams();
+    if (tab === "templates" && A.renderTemplates) A.renderTemplates();
   };
   A.onTab = function (t) {
     if (t === "sprung" && A.renderSprung) A.renderSprung();
     if (t === "parameter" && A.renderParams) A.renderParams();
+    if (t === "templates" && A.renderTemplates) A.renderTemplates();
   };
   A.rememberBase = function (rows, fname, fotos) { ST.kvSet("base", { rows: rows, file: fname, fotos: fotos || {}, saved: Date.now() }); };
 
   /* ---------- Hinweise für das Blatt „Datenqualität“ ---------- */
   A.flags = function (f) {
-    var all = S.results;
-    if (!all.length) return f;
+    var all = S.results, out = f.slice();
+    if (!A.tplIsAll()) out.push(["Auswertungsvorlage aktiv", "„" + A.tplName() + "“ – Einzelauswertung, Profilblatt, PDF und Excel zeigen nur die Kennwerte dieser Vorlage. Wechsel oben rechts oder im Reiter „Auswertungstemplates“.", "ok"]);
+    if (S.imports.length) {
+      var ii = S.info.imp || { rows: 0, added: 0, unmatched: {} }, un0 = Object.keys(ii.unmatched || {});
+      out.push(["Zusatzdaten aus CSV", S.imports.length + " Import(e) mit " + ii.rows + " Zeilen, " + S.custom.length + " eigene Parameter. Verwaltung im Reiter „Auswertungstemplates“.", "ok"]);
+      if (un0.length) out.push(["CSV-Namen nicht im Rohdatenblatt", un0.join(", ") + " — kein gleicher Name im Blatt gefunden; sie erscheinen als eigene Personen ohne Bootsklasse."]);
+    }
+    if (!all.length) return out;
     var use = all.filter(K.usable), athletes = {}, days = {}, types = {};
     all.forEach(function (r) { athletes[r.athlete] = 1; });
     use.forEach(function (r) { if (r.date) days[r.date] = 1; });
     all.forEach(function (r) { var t = K.typeOf(r); types[t] = (types[t] || 0) + 1; });
     var tt = Object.keys(types).map(function (t) { return types[t] + "× " + A.typeLabel(t); }).join(", ");
-    var out = f.slice();
     out.push(["Sprungspeicher (VALD)", all.length + " Sprünge von " + Object.keys(athletes).length + " Athlet:innen an " + Object.keys(days).length + " Testtag(en), " + use.length +
       " davon in der Auswertung · " + tt + " · Mehrere Versuche je Tag: " + K.AGG[S.settings.agg] + " · " + selNames().length + " Kennwerte ausgewählt, " + S.defs.length +
       " Metriken in Einzel- und Teamauswertung. Stand der Daten und Auswahl: Tabs „Sprungdaten“ und „Parameter“.", "ok"]);
@@ -211,38 +309,53 @@ var KVApp = (function () {
   A.backup = function (withRaw) {
     return ST.exportBlob(withRaw).then(function (blob) { saveBlob(blob, "Sprungspeicher_" + stamp() + (withRaw ? "_mit_Rohkurven" : "") + ".json"); return blob.size; });
   };
+  /* Zustand aus dem Speicher in den Arbeitsspeicher holen (Start, Wiederherstellung) */
+  A.loadState = function () {
+    Object.assign(S.settings, ST.kvGet("settings", {}));
+    S.aliases = ST.kvGet("aliases", {});
+    S.results = ST.results();
+    S.templates = (ST.kvGet("templates", []) || []).map(function (t) { return KVTpl.normalize(t); });
+    S.activeTpl = ST.kvGet("activeTemplate", "tpl:alle");
+    S.custom = ST.kvGet("custom", []) || [];
+    S.imports = ST.kvGet("imports", []) || [];
+    S.tplVer++;
+    var base = ST.kvGet("base", null);
+    return base;
+  };
   A.restore = function (file) {
-    return file.text().then(function (t) { return ST.importObject(JSON.parse(t)); }).then(function (r) {
-      S.results = ST.results(); S.aliases = ST.kvGet("aliases", {}); Object.assign(S.settings, ST.kvGet("settings", {}));
-      var base = ST.kvGet("base", null);
-      if (base && base.rows && base.rows.length && (typeof DEMO !== "undefined" && DEMO)) { FILE = base.file || FILE; DEMO = false; FOTOS = base.fotos || {}; UNKNOWN = []; BASE_ROWS = base.rows; }
-      return r;
-    });
+    return file.text().then(function (t) { return ST.importObject(JSON.parse(t)); }).then(function (r) { A.afterRestore(); return r; });
+  };
+  A.afterRestore = function () {
+    var base = A.loadState();
+    if (base && base.rows && base.rows.length && (typeof DEMO !== "undefined" && DEMO)) { FILE = base.file || FILE; DEMO = false; FOTOS = base.fotos || {}; UNKNOWN = []; BASE_ROWS = base.rows; }
+    A.renderTplSelect();
   };
   A.wipe = function () {
-    return ST.clearAll().then(function () { S.results = []; S.aliases = {}; S.settings = { agg: "best", thr: 20, keepRaw: true, fillCmjSj: true, skipKnown: true }; });
+    return ST.clearAll().then(function () {
+      S.results = []; S.aliases = {}; S.templates = []; S.activeTpl = "tpl:alle"; S.custom = []; S.imports = []; S.tplVer++;
+      S.settings = { agg: "best", thr: 20, keepRaw: true, fillCmjSj: true, skipKnown: true }; A.renderTplSelect();
+    });
   };
 
   /* ---------- Start ---------- */
   A.init = function () {
     return ST.init().then(function (info) {
       S.persistent = info.persistent;
-      Object.assign(S.settings, ST.kvGet("settings", {}));
-      S.aliases = ST.kvGet("aliases", {});
-      S.results = ST.results();
+      var base = A.loadState();
       loadSel();
       S.ready = true;
-      var base = ST.kvGet("base", null);
+      A.renderTplSelect();
       if (base && base.rows && base.rows.length) {
         FILE = base.file || "Gespeichertes Rohdatenblatt"; DEMO = false; FOTOS = base.fotos || {}; UNKNOWN = [];
         ingestRows(base.rows); render();
         toast("Gespeicherte Daten geladen: " + players.length + " Athlet:innen" + (S.results.length ? ", " + S.results.length + " Sprünge" : "") + ".", 4500);
-      } else if (S.results.length) {
-        FILE = "Sprungspeicher (VALD)"; DEMO = false; ingestRows([]); render();
-        toast("Sprungspeicher geladen: " + S.results.length + " Sprünge.", 4500);
-      }
+      } else if (S.results.length || S.imports.length) {
+        FILE = S.results.length ? "Sprungspeicher (VALD)" : "CSV-Import"; DEMO = false; ingestRows([]); render();
+        toast("Gespeicherte Daten geladen" + (S.results.length ? ": " + S.results.length + " Sprünge" : "") + ".", 4500);
+      } else if (S.templates.length || S.activeTpl !== "tpl:alle") { rebuildTests(); render(); }
       ST.persist();
-      if (tab === "sprung" || tab === "parameter") A.onTab(tab);
+      KVSync.init().then(function (sy) { if (sy.handle && sy.perm !== "granted") toast("Sicherungsordner: Zugriff bitte im Reiter „Auswertungstemplates“ bestätigen.", 6500); });
+      if (tab === "sprung" || tab === "parameter" || tab === "templates") A.onTab(tab);
     });
   };
   return A;
