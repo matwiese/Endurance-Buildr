@@ -1,0 +1,1908 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprint FVP — Team &amp; Einzelauswertung</title>
+<link rel="stylesheet" media="print" onload="this.media='all'"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#12161B; --ink-2:#4A555F; --line:#D5DAE0; --line-soft:#E6E9ED;
+  --paper:#EDEFF2; --card:#FFFFFF; --red:#D8232A; --red-soft:#FBE9EA;
+  --navy:#1B3A5C; --navy-soft:#E7ECF2; --gold:#C98A04; --gold-soft:#FBF2DC;
+  --green:#2E7D4F; --purple:#7A3E9D;
+  --disp:"Barlow Condensed","Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-family:var(--disp);font-weight:700;letter-spacing:.01em;line-height:1.02}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.hidden{display:none!important}
+
+.top{background:var(--ink);color:#fff;padding:26px 0 0;border-bottom:5px solid var(--red)}
+.top-grid{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;padding-bottom:20px}
+.eyebrow{font-family:var(--disp);font-size:14px;letter-spacing:.22em;text-transform:uppercase;color:#95A2AE;font-weight:600}
+.top h1{font-size:clamp(30px,5.4vw,52px);text-transform:uppercase;margin-top:6px}
+.top h1 .thin{color:#7C8894;font-weight:500}
+.src{font-size:12.5px;color:#8B97A3;margin-top:9px;font-variant-numeric:tabular-nums}
+.actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+button{font-family:var(--body);font-size:13.5px;font-weight:600;cursor:pointer;border-radius:2px;border:1px solid transparent;padding:10px 15px;transition:.13s}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn-p{background:var(--red);color:#fff} .btn-p:hover{background:#B31C22}
+.btn-s{background:transparent;color:#fff;border-color:#4C5764} .btn-s:hover{border-color:#fff}
+.btn-g{background:var(--ink);color:#fff} .btn-g:hover{background:#2B333C}
+.btn-o{background:#fff;color:var(--ink);border-color:var(--line)} .btn-o:hover{border-color:var(--ink)}
+.tabs{display:flex;gap:2px;flex-wrap:wrap}
+.tab{background:transparent;color:#95A2AE;border:0;border-bottom:3px solid transparent;padding:12px 18px;
+  font-family:var(--disp);font-size:16px;letter-spacing:.11em;text-transform:uppercase;font-weight:600}
+.tab:hover{color:#fff}
+.tab[aria-selected=true]{color:#fff;border-bottom-color:var(--red)}
+
+section{padding:32px 0 6px}
+.sec-head{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:7px;margin-bottom:18px;flex-wrap:wrap}
+.sec-head h2{font-size:23px;text-transform:uppercase}
+.sec-head .note{font-size:12.5px;color:var(--ink-2);margin-left:auto}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px}
+.kpi{background:var(--card);border:1px solid var(--line-soft);border-top:3px solid var(--ink);padding:14px 16px 15px}
+.kpi.k-red{border-top-color:var(--red)} .kpi.k-navy{border-top-color:var(--navy)}
+.kpi.k-gold{border-top-color:var(--gold)} .kpi.k-green{border-top-color:var(--green)}
+.kpi .val{font-family:var(--disp);font-size:40px;font-weight:700;line-height:.9;font-variant-numeric:tabular-nums}
+.kpi .val .u{font-family:var(--body);font-size:13px;font-weight:600;color:var(--ink-2);margin-left:5px}
+.kpi .lab{font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-2);margin-top:9px;font-weight:600;line-height:1.3}
+.kpi .sub{font-size:12.5px;color:var(--ink-2);margin-top:4px}
+
+.bar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+select,input[type=search],input[type=number],input[type=text]{font-family:var(--body);font-size:14px;padding:9px 11px;
+  border:1px solid var(--line);border-radius:2px;background:#fff;color:var(--ink)}
+select{min-width:170px}
+label.fld{display:flex;flex-direction:column;gap:5px;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);font-weight:600}
+textarea{width:100%;min-height:190px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;
+  padding:12px;border:1px solid var(--line);border-radius:2px;background:#fff;color:var(--ink);line-height:1.55;resize:vertical}
+
+.panel{background:var(--card);border:1px solid var(--line-soft);padding:16px 18px 18px}
+.panel h3{font-size:17px;text-transform:uppercase;letter-spacing:.02em}
+.panel .hint{font-size:12.5px;color:var(--ink-2);margin:4px 0 12px}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}
+.chartbox{position:relative;height:280px}
+.chartbox.tall{height:340px}
+
+.tbl-box{background:var(--card);border:1px solid var(--line-soft);overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:9px 11px;text-align:left;font-size:13.5px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+th{background:#F6F7F9;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2);font-weight:700;cursor:pointer;position:sticky;top:0}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:#F8F9FB}
+tbody tr.clk{cursor:pointer}
+.tag{display:inline-block;padding:2px 8px;border-radius:2px;font-size:11.5px;font-weight:700;letter-spacing:.04em}
+.t-off{background:var(--red-soft);color:var(--red)} .t-def{background:var(--navy-soft);color:var(--navy)}
+.t-none{background:#ECEFF2;color:var(--ink-2)}
+.best{font-weight:700;color:var(--green)}
+
+.hero{background:var(--card);border:1px solid var(--line-soft);border-top:4px solid var(--red);padding:18px 20px;
+  display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.hero.def{border-top-color:var(--navy)}
+.hero .jn{font-family:var(--disp);font-size:58px;font-weight:700;line-height:.85;color:var(--red)}
+.hero.def .jn{color:var(--navy)}
+.hero .nm{font-family:var(--disp);font-size:34px;font-weight:700;text-transform:uppercase;line-height:1}
+.hero .meta{font-size:13px;color:var(--ink-2);margin-top:5px}
+.hero .right{margin-left:auto;text-align:right;font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+.brow{display:grid;grid-template-columns:150px 1fr 78px;gap:10px;align-items:center;padding:5px 0;font-size:13.5px}
+.brow .track{height:15px;background:#EEF0F3;position:relative;overflow:hidden}
+.brow .fill{height:100%;background:var(--ink)}
+.brow .v{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.zrow{display:grid;grid-template-columns:160px 1fr 96px;gap:10px;align-items:center;padding:6px 0;font-size:13.5px;border-bottom:1px solid var(--line-soft)}
+.zbar{position:relative;height:17px;background:#F1F3F5}
+.zbar .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#B9C0C7}
+.zbar .seg{position:absolute;top:2px;bottom:2px}
+.zv{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-size:12.5px}
+
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:16px}
+.slot{background:var(--card);border:1px solid var(--line-soft);border-left:5px solid #ccc;padding:10px 12px}
+.slot .lab{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);font-weight:700;margin-bottom:7px;
+  display:flex;align-items:center;gap:7px}
+.slot .dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.slot select{width:100%;min-width:0}
+.slot .st{font-size:12px;color:var(--ink-2);margin-top:7px;font-variant-numeric:tabular-nums;min-height:18px}
+
+.msg{padding:11px 14px;border-left:4px solid var(--gold);background:var(--gold-soft);font-size:13.5px;margin-bottom:14px}
+.msg.ok{border-left-color:var(--green);background:#E8F3EC}
+.msg.err{border-left-color:var(--red);background:var(--red-soft)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin:10px 0 4px}
+.legend i{width:14px;height:4px;display:inline-block;margin-right:6px;vertical-align:middle}
+.empty{background:var(--card);border:1px dashed var(--line);padding:38px 22px;text-align:center;color:var(--ink-2);font-size:14px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(140%);background:var(--ink);color:#fff;
+  padding:12px 20px;border-radius:2px;font-size:13.5px;transition:.24s;z-index:60;max-width:88vw}
+#toast.on{transform:translateX(-50%) translateY(0)}
+.foot{margin:44px 0 30px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-2)}
+/* ===== Einzelauswertung: Aufbau aus dem Split-Time FVP Profiler ===== */
+.stage{padding:30px 0 6px;border-bottom:1px solid var(--line);}
+.stage:last-of-type{border-bottom:none}
+.stage-label{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.stage-num{font-size:11px;letter-spacing:.11em;color:var(--red);border:1px solid var(--red-soft);
+  background:var(--red-soft);padding:3px 8px;font-weight:700;white-space:nowrap}
+.stage-title{font-family:var(--disp);font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.02em}
+.stage-desc{color:var(--ink-2);font-size:13.5px;margin:8px 0 18px;max-width:660px}
+
+svg.track{width:100%;height:auto;display:block}
+.gate-line{stroke:var(--line-soft);stroke-width:1}
+.gate-post{stroke:#B9C0C7;stroke-width:1.4}
+.gate-dot{transition:fill .2s}
+.gate-dot.filled{fill:var(--navy)}
+.gate-dot.empty{fill:#C9D0D6}
+.gate-label{font-size:11px;fill:var(--ink-2);font-family:var(--body)}
+.track-wrap{margin-bottom:20px}
+
+.gate-inputs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:640px){.gate-inputs{grid-template-columns:repeat(2,1fr)}}
+.gate-cell{background:#F6F7F9;border:1px solid var(--line-soft);padding:11px 12px;display:flex;flex-direction:column;gap:6px}
+.gate-cell.edited{border-color:var(--gold);background:var(--gold-soft)}
+.gate-cell-head{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--ink-2)}
+.gate-cell-head b{color:var(--ink);font-size:14px}
+.gate-cell input{padding:8px 9px;font-size:14.5px;width:100%;font-variant-numeric:tabular-nums}
+.gate-segment-block{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:4px}
+.seg-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.seg-label{font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:#8A939B}
+.seg-time,.seg-vel,.seg-acc{font-size:13px;font-variant-numeric:tabular-nums;font-weight:600}
+.seg-time{color:var(--navy)} .seg-vel{color:var(--ink)} .seg-acc{color:var(--gold)}
+.fit-quality{margin-top:18px;display:flex;flex-wrap:wrap;gap:9px 26px;font-size:13px;color:var(--ink-2);
+  font-variant-numeric:tabular-nums}
+.fit-quality b{color:var(--ink)} .fit-quality .ok{color:var(--green)} .fit-quality .warn{color:var(--gold)}
+.actions-row{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:12px}
+.tile{background:var(--card);border:1px solid var(--line-soft);border-top:3px solid var(--line);padding:15px 16px 14px}
+.tile .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:8px;font-weight:600}
+.tile .v{font-family:var(--disp);font-size:34px;font-weight:700;line-height:.95;font-variant-numeric:tabular-nums}
+.tile .u{font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--ink-2);margin-left:4px}
+.tile.accent{border-top-color:var(--red)} .tile.accent .v{color:var(--red)}
+.tile.cyan{border-top-color:var(--navy)} .tile.cyan .v{color:var(--navy)}
+
+.chart-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
+@media (max-width:800px){.chart-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--card);border:1px solid var(--line-soft);padding:15px 16px 10px}
+.chart-card h3{margin:0 0 10px;font-size:16px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink)}
+.chart-canvas-wrap{position:relative;width:100%;height:230px}
+.chart-canvas-wrap canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important}
+.chart-row2{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:800px){.chart-row2{grid-template-columns:1fr}}
+
+.finder-grid{display:grid;grid-template-columns:220px 1fr;gap:22px;align-items:center}
+@media (max-width:720px){.finder-grid{grid-template-columns:1fr}}
+.finder-input label{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);
+  display:block;margin-bottom:8px;font-weight:600}
+.finder-number{font-size:20px;padding:11px 12px;width:100%;margin-bottom:10px;border-color:var(--navy);
+  font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--navy)}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));gap:10px;margin-top:18px}
+.readout .stopwatch{grid-column:1/-1;background:var(--navy-soft);border:1px solid #CBD7E4;padding:16px 20px;
+  display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.readout .stopwatch .time{font-family:var(--disp);font-size:clamp(32px,5vw,46px);font-weight:700;color:var(--navy);
+  line-height:1;font-variant-numeric:tabular-nums}
+.readout .stopwatch .at{font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.readout-sub{background:#F6F7F9;border:1px solid var(--line-soft);padding:11px 14px}
+.readout-sub .k{font-size:11px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;font-weight:600}
+.readout-sub .v{font-family:var(--disp);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.extrap-note{margin-top:12px;font-size:12.5px;color:#9A6B03;background:var(--gold-soft);
+  border-left:4px solid var(--gold);padding:9px 12px;display:none}
+.extrap-note.show{display:block}
+.yard-refs{margin-top:20px;padding-top:18px;border-top:1px solid var(--line-soft)}
+.yard-ref-title{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);
+  margin-bottom:10px;font-weight:600}
+.yard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.yard-card{background:var(--navy-soft);border:1px solid #CBD7E4;padding:12px 16px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.yard-label{font-size:13.5px;color:var(--ink-2)} .yard-m{color:#8A939B;font-size:11.5px}
+.yard-time{font-family:var(--disp);font-size:24px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+.yard-note{margin-top:8px;font-size:11.5px;color:#9A6B03;display:none}
+.yard-note.show{display:block}
+.export-panel{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:18px}
+.export-hint{font-size:13px;color:var(--ink-2);max-width:540px} .export-hint b{color:var(--ink)}
+.print-only{display:none}
+
+@media (max-width:700px){
+  .tab{padding:11px 12px;font-size:14px}
+  .brow{grid-template-columns:110px 1fr 66px}
+  .zrow{grid-template-columns:118px 1fr 84px}
+  .hero .jn{font-size:44px}
+}
+@media print{
+  @page{margin:13mm}
+  .top .actions,.tabs,.bar,#toast,.no-print,.no-print *{display:none!important}
+  body{background:#fff}
+  .top{padding:12px 0 0;border-bottom:2px solid var(--red)}
+  .print-only{display:block}
+  .stage{padding:14px 0 2px;page-break-inside:avoid;break-inside:avoid}
+  .panel,.chart-card,.tile,.gate-cell,.yard-card,.readout-sub,.stopwatch,.kpi{page-break-inside:avoid;break-inside:avoid}
+  .chart-grid,.chart-row2,.finder-grid{grid-template-columns:1fr}
+  .chart-canvas-wrap{height:210px}
+  .gate-cell input,input[type=number]{border:none;background:transparent;padding:2px 0}
+  .yard-refs{margin-top:0;padding-top:0;border-top:none}
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="wrap">
+    <div class="top-grid">
+      <div>
+        <div class="eyebrow">Sprint-Leistungsdiagnostik &middot; 40 m Splitzeiten</div>
+        <h1>Force &ndash; Velocity <span class="thin">&ndash;</span> Power</h1>
+        <div class="src" id="srcline">Noch keine Daten geladen</div>
+      </div>
+      <div class="actions">
+        <button class="btn-p" onclick="loadDemo()">Beispieldaten laden</button>
+        <button class="btn-s" onclick="document.getElementById('fin').click()">Excel oder CSV laden</button>
+        <button class="btn-s" onclick="exportCsv()">Kennzahlen als CSV</button>
+        <input type="file" id="fin" accept=".xlsx,.xlsm,.xlsb,.xls,.ods,.csv,.txt,.tsv" class="hidden" onchange="loadFile(this)">
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tabImport"  role="tab" aria-selected="true"  onclick="setTab('import')">Massenimport</button>
+      <button class="tab" id="tabTeam"    role="tab" aria-selected="false" onclick="setTab('team')">Team&uuml;bersicht</button>
+      <button class="tab" id="tabEinzel"  role="tab" aria-selected="false" onclick="setTab('einzel')">Einzelauswertung</button>
+      <button class="tab" id="tabVergleich" role="tab" aria-selected="false" onclick="setTab('vergleich')">Vergleich</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ===================== IMPORT ===================== -->
+  <div id="viewImport">
+    <section>
+      <div class="sec-head"><h2>Massenimport der Rohdaten</h2>
+        <span class="note">CSV, Semikolon- oder Tabulator-getrennt &middot; eine Zeile je Testdurchgang</span></div>
+
+      <div class="charts" style="grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)">
+        <div class="panel">
+          <h3>Rohdaten einf&uuml;gen</h3>
+          <div class="hint">Kopfzeile mit Spaltennamen, danach je Zeile ein Sprint. Erkannt werden
+            Name, Testdatum, Koerpergroesse_m, Koerpergewicht_kg, Temperatur_C, Luftdruck_hPa und
+            Zeit_5m bis Zeit_40m, ebenso k&uuml;rzere Schreibweisen wie GROESSE oder T40 und die
+            optionalen Spalten Position und Team. Umlaute, Unterstriche und angeh&auml;ngte Einheiten
+            spielen keine Rolle, Dezimalkomma und Dezimalpunkt sind beide zul&auml;ssig. &Uuml;ber
+            <b>Excel oder CSV laden</b> lassen sich auch xlsx-, xlsm- und xls-Dateien direkt
+            einlesen; ihr Inhalt erscheint danach zum Pr&uuml;fen in diesem Feld.</div>
+          <div class="bar hidden" id="sheetBar">
+            <label class="fld">Tabellenblatt<select id="sheetSel" onchange="useSheet(this.value)"></select></label>
+            <span style="font-size:12.5px;color:var(--ink-2);align-self:end;padding-bottom:9px" id="sheetInfo"></span>
+          </div>
+          <textarea id="raw" spellcheck="false" ondragover="event.preventDefault()" ondrop="dropFile(event)" placeholder="NAME,POSITION,TEAM,DATUM,GROESSE,GEWICHT,T5,T10,T15,T20,T25,T30,T35,T40&#10;Muster Anna,Offense,Damen NT,10.03.2025,168,62,1.15,1.95,2.66,3.32,3.96,4.60,5.23,5.87"></textarea>
+          <div class="bar" style="margin:12px 0 0">
+            <button class="btn-p" onclick="runImport()">Daten importieren</button>
+            <button class="btn-o" onclick="loadDemo()">Beispieldaten laden</button>
+            <button class="btn-o" onclick="copyTemplate()">Vorlage einf&uuml;gen</button>
+            <button class="btn-o" onclick="clearAll()">Alles l&ouml;schen</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Umgebung</h3>
+          <div class="hint">Gilt f&uuml;r alle Zeilen ohne eigene Spalten TEMP und DRUCK. Beeinflusst den
+            Luftwiderstand und damit F0, Pmax und DRF.</div>
+          <div class="bar">
+            <label class="fld">Temperatur (&deg;C)<input type="number" id="gTemp" value="18" step="0.5" style="width:110px"></label>
+            <label class="fld">Luftdruck (hPa)<input type="number" id="gPress" value="1013" step="1" style="width:120px"></label>
+          </div>
+          <h3 style="margin-top:16px">Spalten</h3>
+          <div class="hint" style="margin-bottom:0">
+            <b>Pflicht:</b> Name und mindestens drei der acht Torzeiten.<br>
+            <b>Optional:</b> Position, Team, Testdatum, K&ouml;rpergr&ouml;&szlig;e (m oder cm),
+            K&ouml;rpergewicht, Temperatur, Luftdruck.<br>
+            Ohne Positionsspalte entf&auml;llt die Gruppenauswahl, alles &uuml;brige funktioniert unver&auml;ndert.<br>
+            Mehrere Zeilen mit demselben Namen werden als Durchg&auml;nge derselben Person gef&uuml;hrt,
+            sortiert nach Datum.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Importprotokoll</h2><span class="note" id="impnote">Noch nichts importiert</span></div>
+      <div id="impmsg"></div>
+      <div id="imptable"></div>
+    </section>
+  </div>
+
+  <!-- ===================== TEAM ===================== -->
+  <div id="viewTeam" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Team&uuml;bersicht</h2><span class="note" id="teamnote"></span></div>
+      <div class="bar">
+        <label class="fld">Gruppe<select id="grpSel" onchange="renderTeam()"></select></label>
+        <label class="fld">Mannschaft<select id="teamSel" onchange="renderTeam()"></select></label>
+        <label class="fld">Kennzahl f&uuml;r Rangliste<select id="metSel" onchange="renderTeam()"></select></label>
+      </div>
+      <div class="kpis" id="teamKpis"></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Rangliste</h2><span class="note">Jeweils aktuellster Durchgang</span></div>
+      <div class="panel"><h3 id="rankTitle"></h3><div class="hint" id="rankHint"></div><div id="rankBoard"></div></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Kennzahlen aller Personen</h2><span class="note">Spalten&uuml;berschrift klicken zum Sortieren &middot; Zeile klicken f&uuml;r Einzelauswertung</span></div>
+      <div class="tbl-box"><table><thead><tr id="tThead"></tr></thead><tbody id="tTbody"></tbody></table></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2 id="odTitle">Positionsvergleich</h2><span class="note">Mittelwerte im gew&auml;hlten Kader</span></div>
+      <div class="charts" id="odCmp"></div>
+    </section>
+  </div>
+
+  <!-- ===================== EINZEL ===================== -->
+  <div id="viewEinzel" class="hidden">
+    <section style="border-bottom:none;padding-bottom:0">
+      <div class="sec-head"><h2>Einzelauswertung</h2><span class="note">Person und Durchgang w&auml;hlen</span></div>
+      <div class="bar no-print">
+        <label class="fld">Person<select id="pickSel" style="min-width:250px" onchange="onPick()"></select></label>
+        <label class="fld">Durchgang<select id="runSel" onchange="onRunPick()"></select></label>
+        <label class="fld">Referenzgruppe<select id="refSel" onchange="renderRefBlock()"></select></label>
+        <button class="btn-o" onclick="stepPick(-1)" style="align-self:end">&#9664; Zur&uuml;ck</button>
+        <button class="btn-o" onclick="stepPick(1)" style="align-self:end">Weiter &#9654;</button>
+      </div>
+      <div id="singleHero"></div>
+      <div class="print-only" id="print-meta" style="font-size:12px;color:var(--ink-2);margin-bottom:10px"></div>
+      <div id="singleEmpty" class="empty hidden">Noch keine Daten. Im Reiter Massenimport Rohdaten einf&uuml;gen oder die Beispieldaten laden.</div>
+    </section>
+
+    <div id="singleStages">
+      <!-- STAGE 01 -->
+      <section class="stage" id="stage-athlete">
+        <div class="stage-label"><span class="stage-num">STAGE 01</span>
+          <span class="stage-title">Athlet &amp; Bedingungen</span></div>
+        <p class="stage-desc">Diese Werte flie&szlig;en in den Luftwiderstand ein (Stirnfl&auml;che, Luftdichte)
+          und damit in Kraft- und Leistungswerte. Vorbelegt aus den importierten Rohdaten,
+          &Auml;nderungen wirken nur auf diese Ansicht.</p>
+        <div class="panel">
+          <div class="field-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px">
+            <label class="fld">K&ouml;rpergr&ouml;&szlig;e (m)
+              <input type="number" id="in-stature" step="0.01" min="1.0" max="2.3"></label>
+            <label class="fld">K&ouml;rpermasse (kg)
+              <input type="number" id="in-mass" step="0.1" min="20" max="200"></label>
+            <label class="fld">Temperatur (&deg;C)
+              <input type="number" id="in-temp" step="0.5"></label>
+            <label class="fld">Luftdruck (hPa)
+              <input type="number" id="in-pressure" step="1" min="800" max="1100"></label>
+          </div>
+          <div id="athlete-warning" style="display:none;color:#9A6B03;background:var(--gold-soft);
+            border-left:4px solid var(--gold);padding:9px 12px;margin-top:14px;font-size:13px"></div>
+        </div>
+      </section>
+
+      <!-- STAGE 02 -->
+      <section class="stage" id="stage-splits">
+        <div class="stage-label"><span class="stage-num">STAGE 02</span>
+          <span class="stage-title">Torzeiten &mdash; 5 bis 40&nbsp;m</span></div>
+        <p class="stage-desc">Zeit ab dem Start f&uuml;r jedes Zeittor. Leere Tore werden bei der Anpassung
+          ignoriert, mindestens drei sind n&ouml;tig.</p>
+        <div class="panel">
+          <div class="track-wrap">
+            <svg class="track" id="gate-track" viewBox="0 0 1000 90" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+          <div class="gate-inputs" id="gate-inputs"></div>
+          <div class="fit-quality" id="fit-quality"></div>
+        </div>
+        <div class="actions-row no-print">
+          <button class="btn-o" id="btn-reset">Werte aus dem Import wiederherstellen</button>
+          <button class="btn-o" id="btn-clear">Felder leeren</button>
+        </div>
+      </section>
+
+      <!-- STAGE 03 -->
+      <section class="stage" id="stage-results">
+        <div class="stage-label"><span class="stage-num">STAGE 03</span>
+          <span class="stage-title">FVP-Profil</span></div>
+        <p class="stage-desc">Aus dem angepassten v max/&tau;-Modell abgeleitete mechanische Kennwerte.</p>
+        <div class="tiles" id="tiles"></div>
+      </section>
+
+      <!-- STAGE 04 -->
+      <section class="stage" id="stage-curves">
+        <div class="stage-label"><span class="stage-num">STAGE 04</span>
+          <span class="stage-title">Kurven</span></div>
+        <p class="stage-desc">Geschwindigkeits-Zeit-Modell mit gemessenen Toren, sowie Kraft- und
+          Leistungs-Geschwindigkeits-Beziehung.</p>
+        <div class="chart-grid">
+          <div class="chart-card"><h3>Geschwindigkeit &uuml;ber Zeit</h3>
+            <div class="chart-canvas-wrap"><canvas id="chart-vt"></canvas></div></div>
+          <div class="chart-card"><h3>Kraft&ndash;Geschwindigkeit</h3>
+            <div class="chart-canvas-wrap"><canvas id="chart-fv"></canvas></div></div>
+          <div class="chart-card" style="grid-column:1/-1">
+            <h3 style="color:var(--red)">Force&ndash;Velocity&ndash;Power</h3>
+            <div class="chart-canvas-wrap" style="height:280px"><canvas id="chart-fvp"></canvas></div></div>
+          <div class="chart-row2">
+            <div class="chart-card"><h3>Leistung &uuml;ber Geschwindigkeit</h3>
+              <div class="chart-canvas-wrap"><canvas id="chart-pv"></canvas></div></div>
+            <div class="chart-card"><h3>Kraftanteil (RF) &uuml;ber Geschwindigkeit</h3>
+              <div class="chart-canvas-wrap"><canvas id="chart-rf"></canvas></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STAGE 05 -->
+      <section class="stage" id="stage-finder">
+        <div class="stage-label"><span class="stage-num">STAGE 05</span>
+          <span class="stage-title">Zwischenzeit-Finder</span></div>
+        <p class="stage-desc no-print">Beliebige Distanz zwischen 0 und 40&nbsp;m eingeben &mdash; die Zeit wird
+          analytisch aus dem angepassten Modell berechnet, nicht aus einer Tabelle interpoliert.</p>
+        <div class="panel">
+          <div class="finder-grid no-print">
+            <div class="finder-input">
+              <label for="finder-distance">Distanz (m)</label>
+              <input type="number" id="finder-distance" class="finder-number" min="0" max="40" step="0.1" value="17.5">
+              <input type="range" id="finder-slider" min="0" max="40" step="0.1" value="17.5">
+            </div>
+            <div><svg class="track" id="finder-track" viewBox="0 0 1000 90" preserveAspectRatio="xMidYMid meet"></svg></div>
+          </div>
+          <div class="readout no-print">
+            <div class="stopwatch">
+              <span class="time" id="finder-time">0,000&nbsp;s</span>
+              <span class="at" id="finder-at">bei 17,5&nbsp;m</span>
+            </div>
+            <div class="readout-sub"><div class="k">Geschwindigkeit</div><div class="v" id="finder-v">&ndash; m/s</div></div>
+            <div class="readout-sub"><div class="k">Beschleunigung</div><div class="v" id="finder-a">&ndash; m/s&sup2;</div></div>
+            <div class="readout-sub"><div class="k">Horizontalkraft</div><div class="v" id="finder-f">&ndash; N/kg</div></div>
+            <div class="readout-sub"><div class="k">Leistung</div><div class="v" id="finder-p">&ndash; W/kg</div></div>
+          </div>
+          <div class="extrap-note no-print" id="extrap-note">Extrapoliert &uuml;ber das letzte gemessene Zeittor hinaus &mdash; die Genauigkeit nimmt ab.</div>
+
+          <div class="yard-refs">
+            <div class="yard-ref-title">Yard-Referenzen <span style="color:#8A939B;text-transform:none;letter-spacing:0">(1&nbsp;yd = 0,9144&nbsp;m)</span></div>
+            <div class="yard-grid">
+              <div class="yard-card"><div class="yard-label">10 yards <span class="yard-m">(9,14&nbsp;m)</span></div>
+                <div class="yard-time" id="yard10-time">&ndash; s</div></div>
+              <div class="yard-card"><div class="yard-label">40 yards <span class="yard-m">(36,58&nbsp;m)</span></div>
+                <div class="yard-time" id="yard40-time">&ndash; s</div></div>
+            </div>
+            <div class="yard-note" id="yard-note">* extrapoliert &uuml;ber die letzte gemessene Torzeit hinaus</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STAGE 06 -->
+      <section class="stage no-print" id="stage-export">
+        <div class="stage-label"><span class="stage-num">STAGE 06</span>
+          <span class="stage-title">Bericht speichern</span></div>
+        <p class="stage-desc">Erstellt ein PDF mit Torzeiten, Kennwerten, Diagrammen und Yard-Referenzen
+          &uuml;ber den Druckdialog des Browsers.</p>
+        <div class="panel export-panel">
+          <div class="export-hint">Der Klick &ouml;ffnet den Druckdialog. Dort als Ziel
+            <b>&bdquo;Als PDF speichern&ldquo;</b> (Windows, Chrome) beziehungsweise
+            <b>&bdquo;In PDF sichern&ldquo;</b> (Mac) w&auml;hlen. Gedruckt wird nur diese Einzelauswertung.</div>
+          <button class="btn-p" id="btn-export-pdf" style="padding:14px 24px;font-size:14.5px">Als PDF speichern</button>
+        </div>
+      </section>
+
+      <!-- Zusatz aus den Teamdaten -->
+      <section class="stage no-print" id="stage-team">
+        <div class="stage-label"><span class="stage-num">ZUSATZ</span>
+          <span class="stage-title">Einordnung im Kader</span></div>
+        <p class="stage-desc">Nicht Teil des Split-Time-Profilers &mdash; dieser Abschnitt nutzt die
+          &uuml;brigen importierten Personen als Vergleichsma&szlig;stab.</p>
+        <div id="refBlock"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ===================== VERGLEICH ===================== -->
+  <div id="viewVergleich" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Vergleich</h2><span class="note">Bis zu f&uuml;nf Personen, jede in eigener Farbe</span></div>
+      <div class="slots" id="cmpSlots"></div>
+      <div class="bar">
+        <button class="btn-o" onclick="clearCmp()">Auswahl leeren</button>
+        <button class="btn-o" onclick="fillTop5()">F&uuml;nf beste nach Pmax</button>
+        <label class="fld" style="margin-left:auto">Kurven bis<select id="cmpRange" onchange="renderCompare()">
+          <option value="last">letztes gemessenes Tor</option>
+          <option value="model" selected>Modellende (v &asymp; v max)</option>
+        </select></label>
+      </div>
+      <div id="cmpBody"></div>
+    </section>
+  </div>
+
+  <div class="foot" id="foot">
+    Modell: monoexponentielle Geschwindigkeitsentwicklung v(t) = v&#8320;&#8331;&#8331;&#8331; &middot; (1 &minus; e^(&minus;t/&tau;)),
+    angepasst an die Torzeiten. Kraft je Kilogramm aus Beschleunigung plus Luftwiderstand,
+    F0/V0/Pmax aus der linearen Regression des Kraft-Geschwindigkeits-Verlaufs.
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ===================== MODELL ===================== */
+function pos_(t,V,T){ return V*(t+T*Math.exp(-t/T))-V*T; }
+function vel_(t,V,T){ return V*(1-Math.exp(-t/T)); }
+function acc_(t,V,T){ return (V/T)*Math.exp(-t/T); }
+function airF(v,st,m,tc,hpa){
+  var rho=1.293*(hpa/1013.25)*(273.15/(273.15+tc));
+  var Ad=0.2025*Math.pow(st,0.725)*Math.pow(m,0.425)*0.266;
+  return 0.5*rho*Ad*0.9*v*v;
+}
+function invPos(d,V,T){
+  var t=Math.max(d/V,0.02)+0.05,i,f,fp,tn;
+  for(i=0;i<60;i++){ f=pos_(t,V,T)-d; fp=vel_(t,V,T); if(fp<=1e-9) break;
+    tn=t-f/fp; if(!isFinite(tn)||tn<=0) break; if(Math.abs(tn-t)<1e-11){t=tn;break;} t=tn; }
+  return t;
+}
+function linreg(xs,ys){
+  var n=xs.length,sx=0,sy=0,sxx=0,sxy=0,i;
+  for(i=0;i<n;i++){sx+=xs[i];sy+=ys[i];sxx+=xs[i]*xs[i];sxy+=xs[i]*ys[i];}
+  var den=n*sxx-sx*sx, sl=den!==0?(n*sxy-sx*sy)/den:0;
+  return {slope:sl,intercept:(sy-sl*sx)/n};
+}
+function nelderMead(f,x0,opt){
+  opt=opt||{}; var al=1,ga=2,rh=0.5,si=0.5,maxIter=opt.maxIter||4000,tol=opt.tol||1e-15,n=x0.length;
+  var simplex=[x0.slice()],i,j;
+  for(i=0;i<n;i++){ var p=x0.slice(); p[i]=p[i]!==0?p[i]*1.08:0.02; simplex.push(p); }
+  var fv=simplex.map(f);
+  for(var it=0;it<maxIter;it++){
+    var idx=fv.map(function(v,k){return k;}).sort(function(a,b){return fv[a]-fv[b];});
+    simplex=idx.map(function(k){return simplex[k];}); fv=idx.map(function(k){return fv[k];});
+    if(Math.abs(fv[n]-fv[0])<tol) break;
+    var cen=new Array(n).fill(0);
+    for(i=0;i<n;i++) for(j=0;j<n;j++) cen[j]+=simplex[i][j];
+    for(j=0;j<n;j++) cen[j]/=n;
+    var worst=simplex[n];
+    var xr=cen.map(function(c,k){return c+al*(c-worst[k]);}), fr=f(xr);
+    if(fr<fv[0]){
+      var xe=cen.map(function(c,k){return c+ga*(xr[k]-c);}), fe=f(xe);
+      if(fe<fr){simplex[n]=xe;fv[n]=fe;} else {simplex[n]=xr;fv[n]=fr;}
+    } else if(fr<fv[n-1]){ simplex[n]=xr; fv[n]=fr; }
+    else {
+      var xc=cen.map(function(c,k){return c+rh*(worst[k]-c);}), fc=f(xc);
+      if(fc<fv[n]){simplex[n]=xc;fv[n]=fc;}
+      else { for(i=1;i<=n;i++){ simplex[i]=simplex[i].map(function(v,k){return simplex[0][k]+si*(v-simplex[0][k]);});
+        fv[i]=f(simplex[i]); } }
+    }
+  }
+  var ix2=fv.map(function(v,k){return k;}).sort(function(a,b){return fv[a]-fv[b];});
+  return {x:simplex[ix2[0]],f:fv[ix2[0]]};
+}
+function fitVT(D,T){
+  var lastV=(D[D.length-1]-D[D.length-2])/(T[T.length-1]-T[T.length-2]);
+  var x0=[Math.min(Math.max(lastV*1.05,4),12),0.9];
+  function sse(p){
+    var V=p[0],Ta=p[1];
+    if(V<=0.5||Ta<=0.05||V>13||Ta>2.5) return 1e12;
+    var s=0,i,df;
+    for(i=0;i<D.length;i++){ df=pos_(T[i],V,Ta)-D[i]; s+=df*df; }
+    return s;
+  }
+  var r1=nelderMead(sse,x0), r2=nelderMead(sse,r1.x);
+  return {Vmax:r2.x[0],Tau:r2.x[1],sse:r2.f};
+}
+
+var GATES=[5,10,15,20,25,30,35,40], YD=0.9144;
+
+/* Berechnet alle Kennwerte und die Kurven eines Durchgangs. */
+function computeRun(run){
+  var D=[],T=[],i;
+  GATES.forEach(function(d){
+    var v=run.splits[d];
+    if(v!=null&&isFinite(v)&&v>0){ D.push(d); T.push(v); }
+  });
+  run.nGates=D.length;
+  if(D.length<3){ run.res=null; run.error="weniger als drei Torzeiten"; return null; }
+  for(i=1;i<T.length;i++) if(T[i]<=T[i-1]){ run.res=null; run.error="Torzeiten steigen nicht durchgehend an"; return null; }
+
+  var fit=fitVT(D,T), V=fit.Vmax, Ta=fit.Tau, last=D[D.length-1];
+  var st=run.stature, m=run.mass, tc=run.temp, hpa=run.press, wF=m*9.81;
+  var tEnd=Math.max(6*Ta, T[T.length-1]+0.5), steps=Math.round(tEnd/0.01);
+  var H=[],L=[],Prf=[],Hrf=[],fv=[],pv=[],vt=[],rf=[],at=[];
+  var tLast=invPos(last,V,Ta);
+  for(i=1;i<=steps;i++){
+    var t=i*0.01, v=vel_(t,V,Ta), a=acc_(t,V,Ta);
+    var K=airF(v,st,m,tc,hpa)+m*a, Lv=K/m, Pw=Lv*v;
+    H.push(v); L.push(Lv);
+    if(i%4===0){ fv.push({x:+v.toFixed(4),y:+Lv.toFixed(4)}); pv.push({x:+v.toFixed(4),y:+Pw.toFixed(4)});
+      vt.push({x:+t.toFixed(3),y:+v.toFixed(4)}); at.push({x:+t.toFixed(3),y:+a.toFixed(4)}); }
+    if(t>=0.51-1e-9){
+      var Pr=K/Math.sqrt(K*K+wF*wF); Prf.push(Pr); Hrf.push(v);
+      if(i%4===0) rf.push({x:+v.toFixed(4),y:+(Pr*100).toFixed(3)});
+    }
+  }
+  var reg=linreg(H,L), F0=reg.intercept, sl=reg.slope, V0=-F0/sl, Pmax=F0*V0/4;
+  var regRF=linreg(Hrf,Prf);
+  var vAtLast=vel_(tLast,V,Ta);
+  run.res={
+    Vmax:V, Tau:Ta, rmse:Math.sqrt(fit.sse/D.length), sse:fit.sse,
+    F0:F0, V0:V0, Pmax:Pmax, FVslope:sl, RFmax:Math.max.apply(null,Prf)*100,
+    DRF:Math.abs(regRF.slope*100), DRFsigned:regRF.slope*100, Vopt:V0/2, vAtLast:vAtLast, tLast:tLast, lastGate:last,
+    t10:run.splits[10]!=null?run.splits[10]:invPos(10,V,Ta),
+    t40:run.splits[40]!=null?run.splits[40]:invPos(40,V,Ta),
+    t40extra:run.splits[40]==null,
+    y10:invPos(10*YD,V,Ta), y40:invPos(40*YD,V,Ta),
+    kmh:vAtLast*3.6,
+    curves:{fv:fv,pv:pv,vt:vt,at:at,rf:rf},
+    gateD:D, gateT:T,
+    gatePts:D.map(function(d,k){ return {x:T[k], y:vel_(T[k],V,Ta)}; })
+  };
+  run.error=null;
+  return run.res;
+}
+
+/* ===================== STATE ===================== */
+var runs=[], athletes=[], byName={};
+var tab="import", pickName=null, tSortKey="pmax", tSortDir=-1;
+var cmpSel=[null,null,null,null,null];
+var PAL=["#D8232A","#1B3A5C","#C98A04","#2E7D4F","#7A3E9D"];
+var $=function(id){return document.getElementById(id);};
+var charts={};
+
+var MET=[
+ {k:"F0",   t:"F0",                    u:"N/kg", d:2, dir:1,  g:"Kraft"},
+ {k:"V0",   t:"V0",                    u:"m/s",  d:2, dir:1,  g:"Geschwindigkeit"},
+ {k:"Pmax", t:"Pmax",                  u:"W/kg", d:2, dir:1,  g:"Leistung"},
+ {k:"Vmax", t:"v max (asymptotisch)",  u:"m/s",  d:2, dir:1,  g:"Geschwindigkeit"},
+ {k:"vAtLast",t:"v am letzten Tor",    u:"m/s",  d:2, dir:1,  g:"Geschwindigkeit"},
+ {k:"kmh",  t:"H\u00f6chstgeschwindigkeit",u:"km/h",d:1,dir:1,g:"Geschwindigkeit"},
+ {k:"Tau",  t:"\u03c4 (Zeitkonstante)",u:"s",    d:3, dir:-1, g:"Antritt"},
+ {k:"RFmax",t:"RF max",                u:"%",    d:1, dir:1,  g:"Kraft"},
+ {k:"DRF",  t:"DRF (Betrag)",          u:"%/(m/s)",d:2,dir:-1,g:"Kraft"},
+ {k:"Vopt", t:"v optimal",             u:"m/s",  d:2, dir:1,  g:"Leistung"},
+ {k:"FVslope",t:"F-v-Steigung",        u:"",     d:3, dir:-1, g:"Kraft"},
+ {k:"t10",  t:"10 m",                  u:"s",    d:2, dir:-1, g:"Zeiten"},
+ {k:"t40",  t:"40 m",                  u:"s",    d:2, dir:-1, g:"Zeiten"},
+ {k:"y10",  t:"10 Yards",              u:"s",    d:2, dir:-1, g:"Zeiten"},
+ {k:"y40",  t:"40 Yards",              u:"s",    d:2, dir:-1, g:"Zeiten"}
+];
+var MK={}; MET.forEach(function(m){MK[m.k]=m;});
+var curMetric="Pmax";
+
+/* ===================== HELFER ===================== */
+var tmr;
+function toast(m,ms){ var t=$("toast"); t.textContent=m; t.classList.add("on");
+  clearTimeout(tmr); tmr=setTimeout(function(){t.classList.remove("on");}, ms||3800); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+function nz(v,d){ if(v==null||!isFinite(v)) return "\u2013"; return Number(v).toLocaleString("de-AT",
+  {minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d}); }
+function num(v){ if(v==null||v==="") return null;
+  var n=parseFloat(String(v).trim().replace(/\s/g,"").replace(",",".")); return isNaN(n)?null:n; }
+function y4(y){ y=+y; return y<100 ? (y<70?2000+y:1900+y) : y; }
+function dparts(s){ if(s==null||s==="") return null; s=String(s).trim(); var m;
+  if((m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/))) return [y4(m[3]),+m[2],+m[1]];
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return [+m[1],+m[2],+m[3]];
+  if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/))) return [y4(m[3]),+m[1],+m[2]];
+  /* Excel liefert Datumszellen ohne Formatierung als fortlaufende Tagesnummer ab 30.12.1899. */
+  if(/^\d{5}(\.\d+)?$/.test(s)){
+    var n=Math.floor(+s);
+    if(n>=20000&&n<=80000){ var d=new Date(Date.UTC(1899,11,30)+n*864e5);
+      return [d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()]; }
+  }
+  return null; }
+function dateKey(s){ var p=dparts(s); return p?p[0]*10000+p[1]*100+p[2]:0; }
+function dateDe(s){ var p=dparts(s); if(!p) return s||"\u2013";
+  return (p[2]<10?"0":"")+p[2]+"."+(p[1]<10?"0":"")+p[1]+"."+p[0]; }
+function posClass(p){ return p==="Offense"?"t-off":p==="Defense"?"t-def":"t-none"; }
+function posTag(p,fallback){
+  if(!p) return '<span class="tag t-none">'+esc(fallback||"ohne")+'</span>';
+  if(p==="Offense"||p==="Defense") return '<span class="tag '+posClass(p)+'">'+esc(p)+'</span>';
+  var c=posColor(p);
+  return '<span class="tag" style="color:'+c+';background:'+c+'1A">'+esc(p)+'</span>';
+}
+/* Positionen kommen aus den Rohdaten und hei\u00dfen nicht zwingend Offense und Defense.
+   Offense und Defense behalten ihre Vereinsfarben, alles andere bekommt beim Einlesen
+   eine eigene Farbe zugewiesen, damit Balken und Punkte unterscheidbar bleiben. */
+var POSCOL={}, POSLIST=[];
+var POSPAL=["#C98A04","#2E7D4F","#7A3E9D","#0E7C86","#B2560D","#5B6B7A"];
+function buildPositions(){
+  POSLIST=[]; POSCOL={"Offense":"#D8232A","Defense":"#1B3A5C"};
+  var seen={}, k=0;
+  athletes.forEach(function(a){
+    var p=a.position;
+    if(!p||seen[p]) return;
+    seen[p]=1; POSLIST.push(p);
+    if(!POSCOL[p]) POSCOL[p]=POSPAL[k++%POSPAL.length];
+  });
+  POSLIST.sort(function(a,b){
+    var o={"Offense":0,"Defense":1};
+    var oa=(o[a]!=null?o[a]:9), ob=(o[b]!=null?o[b]:9);
+    return oa!==ob?oa-ob:a.localeCompare(b,"de");
+  });
+}
+function posColor(p){ return POSCOL[p]||"#6B757E"; }
+function posCount(p){ return athletes.filter(function(a){return a.cur&&a.position===p;}).length; }
+function stamp(){ return new Date().toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"}); }
+
+/* ===================== CSV ===================== */
+function splitLines(t){ return String(t).replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n"); }
+function splitRow(line,sep){
+  var out=[],f="",q=false,i,c;
+  for(i=0;i<line.length;i++){ c=line[i];
+    if(q){ if(c==='"'){ if(line[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===sep){ out.push(f); f=""; }
+    else f+=c; }
+  out.push(f); return out.map(function(s){return s.trim();});
+}
+/* Spaltenerkennung: mehrere Schreibweisen je Feld erlaubt. */
+/* Spaltenerkennung. Kopfzeilen werden zuerst vereinheitlicht: Umlaute aufgel\u00f6st
+   (K\u00f6rpergr\u00f6\u00dfe und Koerpergroesse sind dasselbe), Trennzeichen zu Leerraum, und
+   angeh\u00e4ngte Einheiten entfernt. So passen Koerpergroesse_m, "Height (cm)" und
+   K\u00f6rpergr\u00f6\u00dfe auf denselben Eintrag, ohne jede Schreibweise zu pflegen. */
+var UNITS=["M","CM","MM","KG","G","LBS","C","GRAD","HPA","MBAR","PA","S","SEK","SEC","MS","IN","NR"];
+function normHead(h){
+  return String(h).toUpperCase()
+    .replace(/\u00C4/g,"AE").replace(/\u00D6/g,"OE").replace(/\u00DC/g,"UE").replace(/\u00DF/g,"SS")
+    .replace(/[^A-Z0-9]+/g," ").trim();
+}
+function headKey(n){
+  return n.split(" ").filter(function(t){ return t && UNITS.indexOf(t)<0; }).join("");
+}
+/* Erkennt Torzeit-Spalten: T5, t_10, 15m, Zeit_20m, "Split 30", Time40M \u2026 */
+function gateOf(n){
+  var m=n.match(/^(?:T|ZEIT|ZWISCHENZEIT|TIME|SPLIT|TOR|GATE)?\s*(\d{1,2})\s*(?:M|METER|MTR)?$/);
+  if(!m) return null;
+  var d=+m[1];
+  return GATES.indexOf(d)>=0 ? d : null;
+}
+var COLDEF=[
+ {f:"name",   a:["NAME","ATHLET","ATHLETIN","ATHLETE","SPIELER","SPIELERIN","PERSON","TESTPERSON","NACHNAMEVORNAME","VORNAMENACHNAME"]},
+ {f:"position",a:["POSITION","POS","ROLLE"]},
+ {f:"team",   a:["TEAM","MANNSCHAFT","KADER","BEWERB","GRUPPE","VEREIN","SQUAD"]},
+ {f:"datum",  a:["DATUM","TESTDATUM","MESSDATUM","DATE","TESTDATE","TEST"]},
+ {f:"stature",a:["KOERPERGROESSE","GROESSE","GROSSE","GR","HEIGHT","BODYHEIGHT","STATURE","LAENGE","H"]},
+ {f:"mass",   a:["KOERPERGEWICHT","GEWICHT","GEW","MASSE","MASS","WEIGHT","BODYMASS"]},
+ {f:"temp",   a:["TEMPERATUR","LUFTTEMPERATUR","TEMP","TEMPERATURE","T"]},
+ {f:"press",  a:["LUFTDRUCK","DRUCK","PRESSURE","AIRPRESSURE","BAROMETER"]}
+];
+function mapHeader(head){
+  var N=head.map(normHead);
+  var K=N.map(headKey);
+  var map={gates:{}}, used={};
+  /* Torzeiten zuerst, damit eine Spalte "T" als Temperatur und nicht als Tor gelesen wird */
+  N.forEach(function(n,i){
+    var d=gateOf(n);
+    if(d!=null && map.gates[d]==null){ map.gates[d]=i; used[i]=1; }
+  });
+  COLDEF.forEach(function(c){
+    for(var i=0;i<K.length;i++){
+      if(used[i]||map[c.f]!=null) continue;
+      if(c.a.indexOf(K[i])>=0){ map[c.f]=i; used[i]=1; break; }
+    }
+  });
+  return map;
+}
+/* Sucht Trennzeichen und Kopfzeile gemeinsam: Excel-Exporte beginnen oft mit
+   Titel- oder Leerzeilen, die Spaltennamen stehen dann erst weiter unten. */
+function analyze(L){
+  var seps=[",",";","\t","|"], lim=Math.min(L.length,15), fb=null, k, i, head, map, gc, sc;
+  for(k=0;k<seps.length;k++){
+    for(i=0;i<lim;i++){
+      if(!L[i]||!L[i].trim()) continue;
+      head=splitRow(L[i],seps[k]); map=mapHeader(head); gc=Object.keys(map.gates).length;
+      if(map.name!=null&&gc>=3) return {sep:seps[k],idx:i,map:map,gates:gc,cols:head.length};
+      sc=(map.name!=null?10:0)+gc;
+      if(!fb||sc>fb.score) fb={sep:seps[k],idx:i,map:map,gates:gc,cols:head.length,score:sc};
+    }
+  }
+  return fb;
+}
+var DEMO=[
+"NAME,POSITION,TEAM,DATUM,GROESSE,GEWICHT,T5,T10,T15,T20,T25,T30,T35,T40",
+"Kugler Karoline,Offense,Flag Football Damen,10.03.2025,170,87,1.18,2.07,2.82,3.49,4.21,4.89,5.54,6.25",
+"Helm Magdalena,Offense,Flag Football Damen,10.03.2025,167,64,1.29,2.09,2.79,3.48,4.13,4.79,5.45,6.11",
+"Hader Daniela,Defense,Flag Football Damen,10.03.2025,162,55.8,1.12,1.91,2.62,3.27,3.91,4.58,5.21,5.89",
+"Mansbart Katrin,Offense,Flag Football Damen,10.03.2025,178,67.4,1.33,2.23,2.98,3.7,4.4,5.09,5.77,6.45",
+"Peham Bianca,Defense,Flag Football Damen,10.03.2025,164,64.4,1.08,1.86,2.61,3.24,3.93,4.56,5.2,5.85",
+"Spitzer Sophie,Defense,Flag Football Damen,10.03.2025,176,65.9,1.12,1.9,2.65,3.37,4.03,4.68,5.36,6.01",
+"Einfalt Sophie,Defense,Flag Football Damen,10.03.2025,172,60.3,1.08,1.83,2.52,3.18,3.79,4.4,5.01,5.63",
+"Valenta Anna,Offense,Flag Football Damen,10.03.2025,171,67.2,1.26,2.08,2.79,3.46,4.08,4.7,5.38,6.03",
+"Haischberger Mara,Offense,Flag Football Damen,10.03.2025,167,62.9,1.13,1.89,2.61,3.26,3.9,4.51,5.16,5.8",
+"Troniarsky Viktoria Viola,Defense,Flag Football Damen,10.03.2025,170,60,1.23,2.03,2.7,3.34,3.97,4.59,5.19,5.79",
+"Müllegger Helena Giovanna,Defense,Flag Football Damen,10.03.2025,162,56,1.27,2.1,2.82,3.49,4.15,4.8,5.44,6.09",
+"Schmidt Elisabeth,Offense,Flag Football Damen,10.03.2025,164,56.7,1.25,2.02,2.74,3.4,4.02,4.67,5.3,5.93",
+"Fiegl Tabea,Defense,Flag Football Damen,10.03.2025,169,66,1.23,1.96,2.66,3.29,3.9,4.5,5.09,5.68",
+"Kugler Karoline,Offense,Flag Football Damen,02.06.2025,170,86.2,1.23,1.98,2.75,3.41,4.07,4.7,5.35,6",
+"Sottner Franziska,Offense,Flag Football Damen,10.03.2025,163,55.8,1.05,1.82,2.53,3.21,3.86,4.5,5.11,5.74",
+"Einfalt Sophie,Defense,Flag Football Damen,02.06.2025,172,63.2,1.32,2.04,2.78,3.41,4.03,4.59,5.23,5.84",
+"Mansbart Katrin,Offense,Flag Football Damen,02.06.2025,178,70.2,1.3,2.22,2.96,3.69,4.37,5.04,5.72,6.4",
+"Peham Bianca,Defense,Flag Football Damen,02.06.2025,164,66.3,1.09,1.89,2.59,3.25,3.88,4.52,5.14,5.77",
+"Kugler Karoline,Offense,Flag Football Damen,08.09.2025,170,86.1,1.18,2.07,2.8,3.46,4.17,4.83,5.45,6.17"
+].join("\n");
+
+/* ===================== IMPORT ===================== */
+function runImport(){
+  var txt=$("raw").value.trim();
+  if(!txt){ showImpMsg("err","Es sind keine Rohdaten eingef\u00fcgt. Text in das Feld einf\u00fcgen oder Beispieldaten laden."); return; }
+  try{ ingest(txt); }
+  catch(e){ showImpMsg("err",esc(e.message)); }
+}
+/* ---------- Excel ---------- */
+var lastWb=null, lastWbName="";
+function loadLib(url){
+  return new Promise(function(ok,no){
+    var sc=document.createElement("script");
+    sc.src=url; sc.onload=function(){ok();}; sc.onerror=function(){no(new Error("nicht erreichbar"));};
+    document.head.appendChild(sc);
+    setTimeout(function(){no(new Error("Zeit\u00fcberschreitung"));},9000);
+  });
+}
+function needXlsx(){
+  if(window.XLSX) return Promise.resolve(true);
+  return loadLib("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js")
+    .then(function(){return !!window.XLSX;}).catch(function(){return false;});
+}
+function sheetCsv(name){
+  var ws=lastWb.Sheets[name];
+  if(!ws) return "";
+  return XLSX.utils.sheet_to_csv(ws,{raw:false,blankrows:true,FS:";"});
+}
+/* Bewertet, wie gut ein Blatt als Rohdatenblatt taugt: Name-Spalte plus Torzeiten. */
+function sheetScore(name){
+  var csv=sheetCsv(name);
+  if(!csv.trim()) return {score:-1,rows:0,gates:0};
+  var L=splitLines(csv), A=analyze(L);
+  if(!A) return {score:-1,rows:0,gates:0};
+  var rows=0;
+  for(var i=A.idx+1;i<L.length;i++) if(L[i]&&L[i].trim()) rows++;
+  return {score:(A.map.name!=null?100:0)+A.gates*10+Math.min(rows,50), rows:rows, gates:A.gates, csv:csv};
+}
+function showSheetBar(names,used){
+  var bar=$("sheetBar"), sel=$("sheetSel");
+  if(!names||names.length<2){ bar.classList.add("hidden"); return; }
+  bar.classList.remove("hidden");
+  sel.innerHTML=names.map(function(n){
+    return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}).join("");
+  sel.value=used;
+  $("sheetInfo").textContent="Die Datei enth\u00e4lt "+names.length+" Bl\u00e4tter. Bei Bedarf ein anderes w\u00e4hlen.";
+}
+function useSheet(name){
+  if(!lastWb) return;
+  var csv=sheetCsv(name);
+  $("raw").value=csv;
+  if(!csv.trim()){ showImpMsg("err","Das Blatt \u201e"+esc(name)+"\u201c ist leer."); return; }
+  try{ ingest(csv); $("impnote").textContent+=" \u00b7 Blatt \u201e"+name+"\u201c aus "+lastWbName; }
+  catch(e){ showImpMsg("err","Blatt \u201e"+esc(name)+"\u201c: "+esc(e.message)+" Bei Bedarf oben ein anderes Blatt w\u00e4hlen."); }
+}
+function readWorkbook(f){
+  needXlsx().then(function(ok){
+    if(!ok){
+      showImpMsg("err","Die Excel-Bibliothek konnte nicht geladen werden. Daf\u00fcr wird einmalig eine Internetverbindung gebraucht. "+
+        "Ohne Verbindung das Tabellenblatt in Excel \u00fcber <b>Speichern unter \u2192 CSV</b> ablegen und die CSV-Datei laden.");
+      return;
+    }
+    var rd=new FileReader();
+    rd.onerror=function(){ showImpMsg("err","Die Datei konnte nicht gelesen werden."); };
+    rd.onload=function(e){
+      try{
+        lastWb=XLSX.read(new Uint8Array(e.target.result),{type:"array",cellDates:false});
+        lastWbName=f.name;
+        var names=lastWb.SheetNames||[];
+        if(!names.length) throw new Error("Die Datei enth\u00e4lt kein Tabellenblatt.");
+        var best=null;
+        names.forEach(function(n){
+          var sc=sheetScore(n);
+          if(!best||sc.score>best.score) best={name:n,score:sc.score,gates:sc.gates,rows:sc.rows};
+        });
+        showSheetBar(names,best.name);
+        if(best.score<100){
+          $("raw").value=sheetCsv(best.name);
+          showImpMsg("err","In \u201e"+esc(f.name)+"\u201c wurde kein Blatt mit einer Spalte NAME und mindestens drei Torzeiten gefunden. "+
+            "Der Inhalt von \u201e"+esc(best.name)+"\u201c steht zum Pr\u00fcfen im Feld oben"+
+            (names.length>1?", oben l\u00e4sst sich ein anderes Blatt w\u00e4hlen":"")+".");
+          return;
+        }
+        useSheet(best.name);
+      }catch(err){
+        showImpMsg("err","Die Datei konnte nicht gelesen werden: "+esc(err.message));
+      }
+    };
+    rd.readAsArrayBuffer(f);
+  });
+}
+function handleFile(f){
+  if(!f) return;
+  setTab("import");
+  if(/\.(xlsx|xlsm|xlsb|xls|ods)$/i.test(f.name)){ readWorkbook(f); return; }
+  lastWb=null; $("sheetBar").classList.add("hidden");
+  var rd=new FileReader();
+  rd.onload=function(){ $("raw").value=rd.result; runImport(); };
+  rd.onerror=function(){ showImpMsg("err","Die Datei konnte nicht gelesen werden."); };
+  rd.readAsText(f,"UTF-8");
+}
+function loadFile(inp){ var f=inp.files&&inp.files[0]; handleFile(f); inp.value=""; }
+function dropFile(ev){
+  var f=ev.dataTransfer&&ev.dataTransfer.files&&ev.dataTransfer.files[0];
+  if(!f) return;
+  ev.preventDefault(); handleFile(f);
+}
+function loadDemo(){ lastWb=null; $("sheetBar").classList.add("hidden");
+  $("raw").value=DEMO; setTab("import"); ingest(DEMO); }
+function copyTemplate(){
+  $("raw").value=
+    "Name;Position;Team;Testdatum;Koerpergroesse_m;Koerpergewicht_kg;Temperatur_C;Luftdruck_hPa;"+
+    "Zeit_5m;Zeit_10m;Zeit_15m;Zeit_20m;Zeit_25m;Zeit_30m;Zeit_35m;Zeit_40m\n"+
+    "Muster Anna;Offense;Damen NT;23.08.2026;1.68;62.0;18;1013;1.15;1.95;2.66;3.32;3.96;4.60;5.23;5.87\n"+
+    "Muster Berta;Defense;Damen NT;23.08.2026;1.75;70.0;18;1013;1.20;2.02;2.74;3.41;4.06;4.71;5.36;6.01";
+  toast("Vorlage eingef\u00fcgt. Spalten Position und Team sind optional.");
+}
+function clearAll(){
+  runs=[]; athletes=[]; byName={}; pickName=null; cmpSel=[null,null,null,null,null];
+  lastWb=null; $("sheetBar").classList.add("hidden");
+  $("raw").value=""; $("imptable").innerHTML=""; $("impmsg").innerHTML="";
+  $("impnote").textContent="Noch nichts importiert";
+  $("srcline").textContent="Noch keine Daten geladen";
+  rebuildAll();
+  toast("Alle Daten gel\u00f6scht.");
+}
+function showImpMsg(cls,html){ $("impmsg").innerHTML='<div class="msg '+cls+'">'+html+'</div>'; }
+
+function ingest(text){
+  var L=splitLines(text);
+  if(L.filter(function(l){return l.trim()!=="";}).length<2)
+    throw new Error("Die Daten enthalten nur eine Zeile. Erwartet werden eine Kopfzeile und mindestens eine Datenzeile.");
+  var A=analyze(L);
+  if(!A||A.map.name==null) throw new Error("Keine Spalte NAME gefunden. Eine der ersten Zeilen muss die Spalten\u00fcberschriften enthalten, darunter eine Spalte NAME.");
+  var sep=A.sep, map=A.map, gk=Object.keys(map.gates);
+  if(gk.length<3) throw new Error("Es wurden nur "+gk.length+" Torzeit-Spalten erkannt. Ben\u00f6tigt werden mindestens drei aus T5 bis T40.");
+
+  var gT=num($("gTemp").value); if(gT==null) gT=18;
+  var gP=num($("gPress").value); if(gP==null) gP=1013;
+
+  var out=[], skipped=0;
+  for(var r=A.idx+1;r<L.length;r++){
+    if(!L[r]||!L[r].trim()) continue;
+    var c=splitRow(L[r],sep);
+    var gv=function(i){ return (i!=null&&c[i]!=null)?String(c[i]).trim():""; };
+    var nm=gv(map.name);
+    if(!nm){ skipped++; continue; }
+    var st=num(gv(map.stature)); if(st!=null&&st>3) st=st/100;      /* cm-Eingabe automatisch umrechnen */
+    var ms=num(gv(map.mass));
+    var run={
+      id:out.length, row:r+1, name:nm,
+      position:gv(map.position), team:gv(map.team), datum:gv(map.datum),
+      stature: st!=null?st:1.75, statureGiven: st!=null,
+      mass: ms!=null?ms:70, massGiven: ms!=null,
+      temp: num(gv(map.temp))!=null?num(gv(map.temp)):gT,
+      press: num(gv(map.press))!=null?num(gv(map.press)):gP,
+      splits:{}, warn:[]
+    };
+    GATES.forEach(function(d){ var v=num(gv(map.gates[d])); if(v!=null&&v>0) run.splits[d]=v; });
+    if(!run.statureGiven) run.warn.push("K\u00f6rpergr\u00f6\u00dfe fehlt, 1,75 m angenommen");
+    if(!run.massGiven) run.warn.push("K\u00f6rpergewicht fehlt, 70 kg angenommen");
+    if(run.statureGiven&&(run.stature<1.2||run.stature>2.3)) run.warn.push("K\u00f6rpergr\u00f6\u00dfe au\u00dferhalb 1,2 bis 2,3 m");
+    if(run.massGiven&&(run.mass<25||run.mass>200)) run.warn.push("K\u00f6rpergewicht au\u00dferhalb 25 bis 200 kg");
+    computeRun(run);
+    if(run.res&&run.res.rmse>0.25) run.warn.push("gro\u00dfe Modellabweichung von \u00b1"+nz(run.res.rmse*100,1)+" cm, Torzeiten pr\u00fcfen");
+    out.push(run);
+  }
+  if(!out.length) throw new Error("Keine verwertbare Datenzeile gefunden.");
+
+  runs=out;
+  rebuildAll();
+
+  var ok=runs.filter(function(x){return x.res;}).length;
+  var bad=runs.length-ok;
+  var wc=runs.filter(function(x){return x.res&&x.warn.length;}).length;
+  var cls=bad?"":"ok";
+  showImpMsg(cls,
+    "<b>"+ok+"</b> von <b>"+runs.length+"</b> Zeilen ausgewertet, verteilt auf <b>"+athletes.length+"</b> Personen."+
+    (bad?" <b>"+bad+"</b> Zeile"+(bad>1?"n":"")+" konnte"+(bad>1?"n":"")+" nicht berechnet werden.":"")+
+    (wc?" "+wc+" Zeile"+(wc>1?"n":"")+" mit Hinweis.":"")+
+    (skipped?" "+skipped+" Zeile"+(skipped>1?"n":"")+" ohne Namen \u00fcbersprungen.":""));
+  $("impnote").textContent="Trennzeichen \u201e"+(sep==="\t"?"Tabulator":sep)+"\u201c \u00b7 Kopfzeile in Zeile "+
+    (A.idx+1)+" \u00b7 "+gk.length+" Torzeit-Spalten \u00b7 "+stamp();
+  $("srcline").textContent=athletes.length+" Personen \u00b7 "+runs.length+" Durchg\u00e4nge \u00b7 Stand "+stamp();
+  renderImportTable();
+  if(bad===0) toast("Import abgeschlossen: "+ok+" Durchg\u00e4nge, "+athletes.length+" Personen.");
+}
+
+function rebuildAll(){
+  byName={};
+  runs.forEach(function(r){ (byName[r.name]=byName[r.name]||[]).push(r); });
+  athletes=Object.keys(byName).map(function(n){
+    var list=byName[n].slice().sort(function(a,b){
+      var ka=dateKey(a.datum), kb=dateKey(b.datum);
+      if(ka!==kb) return ka-kb; return a.id-b.id;
+    });
+    var valid=list.filter(function(x){return x.res;});
+    var first=list[0];
+    return { name:n, position:first.position||"", team:first.team||"",
+      runs:list, cur: valid.length?valid[valid.length-1]:null };
+  }).sort(function(a,b){ return a.name.localeCompare(b.name,"de"); });
+  buildPositions();
+  if(!pickName||!byName[pickName]) pickName=(athletes[0]||{}).name||null;
+  cmpSel=cmpSel.map(function(n){ return byName[n]?n:null; });
+  fillSelectors();
+  if(tab==="team") renderTeam();
+  if(tab==="einzel") renderSingle();
+  if(tab==="vergleich") renderCompare();
+}
+
+function renderImportTable(){
+  if(!runs.length){ $("imptable").innerHTML=""; return; }
+  var hasPos=runs.some(function(r){return r.position;});
+  var hasDate=runs.some(function(r){return r.datum;});
+  var h='<div class="tbl-box"><table><thead><tr>'+
+    '<th class="n">Zeile</th><th>Name</th>'+(hasPos?'<th>Position</th>':'')+
+    (hasDate?'<th class="n">Datum</th>':'')+'<th class="n">Tore</th>'+
+    '<th class="n">Abweichung</th><th class="n">F0</th><th class="n">V0</th><th class="n">Pmax</th><th>Status</th>'+
+    '</tr></thead><tbody>';
+  runs.forEach(function(r){
+    var s=r.res;
+    h+='<tr><td class="n">'+r.row+'</td><td>'+esc(r.name)+'</td>'+
+      (hasPos?'<td>'+posTag(r.position)+'</td>':'')+
+      (hasDate?'<td class="n">'+esc(r.datum?dateDe(r.datum):"\u2013")+'</td>':'')+
+      '<td class="n">'+r.nGates+'</td>'+
+      '<td class="n" style="color:'+(s?(s.rmse<0.10?"#2E7D4F":s.rmse<0.25?"#4A555F":"#C98A04"):"#4A555F")+'">'+
+        (s?"\u00b1"+nz(s.rmse*100,1)+" cm":"\u2013")+'</td>'+
+      '<td class="n">'+(s?nz(s.F0,2):"\u2013")+'</td>'+
+      '<td class="n">'+(s?nz(s.V0,2):"\u2013")+'</td>'+
+      '<td class="n">'+(s?nz(s.Pmax,2):"\u2013")+'</td>'+
+      '<td style="white-space:normal;max-width:280px">'+
+        (s? (r.warn.length? '<span style="color:#C98A04">'+esc(r.warn.join("; "))+'</span>' : '<span style="color:#2E7D4F">ausgewertet</span>')
+          : '<span style="color:#D8232A">nicht berechnet: '+esc(r.error||"unbekannt")+'</span>')+
+      '</td></tr>';
+  });
+  $("imptable").innerHTML=h+"</tbody></table></div>";
+}
+
+/* ===================== TABS ===================== */
+function setTab(t){
+  tab=t;
+  ["import","team","einzel","vergleich"].forEach(function(x){
+    $("view"+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle("hidden",x!==t);
+    $("tab"+x.charAt(0).toUpperCase()+x.slice(1)).setAttribute("aria-selected",x===t);
+  });
+  if(t==="team") renderTeam();
+  if(t==="einzel") renderSingle();
+  if(t==="vergleich") renderCompare();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ===================== SELEKTOREN ===================== */
+function teamList(){
+  var s={},o=[];
+  athletes.forEach(function(a){ if(a.team&&!s[a.team]){s[a.team]=1;o.push(a.team);} });
+  return o.sort();
+}
+function fillSelectors(){
+  var g=$("grpSel"), gv=g.value||"team";
+  var posOpts=POSLIST.map(function(p){
+    return '<option value="pos:'+esc(p)+'">'+esc(p)+' ('+posCount(p)+')</option>';}).join("");
+  g.innerHTML='<option value="team">'+(POSLIST.length?"Team (alle Positionen)":"Team gesamt")+'</option>'+posOpts;
+  g.value=gv; if(!g.value) g.value="team";
+  g.parentNode.style.display=POSLIST.length?"":"none";
+
+  var ts=$("teamSel"), tv=ts.value||"";
+  var tl=teamList();
+  ts.innerHTML='<option value="">Alle Mannschaften</option>'+
+    tl.map(function(t){return '<option value="'+esc(t)+'">'+esc(t)+'</option>';}).join("");
+  ts.value=(tl.indexOf(tv)>=0?tv:"");
+  ts.parentNode.style.display=tl.length>1?"":"none";
+
+  var ms=$("metSel");
+  if(!ms.options.length){
+    var groups={},order=[];
+    MET.forEach(function(m){ if(!groups[m.g]){groups[m.g]=[];order.push(m.g);} groups[m.g].push(m); });
+    ms.innerHTML=order.map(function(gn){
+      return '<optgroup label="'+esc(gn)+'">'+groups[gn].map(function(m){
+        return '<option value="'+m.k+'">'+esc(m.t)+(m.u?" ("+esc(m.u)+")":"")+'</option>';}).join("")+'</optgroup>';
+    }).join("");
+    ms.value=curMetric;
+  }
+
+  var ps=$("pickSel");
+  ps.innerHTML=athletes.map(function(a){
+    return '<option value="'+esc(a.name)+'">'+esc(a.name)+(a.position?" \u2014 "+esc(a.position):"")+'</option>';
+  }).join("");
+  if(pickName) ps.value=pickName;
+
+  var rs=$("refSel"), rv=rs.value||"auto";
+  rs.innerHTML=(POSLIST.length?'<option value="auto">Automatisch nach Position</option>':'')+
+    '<option value="team">Team gesamt</option>'+
+    POSLIST.map(function(p){ return '<option value="pos:'+esc(p)+'">'+esc(p)+'</option>'; }).join("");
+  rs.value=rv; if(!rs.value) rs.value=POSLIST.length?"auto":"team";
+  rs.parentNode.style.display=POSLIST.length?"":"none";
+
+  buildCmpSlots();
+}
+
+/* ===================== TEAMÜBERSICHT ===================== */
+function groupOf(a){ return a.position==="Offense"?"off":a.position==="Defense"?"def":"none"; }
+function cohort(grp,team){
+  var want = grp==="off" ? "Offense" : grp==="def" ? "Defense"
+           : (grp&&grp.indexOf("pos:")===0) ? grp.slice(4) : null;
+  return athletes.filter(function(a){
+    if(!a.cur) return false;
+    if(team && a.team!==team) return false;
+    if(want!=null) return a.position===want;
+    return true;
+  });
+}
+function grpLabel(grp){
+  if(!grp||grp==="team") return "Team gesamt";
+  if(grp==="off") return "Offense";
+  if(grp==="def") return "Defense";
+  return grp.indexOf("pos:")===0 ? grp.slice(4) : grp;
+}
+function statOf(list,k){
+  var v=list.map(function(a){return a.cur.res[k];}).filter(function(x){return x!=null&&isFinite(x);});
+  if(!v.length) return null;
+  var mean=v.reduce(function(a,b){return a+b;},0)/v.length;
+  var sd=Math.sqrt(v.reduce(function(a,b){return a+(b-mean)*(b-mean);},0)/v.length);
+  return {mean:mean,sd:sd,n:v.length,min:Math.min.apply(null,v),max:Math.max.apply(null,v)};
+}
+var TCOLS=["name","position","team","datum","gates","F0","V0","Pmax","Vmax","Tau","RFmax","DRF","t10","t40","y40"];
+/* Spalten, zu denen die Rohdaten nichts hergeben, werden gar nicht erst gezeigt. */
+function activeCols(){
+  var hasTeam=teamList().length>0, hasPos=POSLIST.length>0;
+  var hasDate=athletes.some(function(a){return a.cur&&a.cur.datum;});
+  return TCOLS.filter(function(k){
+    if(k==="position") return hasPos;
+    if(k==="team") return hasTeam;
+    if(k==="datum") return hasDate;
+    return true;
+  });
+}
+function colTitle(k){
+  if(k==="name") return "Name"; if(k==="position") return "Position"; if(k==="team") return "Mannschaft";
+  if(k==="datum") return "Datum"; if(k==="gates") return "Tore";
+  var m=MK[k]; return m?(m.t+(m.u?" ("+m.u+")":"")):k;
+}
+function cellVal(a,k){
+  if(k==="name") return a.name; if(k==="position") return a.position; if(k==="team") return a.team;
+  if(k==="datum") return dateKey(a.cur.datum); if(k==="gates") return a.cur.nGates;
+  return a.cur.res[k];
+}
+
+function renderTeam(){
+  if(!athletes.length){
+    $("teamKpis").innerHTML='<div class="empty" style="grid-column:1/-1">Noch keine Daten. Im Reiter Massenimport Rohdaten einf\u00fcgen oder die Beispieldaten laden.</div>';
+    $("rankBoard").innerHTML=""; $("tThead").innerHTML=""; $("tTbody").innerHTML=""; $("odCmp").innerHTML="";
+    $("teamnote").textContent=""; $("rankTitle").textContent=""; $("rankHint").textContent="";
+    return;
+  }
+  var grp=$("grpSel").value||"team", team=$("teamSel").value||"";
+  curMetric=$("metSel").value||"Pmax";
+  var list=cohort(grp,team);
+  var lbl=grpLabel(grp);
+  $("teamnote").textContent=lbl+(team?" \u00b7 "+team:"")+" \u00b7 "+list.length+" Personen mit Auswertung";
+
+  if(!list.length){
+    $("teamKpis").innerHTML='<div class="empty" style="grid-column:1/-1">In dieser Gruppe gibt es keine ausgewerteten Durchg\u00e4nge.</div>';
+    $("rankBoard").innerHTML=""; $("tThead").innerHTML=""; $("tTbody").innerHTML=""; $("odCmp").innerHTML="";
+    return;
+  }
+
+  /* KPI */
+  var kpi=[
+    {k:"Pmax", cls:"k-red"},{k:"F0", cls:"k-navy"},{k:"V0", cls:"k-gold"},
+    {k:"Vmax", cls:"k-green"},{k:"RFmax", cls:""},{k:"DRF", cls:""},{k:"t40", cls:""}
+  ];
+  var kh='<div class="kpi k-red"><div class="val">'+list.length+'</div><div class="lab">Personen</div>'+
+    '<div class="sub">'+runs.filter(function(r){return r.res;}).length+' Durchg\u00e4nge gesamt</div></div>';
+  kpi.forEach(function(x){
+    var m=MK[x.k], s=statOf(list,x.k);
+    if(!s) return;
+    kh+='<div class="kpi '+x.cls+'"><div class="val">'+nz(s.mean,m.d)+'<span class="u">'+esc(m.u)+'</span></div>'+
+      '<div class="lab">\u00d8 '+esc(m.t)+'</div><div class="sub">'+nz(s.min,m.d)+' bis '+nz(s.max,m.d)+' \u00b7 s '+nz(s.sd,m.d)+'</div></div>';
+  });
+  $("teamKpis").innerHTML=kh;
+
+  /* Rangliste */
+  var m=MK[curMetric];
+  var rank=list.filter(function(a){return a.cur.res[curMetric]!=null;})
+    .sort(function(a,b){ return (a.cur.res[curMetric]-b.cur.res[curMetric])*(m.dir===-1?1:-1); });
+  var vals=rank.map(function(a){return a.cur.res[curMetric];});
+  var mx=Math.max.apply(null,vals), mn=Math.min.apply(null,vals);
+  var st=statOf(list,curMetric);
+  $("rankTitle").textContent=m.t+(m.u?" ("+m.u+")":"");
+  $("rankHint").textContent=(m.dir===-1?"Kleinere Werte sind besser":"Gr\u00f6\u00dfere Werte sind besser")+
+    " \u00b7 Mittelwert "+nz(st.mean,m.d)+" \u00b7 Balkenl\u00e4nge relativ zum Bestwert";
+  $("rankBoard").innerHTML=rank.map(function(a,i){
+    var v=a.cur.res[curMetric];
+    var frac;
+    if(mn>0) frac = m.dir===-1 ? mn/v : v/mx;                 /* Verh\u00e4ltnis zum Bestwert */
+    else frac = (mx>mn) ? (m.dir===-1 ? (mx-v)/(mx-mn) : (v-mn)/(mx-mn)) : 1;  /* bei Vorzeichenwechsel: Spannweite */
+    frac=Math.max(0.06,Math.min(1,frac));
+    return '<div class="brow"><div style="overflow:hidden;text-overflow:ellipsis">'+(i+1)+'. '+esc(a.name)+'</div>'+
+      '<div class="track"><div class="fill" style="width:'+(frac*100).toFixed(1)+'%;background:'+posColor(a.position)+'"></div></div>'+
+      '<div class="v">'+nz(v,m.d)+'</div></div>';
+  }).join("");
+
+  /* Tabelle */
+  var COLS=activeCols();
+  $("tThead").innerHTML=COLS.map(function(k){
+    var cls=(k==="name"||k==="position"||k==="team")?"":"n";
+    var arr=(tSortKey===k)?(tSortDir===1?" \u25b2":" \u25bc"):"";
+    return '<th class="'+cls+'" onclick="sortTeam(\''+k+'\')">'+esc(colTitle(k))+arr+'</th>';
+  }).join("");
+  var sorted=list.slice().sort(function(a,b){
+    var va=cellVal(a,tSortKey), vb=cellVal(b,tSortKey);
+    if(typeof va==="string"||typeof vb==="string") return String(va).localeCompare(String(vb),"de")*tSortDir;
+    if(va==null) return 1; if(vb==null) return -1;
+    return (va-vb)*tSortDir;
+  });
+  $("tTbody").innerHTML=sorted.map(function(a){
+    return '<tr class="clk" onclick="openSingle(\''+esc(a.name).replace(/'/g,"\\'")+'\')">'+COLS.map(function(k){
+      if(k==="name") return '<td><b>'+esc(a.name)+'</b></td>';
+      if(k==="position") return '<td>'+posTag(a.position)+'</td>';
+      if(k==="team") return '<td>'+esc(a.team||"\u2013")+'</td>';
+      if(k==="datum") return '<td class="n">'+esc(a.cur.datum?dateDe(a.cur.datum):"\u2013")+'</td>';
+      if(k==="gates") return '<td class="n">'+a.cur.nGates+'</td>';
+      return '<td class="n">'+nz(a.cur.res[k],MK[k].d)+'</td>';
+    }).join("")+'</tr>';
+  }).join("");
+
+  /* Positionsvergleich: alle Positionsgruppen nebeneinander, nicht nur Offense und Defense */
+  var groups=POSLIST.map(function(pn){
+    return {name:pn, color:posColor(pn),
+      list:athletes.filter(function(a){return a.cur&&a.position===pn&&(!team||a.team===team);})};
+  }).filter(function(x){ return x.list.length; });
+  $("odTitle").textContent = groups.length===2 ? (groups[0].name+" gegen "+groups[1].name) : "Positionsvergleich";
+  if(groups.length>=2){
+    var keys=["F0","V0","Pmax","Vmax","RFmax","DRF","t10","t40"];
+    var rows=keys.map(function(k){
+      var mm=MK[k];
+      var st=groups.map(function(g){ return {g:g, s:statOf(g.list,k)}; }).filter(function(x){return x.s;});
+      if(st.length<2) return "";
+      var big=Math.max.apply(null,st.map(function(x){return x.s.mean;}))||1;
+      var bestV=mm.dir===-1 ? Math.min.apply(null,st.map(function(x){return x.s.mean;})) : big;
+      return '<div style="padding:9px 0;border-bottom:1px solid var(--line-soft)">'+
+        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">'+
+          '<b>'+esc(mm.t)+'</b><span style="color:var(--ink-2)">'+esc(mm.u)+'</span></div>'+
+        st.map(function(x){
+          var isBest=Math.abs(x.s.mean-bestV)<1e-12;
+          return '<div class="brow" style="grid-template-columns:96px 1fr 70px;padding:2px 0">'+
+            '<div style="font-size:12.5px;color:'+x.g.color+';font-weight:'+(isBest?700:500)+
+              ';overflow:hidden;text-overflow:ellipsis">'+esc(x.g.name)+'</div>'+
+            '<div class="track"><div class="fill" style="width:'+(x.s.mean/big*100).toFixed(1)+'%;background:'+x.g.color+'"></div></div>'+
+            '<div class="v">'+nz(x.s.mean,mm.d)+'</div></div>';
+        }).join("")+'</div>';
+    }).join("");
+    $("odCmp").innerHTML='<div class="panel" style="grid-column:1/-1"><h3>Mittelwerte im Vergleich</h3>'+
+      '<div class="hint">'+groups.map(function(g){return esc(g.name)+" n = "+g.list.length;}).join(", ")+
+      '. Der fett gesetzte Gruppenname markiert den in dieser Kennzahl besseren Wert.</div>'+rows+'</div>';
+  } else if(groups.length===1){
+    $("odCmp").innerHTML='<div class="empty" style="grid-column:1/-1">Alle ausgewerteten Personen geh\u00f6ren zur Gruppe \u201e'+
+      esc(groups[0].name)+'\u201c. F\u00fcr einen Vergleich wird eine zweite Positionsgruppe gebraucht.</div>';
+  } else {
+    $("odCmp").innerHTML='<div class="empty" style="grid-column:1/-1">Die Rohdaten enthalten keine Positionsangaben. '+
+      'Eine Spalte POSITION in der Importdatei schaltet diesen Vergleich frei.</div>';
+  }
+}
+function sortTeam(k){
+  if(tSortKey===k) tSortDir*=-1;
+  else { tSortKey=k; tSortDir=(k==="name"||k==="position"||k==="team")?1:(MK[k]&&MK[k].dir===-1?1:-1); }
+  renderTeam();
+}
+function openSingle(n){ pickName=n; $("pickSel").value=n; setTab("einzel"); }
+
+/* ===================== CHART-BASIS ===================== */
+function axis(xl,yl){
+  return {
+    x:{type:"linear",title:{display:true,text:xl,color:"#4A555F",font:{family:"Inter",size:11.5,weight:"600"}},
+       ticks:{color:"#6B757E",font:{family:"Inter",size:10.5}},grid:{color:"#E6E9ED"}},
+    y:{type:"linear",title:{display:true,text:yl,color:"#4A555F",font:{family:"Inter",size:11.5,weight:"600"}},
+       ticks:{color:"#6B757E",font:{family:"Inter",size:10.5}},grid:{color:"#E6E9ED"}}
+  };
+}
+function baseOpts(){ return {responsive:true,maintainAspectRatio:false,animation:{duration:200},
+  interaction:{mode:"nearest",axis:"x",intersect:false}}; }
+function legendOpts(){ return {legend:{display:true,position:"bottom",
+  labels:{color:"#4A555F",font:{family:"Inter",size:11.5},boxWidth:22,boxHeight:3,usePointStyle:false}}}; }
+function kill(id){ if(charts[id]){ try{charts[id].destroy();}catch(e){} delete charts[id]; } }
+/* Vor jedem Neuaufbau eines Reiters die Diagramme des alten Aufbaus freigeben,
+   sonst zeigt ein wiederverwendetes Canvas noch die vorherige Auswahl. */
+function killAll(pre){ Object.keys(charts).forEach(function(id){ if(id.indexOf(pre)===0) kill(id); }); }
+function mk(id,cfg){ var el=$(id); if(!el||typeof Chart==="undefined") return; kill(id); charts[id]=new Chart(el.getContext("2d"),cfg); }
+function cut(curve,run,mode){
+  if(mode!=="last"||!run.res) return curve;
+  var vLim=run.res.vAtLast;
+  return curve.filter(function(p){ return p.x<=vLim+1e-9; });
+}
+
+/* ===================== EINZELAUSWERTUNG =====================
+   Aufbau und Berechnung 1:1 aus dem Split-Time FVP Profiler uebernommen:
+   Torbahn, Torzeitenfelder mit Segmentanalyse, Anpassungsguete, zehn Kennwert-
+   kacheln, fuenf Diagramme, Zwischenzeit-Finder und Yard-Referenzen. Die Felder
+   sind hier aus den importierten Rohdaten vorbelegt statt leer.                */
+var TRACK_MAX=40;
+var edit=null;      /* Arbeitskopie des gewaehlten Durchgangs */
+var editRun=null;   /* Originaldurchgang dazu */
+var lastFit=null;   /* Ergebnis der Anpassung, Grundlage fuer Finder und Yards */
+var gateInputs={}, singleReady=false, recomputeTimer=null;
+
+function findAthlete(n){ for(var i=0;i<athletes.length;i++) if(athletes[i].name===n) return athletes[i]; return null; }
+function fmtDe(v,d){ return isFinite(v)&&v!=null ? nz(v,d) : "\u2013"; }
+
+/* ---------- Torbahn ---------- */
+function xForDistance(d){ var mL=34,mR=34,w=1000; return mL+(d/TRACK_MAX)*(w-mL-mR); }
+function svgEl(n){ return document.createElementNS("http://www.w3.org/2000/svg",n); }
+function buildTrack(svg,opts){
+  svg.innerHTML=""; var y=46, r=opts.runner;
+  [y-16,y,y+16].forEach(function(ly){
+    var l=svgEl("line");
+    l.setAttribute("x1",xForDistance(0)); l.setAttribute("x2",xForDistance(TRACK_MAX));
+    l.setAttribute("y1",ly); l.setAttribute("y2",ly); l.setAttribute("class","gate-line");
+    svg.appendChild(l);
+  });
+  [0].concat(GATES).forEach(function(d){
+    var x=xForDistance(d), h=r?20:24;
+    var post=svgEl("line");
+    post.setAttribute("x1",x); post.setAttribute("x2",x);
+    post.setAttribute("y1",y-h); post.setAttribute("y2",y+h); post.setAttribute("class","gate-post");
+    svg.appendChild(post);
+    var dot=svgEl("circle");
+    dot.setAttribute("cx",x); dot.setAttribute("cy",y-h); dot.setAttribute("r",r?3:(d===0?3:5));
+    if(!r) dot.setAttribute("id","gatedot-"+d);
+    dot.setAttribute("class","gate-dot "+(r||d===0?"filled":"empty"));
+    svg.appendChild(dot);
+    var lab=svgEl("text");
+    lab.setAttribute("x",x); lab.setAttribute("y",y+(r?38:42));
+    lab.setAttribute("text-anchor","middle"); lab.setAttribute("class","gate-label");
+    lab.textContent = d===0 ? (r?"0":"START") : (r?String(d):d+"m");
+    svg.appendChild(lab);
+  });
+  if(r){
+    var glow=svgEl("circle");
+    glow.setAttribute("id","runner-glow"); glow.setAttribute("cy",y); glow.setAttribute("r",12);
+    glow.setAttribute("fill","#1B3A5C"); glow.setAttribute("opacity","0.16");
+    svg.appendChild(glow);
+    var mk2=svgEl("circle");
+    mk2.setAttribute("id","runner-marker"); mk2.setAttribute("cy",y); mk2.setAttribute("r",6.5);
+    mk2.setAttribute("fill","#1B3A5C"); mk2.setAttribute("stroke","#fff"); mk2.setAttribute("stroke-width","2");
+    svg.appendChild(mk2);
+  }
+}
+function setRunnerPosition(d){
+  var x=xForDistance(Math.min(Math.max(d,0),TRACK_MAX));
+  var m=$("runner-marker"), g=$("runner-glow");
+  if(m) m.setAttribute("cx",x); if(g) g.setAttribute("cx",x);
+}
+
+/* ---------- Torzeitenfelder ---------- */
+function buildGateInputs(){
+  var box=$("gate-inputs"); box.innerHTML=""; gateInputs={};
+  GATES.forEach(function(d,i){
+    var prev=i===0?0:GATES[i-1];
+    var cell=document.createElement("div");
+    cell.className="gate-cell"; cell.id="gatecell-"+d;
+    cell.innerHTML='<div class="gate-cell-head"><b>'+d+' m</b><span id="gateorig-'+d+'"></span></div>';
+    var inp=document.createElement("input");
+    inp.type="number"; inp.step="0.001"; inp.min="0"; inp.placeholder="s"; inp.id="gate-"+d;
+    cell.appendChild(inp);
+    var seg=document.createElement("div");
+    seg.className="gate-segment-block";
+    seg.innerHTML='<div class="seg-row"><span class="seg-label">\u0394 '+prev+'\u2013'+d+' m</span>'+
+      '<span class="seg-time" id="segment-'+d+'">\u2013</span></div>'+
+      '<div class="seg-row"><span class="seg-label">\u00d8 Geschw.</span>'+
+      '<span class="seg-vel" id="segvel-'+d+'">\u2013</span></div>'+
+      '<div class="seg-row"><span class="seg-label">\u00d8 Beschl.</span>'+
+      '<span class="seg-acc" id="segacc-'+d+'">\u2013</span></div>';
+    cell.appendChild(seg);
+    box.appendChild(cell);
+    gateInputs[d]=inp;
+    inp.addEventListener("input",function(){ updateGateDot(d); updateSegments(); scheduleSingle(); });
+  });
+}
+function updateGateDot(d){
+  var dot=$("gatedot-"+d); if(!dot) return;
+  var f=gateInputs[d]&&gateInputs[d].value!==""&&parseFloat(gateInputs[d].value)>0;
+  dot.classList.toggle("filled",!!f); dot.classList.toggle("empty",!f);
+}
+/* Segmentwerte: v = 5 m / dt, a aus der Differenz zweier Segmentgeschwindigkeiten
+   bezogen auf die Zeitmitten. Nach einer Luecke wird die Referenz neu gestartet,
+   dort steht bei der Beschleunigung bewusst ein Strich. */
+function updateSegments(){
+  var prevT=0, chain=true, haveRef=true, prevV=0, prevM=0;
+  GATES.forEach(function(d){
+    var tEl=$("segment-"+d), vEl=$("segvel-"+d), aEl=$("segacc-"+d);
+    var raw=gateInputs[d].value, t=parseFloat(raw);
+    var filled=raw!==""&&isFinite(t)&&t>0;
+    if(filled&&chain){
+      var dt=t-prevT;
+      if(dt>0){
+        var v=5/dt, M=(prevT+t)/2;
+        tEl.textContent=nz(dt,3)+" s"; vEl.textContent=nz(v,2)+" m/s";
+        if(haveRef){ var a=(v-prevV)/(M-prevM); aEl.textContent=isFinite(a)?nz(a,2)+" m/s\u00b2":"\u2013"; }
+        else aEl.textContent="\u2013";
+        prevV=v; prevM=M; haveRef=true;
+      } else { tEl.textContent="\u2013"; vEl.textContent="\u2013"; aEl.textContent="\u2013"; }
+    } else { tEl.textContent="\u2013"; vEl.textContent="\u2013"; aEl.textContent="\u2013"; }
+    if(filled){ prevT=t; chain=true; } else { chain=false; haveRef=false; }
+  });
+}
+
+/* ---------- Kennwertkacheln ---------- */
+function renderTiles(r){
+  var items=[
+    {k:"V max (asympt.)", v:fmtDe(r.Vmax,2),      u:"m/s",        cls:"accent"},
+    {k:"\u03c4 (Tau)",     v:fmtDe(r.Tau,3),       u:"s"},
+    {k:"V bei letztem Tor",v:fmtDe(r.vAtLast,2),   u:"m/s",        cls:"cyan"},
+    {k:"F0",               v:fmtDe(r.F0,2),        u:"N/kg"},
+    {k:"V0",               v:fmtDe(r.V0,2),        u:"m/s"},
+    {k:"P max",            v:fmtDe(r.Pmax,1),      u:"W/kg",       cls:"accent"},
+    {k:"F\u2013v-Steigung",v:fmtDe(r.FVslope,3),   u:"N/kg / m/s"},
+    {k:"RF max",           v:fmtDe(r.RFmax,1),     u:"%"},
+    {k:"DRF",              v:fmtDe(r.DRFsigned,3), u:"%/(m/s)"},
+    {k:"V opt",            v:fmtDe(r.Vopt,2),      u:"m/s"}
+  ];
+  $("tiles").innerHTML=items.map(function(it){
+    return '<div class="tile '+(it.cls||"")+'"><div class="k">'+it.k+'</div>'+
+      '<div class="v">'+it.v+'<span class="u">'+it.u+'</span></div></div>';
+  }).join("");
+}
+function renderFitQuality(r,n){
+  var el=$("fit-quality");
+  if(!r){ el.innerHTML='<span>Mindestens drei Torzeiten eintragen, damit das Modell angepasst werden kann.</span>'; return; }
+  var cls=r.rmse<0.05?"ok":(r.rmse<0.15?"":"warn");
+  el.innerHTML='<span>Anpassung \u00fcber <b>'+n+'</b> Tore</span>'+
+    '<span>Modellabweichung (RMSE): <b class="'+cls+'">\u00b1'+nz(r.rmse*100,1)+' cm</b></span>'+
+    '<span>Summe Fehlerquadrate: <b>'+nz(r.sse,4)+'</b></span>';
+}
+
+/* ---------- Diagramme ---------- */
+var sCharts={};
+function sAxis(xl,yl,col){
+  col=col||"#4A555F";
+  return {
+    x:{type:"linear",title:{display:true,text:xl,color:"#4A555F",font:{family:"Inter",size:11.5,weight:"600"}},
+       ticks:{color:"#6B757E",font:{size:10.5}},grid:{color:"#E6E9ED"}},
+    y:{type:"linear",title:{display:true,text:yl,color:col,font:{family:"Inter",size:11.5,weight:"600"}},
+       ticks:{color:"#6B757E",font:{size:10.5}},grid:{color:"#E6E9ED"}}
+  };
+}
+function initSingleCharts(){
+  if(typeof Chart==="undefined"||sCharts.vt) return;
+  var base={responsive:true,maintainAspectRatio:false,animation:{duration:200}};
+  var noLeg={legend:{display:false}};
+  var leg={legend:{display:true,position:"bottom",labels:{color:"#4A555F",font:{family:"Inter",size:11.5},boxWidth:22,boxHeight:3}}};
+  sCharts.vt=new Chart($("chart-vt").getContext("2d"),{type:"line",data:{datasets:[
+      {label:"Modell",data:[],borderColor:"#1B3A5C",backgroundColor:"#1B3A5C",borderWidth:2.4,pointRadius:0,tension:.15},
+      {label:"Torzeiten",data:[],borderColor:"#D8232A",backgroundColor:"#D8232A",pointRadius:4.5,borderWidth:0,showLine:false}
+    ]},options:Object.assign({},base,{plugins:leg,scales:sAxis("Zeit (s)","Geschw. (m/s)")})});
+  sCharts.fv=new Chart($("chart-fv").getContext("2d"),{type:"line",data:{datasets:[
+      {label:"F\u2013v",data:[],borderColor:"#D8232A",backgroundColor:"#D8232A",borderWidth:2.4,pointRadius:0}
+    ]},options:Object.assign({},base,{plugins:noLeg,scales:sAxis("Geschw. (m/s)","Kraft (N/kg)","#D8232A")})});
+  sCharts.pv=new Chart($("chart-pv").getContext("2d"),{type:"line",data:{datasets:[
+      {label:"P\u2013v",data:[],borderColor:"#1B3A5C",backgroundColor:"#1B3A5C",borderWidth:2.4,pointRadius:0,tension:.1}
+    ]},options:Object.assign({},base,{plugins:noLeg,scales:sAxis("Geschw. (m/s)","Leistung (W/kg)","#1B3A5C")})});
+  sCharts.rf=new Chart($("chart-rf").getContext("2d"),{type:"line",data:{datasets:[
+      {label:"RF\u2013v",data:[],borderColor:"#C98A04",backgroundColor:"#C98A04",borderWidth:2.4,pointRadius:0}
+    ]},options:Object.assign({},base,{plugins:noLeg,scales:sAxis("Geschw. (m/s)","RF (%)","#C98A04")})});
+  sCharts.fvp=new Chart($("chart-fvp").getContext("2d"),{type:"line",data:{datasets:[
+      {label:"Kraft (N/kg)",data:[],borderColor:"#D8232A",backgroundColor:"#D8232A",borderWidth:2.4,pointRadius:0,yAxisID:"y"},
+      {label:"Leistung (W/kg)",data:[],borderColor:"#1B3A5C",backgroundColor:"#1B3A5C",borderWidth:2.4,pointRadius:0,tension:.1,yAxisID:"y1"}
+    ]},options:Object.assign({},base,{plugins:leg,interaction:{mode:"nearest",axis:"x",intersect:false},scales:{
+      x:{type:"linear",title:{display:true,text:"Geschw. (m/s)",color:"#4A555F",font:{family:"Inter",size:11.5,weight:"600"}},
+         ticks:{color:"#6B757E",font:{size:10.5}},grid:{color:"#E6E9ED"}},
+      y:{type:"linear",position:"left",title:{display:true,text:"Kraft (N/kg)",color:"#D8232A",font:{family:"Inter",size:11.5,weight:"600"}},
+         ticks:{color:"#D8232A",font:{size:10.5}},grid:{color:"#E6E9ED"}},
+      y1:{type:"linear",position:"right",title:{display:true,text:"Leistung (W/kg)",color:"#1B3A5C",font:{family:"Inter",size:11.5,weight:"600"}},
+         ticks:{color:"#1B3A5C",font:{size:10.5}},grid:{drawOnChartArea:false}}
+    }})});
+}
+function clearSingleCharts(){
+  if(!sCharts.vt) return;
+  sCharts.vt.data.datasets[0].data=[]; sCharts.vt.data.datasets[1].data=[]; sCharts.vt.update();
+  ["fv","pv","rf"].forEach(function(k){ sCharts[k].data.datasets[0].data=[]; sCharts[k].update(); });
+  sCharts.fvp.data.datasets[0].data=[]; sCharts.fvp.data.datasets[1].data=[]; sCharts.fvp.update();
+}
+
+/* ---------- Rechnen ---------- */
+function scheduleSingle(){ clearTimeout(recomputeTimer); recomputeTimer=setTimeout(singleRecompute,180); }
+function validateAthleteInputs(st,ms,tc,pr){
+  var w=[];
+  if(st>3) w.push("K\u00f6rpergr\u00f6\u00dfe wirkt wie Zentimeter statt Meter eingegeben, zum Beispiel 1,72 statt 172. Das verf\u00e4lscht alle Kennwerte massiv.");
+  else if(st<1.0||st>2.3) w.push("K\u00f6rpergr\u00f6\u00dfe ("+nz(st,2)+" m) liegt au\u00dferhalb des plausiblen Bereichs von 1,0 bis 2,3 m.");
+  if(ms<20||ms>200) w.push("K\u00f6rpermasse ("+nz(ms,1)+" kg) liegt au\u00dferhalb des plausiblen Bereichs von 20 bis 200 kg.");
+  if(pr<800||pr>1100) w.push("Luftdruck ("+nz(pr,0)+" hPa) liegt au\u00dferhalb des plausiblen Bereichs von 800 bis 1100 hPa.");
+  if(tc<-30||tc>50) w.push("Temperatur ("+nz(tc,1)+" \u00b0C) liegt au\u00dferhalb des plausiblen Bereichs von -30 bis 50 \u00b0C.");
+  return w;
+}
+function singleRecompute(){
+  if(!edit) return;
+  var st=parseFloat($("in-stature").value)||1.75;
+  var ms=parseFloat($("in-mass").value)||72;
+  var tc=parseFloat($("in-temp").value); if(!isFinite(tc)) tc=18;
+  var pr=parseFloat($("in-pressure").value)||1013;
+
+  var w=validateAthleteInputs(st,ms,tc,pr), wEl=$("athlete-warning");
+  if(w.length){ wEl.style.display="block"; wEl.innerHTML=w.join("<br>"); } else wEl.style.display="none";
+
+  var tmp={splits:{},stature:st,mass:ms,temp:tc,press:pr,warn:[]};
+  var n=0;
+  GATES.forEach(function(d){
+    var raw=gateInputs[d].value, t=parseFloat(raw);
+    if(raw!==""&&isFinite(t)&&t>0){ tmp.splits[d]=t; n++; }
+    var orig=editRun?editRun.splits[d]:null;
+    var cell=$("gatecell-"+d), tag=$("gateorig-"+d);
+    var changed=(orig==null?(raw!==""):(raw===""||Math.abs(t-orig)>1e-9));
+    if(cell) cell.classList.toggle("edited",!!changed);
+    if(tag) tag.innerHTML=changed?'<span style="font-size:10px;color:#9A6B03">Import: '+(orig!=null?nz(orig,3):"leer")+'</span>':"";
+  });
+  computeRun(tmp);
+
+  if(!tmp.res){
+    lastFit=null;
+    renderFitQuality(null,n);
+    if(n>=3) $("fit-quality").innerHTML='<span class="warn">'+esc(tmp.error||"nicht berechenbar")+' \u2013 bitte die Torzeiten pr\u00fcfen.</span>';
+    $("tiles").innerHTML='<div class="tile"><div class="k">Status</div><div class="v" style="font-size:16px;color:var(--ink-2)">Warte auf Daten\u2026</div></div>';
+    clearSingleCharts(); updateFinder();
+    return;
+  }
+  var r=tmp.res;
+  lastFit={Vmax:r.Vmax,Tau:r.Tau,stature:st,mass:ms,temp:tc,press:pr,lastDistance:r.lastGate};
+  renderFitQuality(r,r.gateD.length);
+  renderTiles(r);
+  [0].concat(GATES).forEach(function(d){
+    var dot=$("gatedot-"+d); if(!dot) return;
+    var f=(d===0||r.gateD.indexOf(d)>=0);
+    dot.classList.toggle("filled",f); dot.classList.toggle("empty",!f);
+  });
+  if(sCharts.vt){
+    sCharts.vt.data.datasets[0].data=r.curves.vt;
+    sCharts.vt.data.datasets[1].data=r.gatePts;
+    sCharts.vt.update();
+    sCharts.fv.data.datasets[0].data=r.curves.fv; sCharts.fv.update();
+    sCharts.pv.data.datasets[0].data=r.curves.pv; sCharts.pv.update();
+    sCharts.rf.data.datasets[0].data=r.curves.rf; sCharts.rf.update();
+    sCharts.fvp.data.datasets[0].data=r.curves.fv;
+    sCharts.fvp.data.datasets[1].data=r.curves.pv;
+    sCharts.fvp.update();
+  }
+  updateFinder();
+  renderRefBlock();
+}
+
+/* ---------- Zwischenzeit-Finder ---------- */
+function updateYardRefs(){
+  var y10=10*YD, y40=40*YD;
+  if(!lastFit){ $("yard10-time").textContent="\u2013 s"; $("yard40-time").textContent="\u2013 s";
+    $("yard-note").classList.remove("show"); return; }
+  var t10=invPos(y10,lastFit.Vmax,lastFit.Tau), t40=invPos(y40,lastFit.Vmax,lastFit.Tau);
+  var e10=y10>lastFit.lastDistance+1e-6, e40=y40>lastFit.lastDistance+1e-6;
+  $("yard10-time").textContent=nz(t10,3)+" s"+(e10?" *":"");
+  $("yard40-time").textContent=nz(t40,3)+" s"+(e40?" *":"");
+  $("yard-note").classList.toggle("show",e10||e40);
+}
+function updateFinder(){
+  var raw=parseFloat($("finder-distance").value);
+  var d=isFinite(raw)?Math.min(Math.max(raw,0),TRACK_MAX):0;
+  setRunnerPosition(d);
+  $("finder-at").innerHTML="bei "+nz(d,1)+"&nbsp;m";
+  if(!lastFit){
+    $("finder-time").innerHTML="\u2013 s";
+    $("finder-v").textContent="\u2013 m/s"; $("finder-a").textContent="\u2013 m/s\u00b2";
+    $("finder-f").textContent="\u2013 N/kg"; $("finder-p").textContent="\u2013 W/kg";
+    $("extrap-note").classList.remove("show"); updateYardRefs(); return;
+  }
+  var f=lastFit, t=invPos(d,f.Vmax,f.Tau), v=vel_(t,f.Vmax,f.Tau), a=acc_(t,f.Vmax,f.Tau);
+  var K=airF(v,f.stature,f.mass,f.temp,f.press)+f.mass*a, Fkg=K/f.mass;
+  $("finder-time").innerHTML=nz(t,3)+"&nbsp;s";
+  $("finder-v").textContent=nz(v,2)+" m/s";
+  $("finder-a").textContent=nz(a,2)+" m/s\u00b2";
+  $("finder-f").textContent=nz(Fkg,2)+" N/kg";
+  $("finder-p").textContent=nz(Fkg*v,1)+" W/kg";
+  $("extrap-note").classList.toggle("show",d>f.lastDistance+1e-6);
+  updateYardRefs();
+}
+
+/* ---------- Auswahl und Aufbau ---------- */
+function onPick(){ pickName=$("pickSel").value; loadSingle(true); }
+function onRunPick(){ loadSingle(false); }
+function stepPick(d){
+  if(!athletes.length) return;
+  var i=-1,k;
+  for(k=0;k<athletes.length;k++) if(athletes[k].name===pickName){ i=k; break; }
+  i=(i<0?0:i)+d; if(i<0) i=athletes.length-1; if(i>=athletes.length) i=0;
+  pickName=athletes[i].name; $("pickSel").value=pickName; loadSingle(true);
+}
+function refGroupFor(a){
+  var r=$("refSel").value||"auto";
+  if(r&&r!=="auto") return r;
+  return a.position?("pos:"+a.position):"team";
+}
+function renderSingle(){ loadSingle(true); }
+
+function loadSingle(resetRun){
+  if(!singleReady){
+    buildTrack($("gate-track"),{runner:false});
+    buildTrack($("finder-track"),{runner:true});
+    buildGateInputs();
+    initSingleCharts();
+    $("btn-reset").addEventListener("click",function(){ loadSingle(false); toast("Werte aus dem Import wiederhergestellt."); });
+    $("btn-clear").addEventListener("click",function(){
+      GATES.forEach(function(d){ gateInputs[d].value=""; updateGateDot(d); });
+      updateSegments(); singleRecompute();
+    });
+    ["in-stature","in-mass","in-temp","in-pressure"].forEach(function(id){
+      $(id).addEventListener("input",scheduleSingle);
+    });
+    $("finder-distance").addEventListener("input",function(){ $("finder-slider").value=this.value; updateFinder(); });
+    $("finder-slider").addEventListener("input",function(){ $("finder-distance").value=this.value; updateFinder(); });
+    $("btn-export-pdf").addEventListener("click",exportSinglePdf);
+    singleReady=true;
+  }
+
+  var has=athletes.length>0;
+  $("singleStages").classList.toggle("hidden",!has);
+  $("singleEmpty").classList.toggle("hidden",has);
+  if(!has){ $("singleHero").innerHTML=""; edit=null; editRun=null; lastFit=null; return; }
+
+  pickName=$("pickSel").value||pickName;
+  var a=findAthlete(pickName);
+  if(!a){ a=athletes[0]; pickName=a.name; $("pickSel").value=pickName; }
+
+  var rs=$("runSel");
+  if(resetRun||rs.dataset.owner!==a.name){
+    rs.innerHTML=a.runs.map(function(r,i){
+      return '<option value="'+i+'">'+(a.runs.length>1?("Durchgang "+(i+1)+" \u00b7 "):"")+
+        (r.datum?dateDe(r.datum):"ohne Datum")+'</option>';
+    }).join("");
+    rs.dataset.owner=a.name;
+    var ci=a.runs.indexOf(a.cur);
+    rs.value=String(ci>=0?ci:0);
+  }
+  var run=a.runs[+rs.value]||a.runs[0];
+  editRun=run; edit=run;
+
+  /* Kopfkarte */
+  var col=posColor(a.position);
+  $("singleHero").innerHTML='<div class="hero" style="border-top-color:'+col+'">'+
+    '<div class="jn" style="color:'+col+'">'+esc((a.name.match(/\b\w/g)||[]).slice(0,2).join("").toUpperCase())+'</div>'+
+    '<div><div class="nm">'+esc(a.name)+'</div>'+
+      '<div class="meta">'+(a.position?posTag(a.position)+' ':'')+esc(a.team||"")+
+      ' \u00b7 '+a.runs.length+' Durchgang'+(a.runs.length>1?"\u00e4nge":"")+'</div></div>'+
+    '<div class="right">'+esc(run.datum?dateDe(run.datum):"ohne Datum")+'<br>Zeile '+run.row+' der Rohdaten'+
+      (run.warn.length?'<br><span style="color:#9A6B03">'+esc(run.warn.join(" \u00b7 "))+'</span>':'')+
+    '</div></div>';
+
+  /* Felder aus dem Durchgang vorbelegen */
+  $("in-stature").value=(Math.round(run.stature*1000)/1000);
+  $("in-mass").value=run.mass;
+  $("in-temp").value=run.temp;
+  $("in-pressure").value=run.press;
+  GATES.forEach(function(d){
+    gateInputs[d].value = run.splits[d]!=null ? run.splits[d] : "";
+    updateGateDot(d);
+  });
+  updateSegments();
+  clearTimeout(recomputeTimer);
+  singleRecompute();
+}
+
+/* ---------- Einordnung im Kader (Zusatz) ---------- */
+function renderRefBlock(){
+  var box=$("refBlock"); if(!box) return;
+  var a=findAthlete(pickName);
+  if(!a||!lastFit||!edit){ box.innerHTML=""; return; }
+  var tmp={splits:{},stature:lastFit.stature,mass:lastFit.mass,temp:lastFit.temp,press:lastFit.press,warn:[]};
+  GATES.forEach(function(d){ var v=parseFloat(gateInputs[d].value); if(isFinite(v)&&v>0) tmp.splits[d]=v; });
+  computeRun(tmp);
+  var s=tmp.res; if(!s){ box.innerHTML=""; return; }
+
+  var g=refGroupFor(a), glist=cohort(g,""), gname=grpLabel(g);
+  var rows="";
+  ["Pmax","F0","V0","Vmax","RFmax","DRF","t10","t40"].forEach(function(k){
+    var m=MK[k], st=statOf(glist,k), v=s[k];
+    if(!st||v==null||st.n<2) return;
+    var z=st.sd>0?(v-st.mean)/st.sd:0;
+    if(m.dir===-1) z=-z;
+    var w=Math.min(Math.abs(z),3)/3*50, good=z>=0;
+    rows+='<div class="zrow"><div>'+esc(m.t)+'</div>'+
+      '<div class="zbar"><div class="mid"></div><div class="seg" style="'+(good?"left:50%":"right:50%")+
+        ';width:'+w.toFixed(1)+'%;background:'+(good?"#2E7D4F":"#D8232A")+'"></div></div>'+
+      '<div class="zv">'+nz(v,m.d)+' <span style="color:var(--ink-2);font-weight:500">('+(z>=0?"+":"")+nz(z,1)+' s)</span></div></div>';
+  });
+
+  var valid=a.runs.filter(function(r){return r.res;});
+  var h='<div class="charts" style="grid-template-columns:'+(valid.length>1?"minmax(0,1fr) minmax(0,1fr)":"minmax(0,1fr)")+'">'+
+    '<div class="panel"><h3>Einordnung gegen\u00fcber '+esc(gname)+'</h3>'+
+    '<div class="hint">Abweichung vom Gruppenmittel in Standardabweichungen. Nach rechts bedeutet besser, '+
+    'unabh\u00e4ngig davon ob gro\u00dfe oder kleine Werte g\u00fcnstig sind. Gruppengr\u00f6\u00dfe n = '+glist.length+'.</div>'+
+    (rows||'<div class="empty" style="padding:20px">Zu wenige Vergleichsdaten in dieser Gruppe.</div>')+'</div>';
+  if(valid.length>1) h+='<div class="panel"><h3>Entwicklung \u00fcber die Durchg\u00e4nge</h3>'+
+    '<div class="hint">Alle ausgewerteten Durchg\u00e4nge dieser Person in zeitlicher Reihenfolge, '+
+    'mit den Werten aus dem Import.</div><div class="chartbox"><canvas id="c5"></canvas></div></div>';
+  h+='</div>';
+  box.innerHTML=h;
+
+  kill("c5");
+  if(valid.length>1){
+    mk("c5",{type:"bar",data:{labels:valid.map(function(r,i){return r.datum?dateDe(r.datum):("Durchgang "+(i+1));}),
+      datasets:[
+        {label:"Pmax (W/kg)",data:valid.map(function(r){return +r.res.Pmax.toFixed(2);}),backgroundColor:"#D8232A"},
+        {label:"F0 (N/kg)",data:valid.map(function(r){return +r.res.F0.toFixed(2);}),backgroundColor:"#1B3A5C"},
+        {label:"V0 (m/s)",data:valid.map(function(r){return +r.res.V0.toFixed(2);}),backgroundColor:"#C98A04"}
+      ]},options:Object.assign(baseOpts(),{plugins:legendOpts(),scales:{
+        x:{ticks:{color:"#6B757E",font:{size:11}},grid:{display:false}},
+        y:{ticks:{color:"#6B757E",font:{size:10.5}},grid:{color:"#E6E9ED"},beginAtZero:true}
+      }})});
+  }
+}
+
+/* ---------- PDF ---------- */
+function exportSinglePdf(){
+  clearTimeout(recomputeTimer);
+  singleRecompute();
+  if(!lastFit){ toast("Bitte zuerst mindestens drei Torzeiten eintragen, damit der Bericht sinnvolle Werte enth\u00e4lt."); return; }
+  var a=findAthlete(pickName);
+  $("print-meta").textContent=(a?a.name+" \u2014 ":"")+"Split-Time FVP Profil, Bericht erzeugt am "+
+    new Date().toLocaleString("de-AT",{dateStyle:"medium",timeStyle:"short"});
+  setTimeout(function(){ window.print(); },320);
+}
+
+/* ===================== VERGLEICH ===================== */
+function buildCmpSlots(){
+  var box=$("cmpSlots");
+  var opts='<option value="">\u2014 leer \u2014</option>'+athletes.filter(function(a){return a.cur;}).map(function(a){
+    return '<option value="'+esc(a.name)+'">'+esc(a.name)+(a.position?" ("+esc(a.position)+")":"")+'</option>';
+  }).join("");
+  box.innerHTML=PAL.map(function(c,i){
+    return '<div class="slot" style="border-left-color:'+c+'">'+
+      '<div class="lab"><span class="dot" style="background:'+c+'"></span>Person '+(i+1)+'</div>'+
+      '<select id="cs'+i+'" onchange="setCmp('+i+',this.value)">'+opts+'</select>'+
+      '<div class="st" id="cst'+i+'"></div></div>';
+  }).join("");
+  cmpSel.forEach(function(n,i){ if($("cs"+i)) $("cs"+i).value=n||""; });
+}
+function setCmp(i,v){ cmpSel[i]=v||null; renderCompare(); }
+function clearCmp(){ cmpSel=[null,null,null,null,null]; buildCmpSlots(); renderCompare(); }
+function fillTop5(){
+  var top=athletes.filter(function(a){return a.cur&&a.cur.res.Pmax!=null;})
+    .sort(function(a,b){return b.cur.res.Pmax-a.cur.res.Pmax;}).slice(0,5);
+  cmpSel=[0,1,2,3,4].map(function(i){ return top[i]?top[i].name:null; });
+  buildCmpSlots(); renderCompare();
+  if(top.length) toast("F\u00fcnf beste nach Pmax \u00fcbernommen.");
+}
+function cmpPicked(){
+  return cmpSel.map(function(n,i){
+    if(!n) return null;
+    var a=findAthlete(n);
+    return (a&&a.cur)?{a:a,run:a.cur,color:PAL[i],slot:i}:null;
+  }).filter(Boolean);
+}
+function renderCompare(){
+  var box=$("cmpBody"); killAll("v");
+  if(!athletes.length){ box.innerHTML='<div class="empty">Noch keine Daten. Im Reiter Massenimport Rohdaten einf\u00fcgen oder die Beispieldaten laden.</div>'; return; }
+  var sel=cmpPicked();
+  cmpSel.forEach(function(n,i){
+    var el=$("cst"+i); if(!el) return;
+    var a=n?findAthlete(n):null;
+    el.innerHTML=(a&&a.cur)? ("Pmax "+nz(a.cur.res.Pmax,2)+" W/kg \u00b7 F0 "+nz(a.cur.res.F0,2)+" \u00b7 V0 "+nz(a.cur.res.V0,2))
+      : (n?"kein auswertbarer Durchgang":"noch niemand gew\u00e4hlt");
+  });
+  if(!sel.length){
+    box.innerHTML='<div class="empty">Oben bis zu f\u00fcnf Personen w\u00e4hlen. Jede Person beh\u00e4lt in allen Diagrammen ihre Farbe.</div>';
+    ["v1","v2","v3","v4"].forEach(kill);
+    return;
+  }
+  var mode=$("cmpRange").value||"model";
+
+  var h='<div class="legend">'+sel.map(function(x){
+    return '<span><i style="background:'+x.color+'"></i>'+esc(x.a.name)+
+      (x.a.position?' <span style="opacity:.7">('+esc(x.a.position)+')</span>':'')+'</span>';
+  }).join("")+'</div>';
+
+  h+='<div class="charts">'+
+    '<div class="panel" style="grid-column:1/-1"><h3>Kraft, Geschwindigkeit und Leistung</h3>'+
+      '<div class="hint">Durchgezogene Linien zeigen die Kraft je Kilogramm (linke Achse), gestrichelte Linien die Leistung je Kilogramm (rechte Achse). Gleiche Farbe bedeutet gleiche Person.</div>'+
+      '<div class="chartbox tall"><canvas id="v1"></canvas></div></div>'+
+    '<div class="panel"><h3>Kraft \u00fcber Geschwindigkeit</h3>'+
+      '<div class="hint">Der Schnittpunkt links ist F0, rechts V0. Eine flachere Linie bedeutet ein geschwindigkeitsbetontes Profil.</div>'+
+      '<div class="chartbox"><canvas id="v2"></canvas></div></div>'+
+    '<div class="panel"><h3>Leistung \u00fcber Geschwindigkeit</h3>'+
+      '<div class="hint">Der Scheitel liegt bei v optimal und entspricht Pmax.</div>'+
+      '<div class="chartbox"><canvas id="v3"></canvas></div></div>'+
+    '<div class="panel" style="grid-column:1/-1"><h3>Kennzahlen im Direktvergleich</h3>'+
+      '<div class="hint">Balken je Person, gruppiert nach Kennzahl.</div>'+
+      '<div class="chartbox"><canvas id="v4"></canvas></div></div>'+
+  '</div>';
+
+  /* Tabelle mit Bestwert-Markierung */
+  var keys=["F0","V0","Pmax","Vopt","Vmax","kmh","RFmax","DRF","Tau","t10","t40","y40"];
+  var best={};
+  keys.forEach(function(k){
+    var m=MK[k], vals=sel.map(function(x){return x.run.res[k];}).filter(function(v){return v!=null;});
+    if(!vals.length) return;
+    best[k]=m.dir===-1?Math.min.apply(null,vals):Math.max.apply(null,vals);
+  });
+  h+='<div class="tbl-box" style="margin-top:16px"><table><thead><tr><th>Kennzahl</th>'+
+    sel.map(function(x){ return '<th class="n" style="color:'+x.color+'">'+esc(x.a.name)+'</th>'; }).join("")+
+    '</tr></thead><tbody>'+
+    keys.map(function(k){
+      var m=MK[k];
+      return '<tr><td><b>'+esc(m.t)+'</b>'+(m.u?' <span style="color:var(--ink-2)">'+esc(m.u)+'</span>':'')+'</td>'+
+        sel.map(function(x){
+          var v=x.run.res[k];
+          var isB=(best[k]!=null&&v!=null&&Math.abs(v-best[k])<1e-9);
+          return '<td class="n'+(isB?" best":"")+'">'+nz(v,m.d)+'</td>';
+        }).join("")+'</tr>';
+    }).join("")+
+    '<tr><td>Durchgang</td>'+sel.map(function(x){
+      return '<td class="n">'+esc(x.run.datum?dateDe(x.run.datum):"ohne Datum")+'</td>';}).join("")+'</tr>'+
+    '<tr><td>K\u00f6rpergewicht <span style="color:var(--ink-2)">kg</span></td>'+
+      sel.map(function(x){return '<td class="n">'+nz(x.run.mass,1)+'</td>';}).join("")+'</tr>'+
+    '</tbody></table></div>'+
+    '<div class="hint" style="margin-top:8px">Gr\u00fcn markiert ist jeweils der beste Wert der ausgew\u00e4hlten Personen. Bei Zeiten und DRF gilt der kleinere Wert als besser.</div>';
+
+  box.innerHTML=h;
+
+  /* Kombiniertes F-v-P-Diagramm */
+  var ds1=[];
+  sel.forEach(function(x){
+    ds1.push({label:x.a.name+" \u2014 Kraft",data:cut(x.run.res.curves.fv,x.run,mode),
+      borderColor:x.color,backgroundColor:x.color,borderWidth:2.4,pointRadius:0,yAxisID:"y"});
+    ds1.push({label:x.a.name+" \u2014 Leistung",data:cut(x.run.res.curves.pv,x.run,mode),
+      borderColor:x.color,backgroundColor:x.color,borderWidth:2,borderDash:[6,4],pointRadius:0,yAxisID:"y1",tension:.1});
+  });
+  mk("v1",{type:"line",data:{datasets:ds1},options:Object.assign(baseOpts(),{
+    plugins:{legend:{display:true,position:"bottom",labels:{color:"#4A555F",font:{family:"Inter",size:11},boxWidth:24,boxHeight:2}}},
+    scales:{
+      x:{type:"linear",title:{display:true,text:"Geschwindigkeit (m/s)",color:"#4A555F",font:{family:"Inter",size:11.5,weight:"600"}},
+         ticks:{color:"#6B757E",font:{size:10.5}},grid:{color:"#E6E9ED"}},
+      y:{type:"linear",position:"left",title:{display:true,text:"Kraft (N/kg), durchgezogen",color:"#4A555F",font:{family:"Inter",size:11.5,weight:"600"}},
+         ticks:{color:"#6B757E",font:{size:10.5}},grid:{color:"#E6E9ED"},beginAtZero:true},
+      y1:{type:"linear",position:"right",title:{display:true,text:"Leistung (W/kg), gestrichelt",color:"#4A555F",font:{family:"Inter",size:11.5,weight:"600"}},
+         ticks:{color:"#6B757E",font:{size:10.5}},grid:{drawOnChartArea:false},beginAtZero:true}
+    }})});
+
+  mk("v2",{type:"line",data:{datasets:sel.map(function(x){
+    return {label:x.a.name,data:cut(x.run.res.curves.fv,x.run,mode),borderColor:x.color,backgroundColor:x.color,
+      borderWidth:2.4,pointRadius:0};
+  })},options:Object.assign(baseOpts(),{plugins:legendOpts(),scales:axis("Geschwindigkeit (m/s)","Kraft (N/kg)")})});
+
+  mk("v3",{type:"line",data:{datasets:sel.map(function(x){
+    return {label:x.a.name,data:cut(x.run.res.curves.pv,x.run,mode),borderColor:x.color,backgroundColor:x.color,
+      borderWidth:2.4,pointRadius:0,tension:.1};
+  })},options:Object.assign(baseOpts(),{plugins:legendOpts(),scales:axis("Geschwindigkeit (m/s)","Leistung (W/kg)")})});
+
+  var bk=["F0","V0","Pmax","Vmax","RFmax"];
+  mk("v4",{type:"bar",data:{
+    labels:bk.map(function(k){return MK[k].t+(MK[k].u?" ("+MK[k].u+")":"");}),
+    datasets:sel.map(function(x){
+      return {label:x.a.name,data:bk.map(function(k){return +Number(x.run.res[k]).toFixed(2);}),
+        backgroundColor:x.color,borderColor:x.color,borderWidth:1};
+    })},options:Object.assign(baseOpts(),{plugins:legendOpts(),scales:{
+      x:{ticks:{color:"#6B757E",font:{size:11}},grid:{display:false}},
+      y:{ticks:{color:"#6B757E",font:{size:10.5}},grid:{color:"#E6E9ED"},beginAtZero:true}
+    }})});
+}
+
+/* ===================== EXPORT ===================== */
+function exportCsv(){
+  if(!runs.length){ toast("Es sind keine Daten geladen."); return; }
+  var keys=["F0","V0","Pmax","Vopt","Vmax","vAtLast","kmh","Tau","RFmax","DRF","FVslope","t10","t40","y10","y40"];
+  var head=["Name","Position","Mannschaft","Datum","Tore","Groesse_cm","Gewicht_kg","RMSE_cm"]
+    .concat(keys.map(function(k){return MK[k].t+(MK[k].u?" ("+MK[k].u+")":"");}));
+  var lines=[head.join(";")];
+  runs.forEach(function(r){
+    if(!r.res) return;
+    var row=[r.name,r.position,r.team,r.datum?dateDe(r.datum):"",r.nGates,
+      (r.stature*100).toFixed(0),r.mass.toFixed(1),(r.res.rmse*100).toFixed(1)]
+      .concat(keys.map(function(k){ return Number(r.res[k]).toFixed(MK[k].d).replace(".",","); }));
+    lines.push(row.map(function(c){ c=String(c); return /[;"\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(";"));
+  });
+  var blob=new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  var url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download="FVP_Kennzahlen_"+new Date().toISOString().slice(0,10)+".csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},400);
+  toast("Kennzahlen als CSV gespeichert.");
+}
+
+/* ===================== START ===================== */
+fillSelectors();
+$("metSel").value=curMetric;
+loadDemo();
+setTab("import");
+</script>
+</body>
+</html>
