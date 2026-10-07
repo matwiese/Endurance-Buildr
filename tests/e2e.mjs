@@ -94,6 +94,15 @@ try {
   await page.waitForSelector("#board .lb");
   assert.ok((await page.$$("#board .lb")).length >= 12);
   await shot("03_rangliste");
+  /* Gesamtübersicht: Sprung-Spalten voreingestellt, weitere frei wählbar */
+  let ths = await page.$$eval("#lthead th", e => e.map(x => x.textContent));
+  assert.ok(ths.some(t => /RSI-modified/.test(t)) && ths.some(t => /Seitendifferenz Jump Height/.test(t)), "Sprung-Spalten in der Gesamtübersicht: " + ths.join(" | "));
+  const nCols = ths.length;
+  await page.selectOption("#lcAdd", "j_cmj_flight_time"); await page.click("button:has-text('+ Spalte')");
+  ths = await page.$$eval("#lthead th", e => e.map(x => x.textContent)); assert.equal(ths.length, nCols + 1); assert.ok(ths.some(t => /Flight Time/.test(t)));
+  await page.click("#lthead th:has-text('Flight Time') .lcx");
+  assert.equal((await page.$$("#lthead th")).length, nCols);
+  ok("Gesamtübersicht mit Sprung-Spalten; Spalten hinzufügen und entfernen funktioniert");
   await page.evaluate(() => { devWho = "Wende Sophie"; devMetric = "j_cmj_jump_height_imp_mom"; setTab("entwicklung"); });
   await page.waitForTimeout(300);
   await shot("04_entwicklung");

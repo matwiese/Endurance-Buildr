@@ -352,6 +352,10 @@ details.kv-d p,details.kv-d li{line-height:1.5}
 .kv-empty{padding:26px;text-align:center;color:var(--ink-2);font-size:13.5px}
 .kv-note{font-size:12.5px;color:var(--ink-2);margin:6px 0 0}
 @media (max-width:700px){.kv-cols{grid-template-columns:1fr}.kv-items{grid-template-columns:1fr}}
+/* zusätzliche Spalten der Gesamtübersicht Leistung */
+.lcx{color:var(--red);cursor:pointer;margin-left:4px;font-weight:700;font-size:14px}
+.lcx:hover{text-decoration:underline}
+#lcBar{margin-bottom:10px}
 /* acht Reiter sollen ohne Seitwärts-Scrollen passen */
 .tabs .tab{padding:12px 13px;letter-spacing:.07em;font-size:15px}
 @media (max-width:1100px){.tabs .tab{padding:12px 10px}}
@@ -456,6 +460,11 @@ details.kv-d p,details.kv-d li{line-height:1.5}
 
     <section>
       <div class="sec-head"><h2>Gesamtübersicht Leistung</h2><span class="note">Letzter Test je Athlet:in, Spalten sortierbar</span></div>
+      <div class="bar" id="lcBar">
+        <select id="lcAdd" style="min-width:300px;flex:1" aria-label="Spalte hinzufügen"></select>
+        <button class="chip" onclick="lcAdd()">+ Spalte</button>
+        <button class="chip" onclick="lcReset()" title="Zusätzliche Spalten wieder auf die Voreinstellung zurücksetzen">Standardspalten</button>
+      </div>
       <div class="tbl-box"><table><thead><tr id="lthead"></tr></thead><tbody id="ltbody"></tbody></table></div>
     </section>
 
@@ -1110,12 +1119,31 @@ function renderBoard(){
       '<span class="v">'+de(v,m.d)+'</span></div>';
   }).join("");
 }
+/* Zusätzliche Spalten der Gesamtübersicht (z. B. Sprung-Kennwerte aus VALD): frei wählbar, wird im Browser gemerkt.
+   Voreinstellung: einige Sprung-Kennwerte, sofern sie im Tab „Parameter“ ausgewählt sind. */
+var LC_KEY="kader_leistung_spalten_v1";
+var LC_DEFAULT=["j_cmj_rsi_modified_imp_mom","j_cmj_peak_power_bm","j_slcl_jump_height_imp_mom","j_slcr_jump_height_imp_mom","j_lsi_jump_height_imp_mom"];
+var LC_EXTRA=(function(){ try{ var r=JSON.parse(localStorage.getItem(LC_KEY)); if(Array.isArray(r)) return r; }catch(e){} return LC_DEFAULT.slice(); })();
+function lcSave(){ try{ localStorage.setItem(LC_KEY,JSON.stringify(LC_EXTRA)); }catch(e){} }
+function lcolsAll(){ return LCOLS.concat(LC_EXTRA.filter(function(k){ return MET[k] && LCOLS.indexOf(k)<0; })); }
+function lcAdd(){ var k=$("lcAdd").value; if(!k||!MET[k]) return;
+  if(lcolsAll().indexOf(k)<0){ if(LC_EXTRA.indexOf(k)<0) LC_EXTRA.push(k); lcSave(); } renderLTable(); }
+function lcDel(k){ LC_EXTRA=LC_EXTRA.filter(function(x){return x!==k;}); lcSave(); renderLTable(); }
+function lcReset(){ LC_EXTRA=LC_DEFAULT.slice(); lcSave(); renderLTable(); }
+function lcFill(){
+  var have=lcolsAll(), groups={}, go=[];
+  METRICS.forEach(function(m){ if(have.indexOf(m.k)>=0) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  $("lcAdd").innerHTML='<option value="">Spalte hinzufügen …</option>'+orderGroups(go).map(function(g){
+    return '<optgroup label="'+esc(g)+'">'+groups[g].map(function(m){ return '<option value="'+m.k+'">'+esc(mName(m))+'</option>'; }).join("")+'</optgroup>'; }).join("");
+}
 function renderLTable(){
+  var cols=lcolsAll(); lcFill();
   $("lthead").innerHTML='<th onclick="lSortBy(\'name\')">Name'+(lSortKey==="name"?' <span class="arw">'+(lSortDir>0?"▲":"▼")+'</span>':"")+'</th>'+
-    LCOLS.map(function(k){ var m=MET[k];
+    cols.map(function(k){ var m=MET[k];
       var arw=lSortKey===k?' <span class="arw">'+(lSortDir>0?"▲":"▼")+'</span>':"";
-      return '<th onclick="lSortBy(\''+k+'\')" title="'+esc(mName(m))+'">'+esc(m.s||m.t)+
-        (m.u?" <span style='color:#8B97A3'>"+esc(m.u)+"</span>":"")+arw+'</th>'; }).join("");
+      var x=LCOLS.indexOf(k)<0?' <span class="lcx" title="Spalte entfernen" onclick="event.stopPropagation();lcDel(\''+k+'\')">×</span>':"";
+      return '<th onclick="lSortBy(\''+k+'\')" title="'+esc(m.g+": "+mName(m))+'">'+esc(m.s||m.t)+
+        (m.u?" <span style='color:#8B97A3'>"+esc(m.u)+"</span>":"")+arw+x+'</th>'; }).join("");
   var list=players.filter(function(p){return p.hasVal && (!mCls||p.cls===mCls);}).slice().sort(function(a,b){
     if(lSortKey==="name") return a.name.localeCompare(b.name,"de")*lSortDir;
     var x=a.val[lSortKey], y=b.val[lSortKey];
@@ -1126,12 +1154,12 @@ function renderLTable(){
     return '<tr data-n="'+esc(p.name)+'" onclick="openSheet(this.dataset.n)">'+
       '<td class="nm" style="border-left:4px solid '+colorOf(p)+'">'+esc(p.name)+'<div class="alt">'+esc(p.cls||"ohne Klasse")+(p.kader?' · '+esc(p.kader):'')+
       ' · '+p.tests.length+' Durchgang'+(p.tests.length>1?"e":"")+'</div></td>'+
-      LCOLS.map(function(k){ var m=MET[k], v=p.val[k];
+      cols.map(function(k){ var m=MET[k], v=p.val[k];
         if(v==null) return '<td class="tnum" style="color:#AEB6BE">—</td>';
         var rk=rankOf(p,k);
         var hi=rk&&rk.r===1&&rk.n>1?' style="font-weight:700;color:#B8860B"':"";
         return '<td class="tnum"'+hi+'>'+de(v,m.d)+'</td>'; }).join("")+'</tr>';
-  }).join(""):'<tr><td colspan="'+(LCOLS.length+1)+'" style="padding:26px;text-align:center;color:#4A555F">Keine Testdaten geladen.</td></tr>';
+  }).join(""):'<tr><td colspan="'+(cols.length+1)+'" style="padding:26px;text-align:center;color:#4A555F">Keine Testdaten geladen.</td></tr>';
 }
 function renderCmp(){
   var cl=classes().filter(function(c){ return groupList("c:"+c).length; });
@@ -2393,7 +2421,7 @@ function readFotos(grid){
   return out;
 }
 function applyData(rows,fname,fotos){
-  var keep={t:tests,p:players,f:FILE,d:DEMO,fo:FOTOS};
+  var keep={t:tests,p:players,f:FILE,d:DEMO,fo:FOTOS,b:BASE_ROWS};
   try{
     if(!rows.length) throw new Error("Im Blatt stehen keine Namen.");
     FOTOS=fotos||{}; FILE=fname; DEMO=false;
@@ -2403,7 +2431,7 @@ function applyData(rows,fname,fotos){
     if(window.KVApp) KVApp.rememberBase(rows,fname,FOTOS);
     return true;
   }catch(err){
-    tests=keep.t; players=keep.p; FILE=keep.f; DEMO=keep.d; FOTOS=keep.fo; render();
+    tests=keep.t; players=keep.p; FILE=keep.f; DEMO=keep.d; FOTOS=keep.fo; BASE_ROWS=keep.b; render();
     throw err;
   }
 }

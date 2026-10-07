@@ -1,0 +1,11 @@
+{
+  "name": "endurance-buildr-kaderauswertung",
+  "private": true,
+  "description": "Kaderauswertung Segeln mit VALD-Sprungdaten (Quellen in src/, fertige Einzeldatei per npm run build)",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "node --test tests/core.test.mjs",
+    "test:e2e": "node tests/e2e.mjs && node tests/e2e-edge.mjs",
+    "mock-bridge": "node tools/mock-bridge.mjs"
+  }
+}
