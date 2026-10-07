@@ -1,0 +1,2388 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kadertest Segeln — Kader &amp; Leistungsdiagnostik</title>
+<link rel="stylesheet" media="print" onload="this.media='all'"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ink:#12161B; --ink-2:#4A555F; --line:#D5DAE0; --line-soft:#E6E9ED;
+  --paper:#EDEFF2; --card:#FFFFFF; --red:#D8232A; --red-soft:#FBE9EA;
+  --navy:#1B3A5C; --navy-soft:#E7ECF2; --gold:#C98A04; --gold-soft:#FBF2DC;
+  --green:#2E7D4F;
+  --disp:"Barlow Condensed","Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-family:var(--disp);font-weight:700;letter-spacing:.01em;line-height:1.02}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+.top{background:var(--ink);color:#fff;padding:26px 0 0;border-bottom:5px solid var(--red)}
+.top-grid{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;padding-bottom:20px}
+.eyebrow{font-family:var(--disp);font-size:14px;letter-spacing:.22em;text-transform:uppercase;color:#95A2AE;font-weight:600}
+.top h1{font-size:clamp(32px,5.8vw,56px);text-transform:uppercase;margin-top:6px}
+.top h1 .thin{color:#7C8894;font-weight:500}
+.src{font-size:12.5px;color:#8B97A3;margin-top:9px;font-variant-numeric:tabular-nums}
+.actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.headright{display:flex;flex-direction:column;align-items:flex-end;gap:14px}
+.logo-top{height:44px;width:auto;display:block;opacity:.97}
+.logo-foot{height:34px;width:auto;display:block;margin-bottom:12px;opacity:.85}
+.hero .logo-hero{height:30px;width:auto;align-self:flex-start;margin-left:14px;opacity:.9}
+@media (max-width:700px){.headright{align-items:flex-start;width:100%}.actions{justify-content:flex-start}.logo-top{height:34px}}
+button{font-family:var(--body);font-size:13.5px;font-weight:600;cursor:pointer;border-radius:2px;border:1px solid transparent;padding:10px 15px;transition:.13s}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn-p{background:var(--red);color:#fff} .btn-p:hover{background:#B31C22}
+.btn-s{background:transparent;color:#fff;border-color:#4C5764} .btn-s:hover{border-color:#fff}
+.btn-g{background:var(--ink);color:#fff} .btn-g:hover{background:#2B333C}
+.btn-o{background:#fff;color:var(--ink);border-color:var(--line)} .btn-o:hover{border-color:var(--ink)}
+.tabs{display:flex;gap:2px}
+.tab{background:transparent;color:#95A2AE;border:0;border-bottom:3px solid transparent;padding:12px 18px;
+  font-family:var(--disp);font-size:16px;letter-spacing:.11em;text-transform:uppercase;font-weight:600}
+.tab:hover{color:#fff}
+.tab[aria-selected=true]{color:#fff;border-bottom-color:var(--red)}
+
+section{padding:34px 0 6px}
+.sec-head{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:7px;margin-bottom:20px}
+.sec-head h2{font-size:24px;text-transform:uppercase}
+.sec-head .note{font-size:12.5px;color:var(--ink-2);margin-left:auto}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--card);border:1px solid var(--line-soft);border-top:3px solid var(--ink);padding:14px 16px 15px}
+.kpi.k-red{border-top-color:var(--red)} .kpi.k-navy{border-top-color:var(--navy)} .kpi.k-gold{border-top-color:var(--gold)}
+.kpi .val{font-family:var(--disp);font-size:44px;font-weight:700;line-height:.9;font-variant-numeric:tabular-nums}
+.kpi .lab{font-size:11.5px;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-2);margin-top:9px;font-weight:600}
+.kpi .sub{font-size:12.5px;color:var(--ink-2);margin-top:4px}
+
+.bar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+input[type=search],select{font-family:var(--body);font-size:14px;padding:9px 12px;border:1px solid var(--line);border-radius:2px;background:#fff}
+input[type=search]{min-width:190px;flex:1}
+input[type=search]:focus,select:focus{outline:2px solid var(--ink);outline-offset:-1px;border-color:var(--ink)}
+.chip{padding:9px 14px;border:1px solid var(--line);background:#fff;color:var(--ink-2);font-size:13px;font-weight:600}
+.chip[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.c-off[aria-pressed=true]{background:var(--red);border-color:var(--red)}
+.chip.c-def[aria-pressed=true]{background:var(--navy);border-color:var(--navy)}
+.toggle{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+
+.tbl-box{background:var(--card);border:1px solid var(--line-soft);overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--disp);font-size:13.5px;text-transform:uppercase;letter-spacing:.09em;text-align:left;padding:11px 12px;border-bottom:2px solid var(--ink);white-space:nowrap;cursor:pointer;user-select:none;color:var(--ink)}
+th:hover{background:#F6F7F9}
+th .arw{color:var(--red);font-size:11px}
+td{padding:8px 12px;border-bottom:1px solid var(--line-soft);font-size:14px;vertical-align:middle}
+tbody tr{cursor:pointer} tbody tr:hover{background:#F6F7F9} tbody tr:last-child td{border-bottom:0}
+.num{font-family:var(--disp);font-size:29px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;width:56px;text-align:right;padding-right:14px}
+.nm{font-weight:600;display:block} .alt{font-size:11.5px;color:var(--ink-2);font-weight:500;display:block;line-height:1.3}
+.pcell{display:flex;align-items:center;gap:10px}
+.hero{background:var(--card);border:1px solid var(--line-soft);border-top:3px solid var(--red);display:flex;
+  gap:22px;align-items:center;padding:20px 22px;flex-wrap:wrap;margin-bottom:12px}
+.hero.def{border-top-color:var(--navy)}
+.hero .big{width:104px;height:104px;border-radius:50%;object-fit:cover;background:#DDE1E6;flex:0 0 auto}
+.hero .bigph{width:104px;height:104px;border-radius:50%;background:#DDE1E6;color:#6E7882;display:flex;
+  align-items:center;justify-content:center;font-family:var(--disp);font-size:38px;font-weight:700;flex:0 0 auto}
+.hero h2{font-size:32px;text-transform:uppercase}
+.hero .meta{font-size:13px;color:var(--ink-2);margin-top:6px}
+.hero .jn{font-family:var(--disp);font-size:84px;font-weight:700;line-height:.8;margin-left:auto;color:var(--red)}
+.hero.def .jn{color:var(--navy)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.anthro{margin-bottom:12px}
+.anthro .panel{border-top:3px solid var(--gold)}
+.anthro .panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:0 26px;align-items:start}
+.anthro .panel h3,.anthro .panel .hint{grid-column:1/-1}
+.anthro .panel .mline{min-width:0}
+.mline{display:grid;grid-template-columns:1fr 66px 62px;column-gap:9px;row-gap:0;align-items:center;
+  padding:11px 0 13px;border-bottom:1px solid var(--line-soft);font-size:13px}
+.mline:last-child{border-bottom:0}
+.mline .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.regwrap{grid-column:1/-1;margin-top:9px}
+.reg{height:7px;background:#EDEFF2;position:relative;border-radius:4px}
+.reg u{position:absolute;left:50%;top:-3px;width:1px;height:13px;background:#9AA4AE}
+.reg i{position:absolute;top:-4px;width:4px;height:15px;border-radius:2px}
+.scale{display:flex;justify-content:space-between;align-items:baseline;gap:6px;
+  margin-top:7px;font-size:9.5px;line-height:1.25;font-weight:500;color:#98A2AC}
+.scale b{font-weight:500;white-space:nowrap}
+.scale b:nth-child(2){color:#7C8894}
+.dev{text-align:right;font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums}
+.dev.g{color:#2E7D4F} .dev.b{color:#C98A04} .dev.n{color:#8B97A3}
+.mv2{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.mr2{text-align:right;font-size:11px;font-weight:700;color:var(--ink-2)}
+.mr2.gold{color:#B8860B}
+.svgbox{width:100%;max-width:390px;height:auto;display:block;margin:2px auto 0}
+.chart{width:100%;height:auto;display:block;margin-top:6px}
+.tgrid{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:1000px){.tgrid{grid-template-columns:1.55fr 1fr}.tgrid>.panel:nth-child(3){grid-column:1/-1}}
+.spkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-top:4px}
+.spkcard{border:1px solid var(--line-soft);padding:10px 11px 9px;cursor:pointer;background:#fff;transition:.13s}
+.spkcard:hover{border-color:var(--ink)}
+.spktop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:11.5px;font-weight:600;margin-bottom:2px}
+.spktop span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spk{width:100%;height:40px;display:block}
+.spkfoot{font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums;margin-top:3px}
+.tst td.dev{padding-right:8px}
+.phead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.phead h3{margin-bottom:0}
+.refsel{font-family:var(--body);font-size:12px;padding:5px 8px;border:1px solid var(--line);border-radius:2px;background:#fff;color:var(--ink)}
+.refsel:focus{outline:2px solid var(--ink);outline-offset:-1px}
+.tst{width:100%;border-collapse:collapse;font-size:13px}
+.tst th{font-size:11px;padding:6px 8px;border-bottom:1px solid var(--ink);cursor:default}
+.tst td{padding:6px 8px;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:2px;white-space:nowrap}
+.t-off{background:var(--red-soft);color:var(--red)} .t-def{background:var(--navy-soft);color:var(--navy)}
+.t-warn{background:var(--gold-soft);color:var(--gold)} .t-ok{background:#E4F1E9;color:var(--green)}
+.tnum{font-variant-numeric:tabular-nums}
+.mini{background:none;border:1px solid var(--line);padding:5px 10px;font-size:12px;color:var(--ink-2)}
+.mini:hover{border-color:var(--ink);color:var(--ink)}
+.ava{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#DDE1E6;display:inline-block;vertical-align:middle}
+.ava-ph{width:34px;height:34px;border-radius:50%;background:#DDE1E6;color:#6E7882;display:inline-flex;
+  align-items:center;justify-content:center;font-size:11.5px;font-weight:700;vertical-align:middle}
+
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.panel{background:var(--card);border:1px solid var(--line-soft);padding:17px 18px 19px}
+.panel h3{font-size:15px;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px}
+.panel .hint{font-size:12px;color:var(--ink-2);margin-bottom:14px}
+.brow{display:grid;grid-template-columns:80px 1fr 52px;align-items:center;gap:10px;margin-bottom:9px;font-size:13px}
+.brow .track{height:19px;background:#F0F2F4}
+.brow .fill{height:100%;display:block}
+.brow .v{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.lb{display:grid;grid-template-columns:20px 1fr 62px;align-items:center;gap:9px;margin-bottom:7px;font-size:13px}
+.lb .r{font-family:var(--disp);font-size:15px;font-weight:700;color:var(--ink-2);text-align:right}
+.lb .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb .t{height:16px;background:#F0F2F4;margin-top:3px}
+.lb .t i{display:block;height:100%}
+.lb .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.lb.me .n{font-weight:700}
+.hist{display:flex;align-items:flex-end;gap:7px;height:120px;margin-bottom:9px}
+.hist .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;height:100%}
+.hist .bar{width:100%;background:var(--ink);min-height:2px}
+.hist .cnt{font-family:var(--disp);font-size:19px;font-weight:700}
+.xlab{display:flex;gap:7px;font-size:11px;color:var(--ink-2);text-align:center}
+.xlab span{flex:1}
+.split{display:flex;height:26px;border:1px solid var(--line-soft)}
+.split div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);margin-bottom:14px}
+.legend i{display:inline-block;width:11px;height:11px;margin-right:6px;vertical-align:-1px}
+.block-lab{font-family:var(--disp);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);font-weight:600;margin:14px 0 8px}
+.grid-n{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px}
+.cell{background:#fff;border:1px solid var(--line-soft);padding:7px 8px 8px;min-height:62px}
+.cell .n{font-family:var(--disp);font-size:23px;font-weight:700;line-height:1}
+.cell .who{font-size:10.5px;line-height:1.25;margin-top:3px;word-break:break-word}
+.cell.taken{border-left:3px solid var(--ink)}
+.cell.off{border-left-color:var(--red)} .cell.def{border-left-color:var(--navy)}
+.cell.free{background:#F7F8F9;color:#98A2AC}
+.cell.gap{background:transparent;border-style:dashed;color:#AEB6BE}
+.cell.dup{border-left-color:var(--gold);background:var(--gold-soft)}
+
+.flags{display:grid;gap:9px}
+.flag{background:#fff;border:1px solid var(--line-soft);border-left:3px solid var(--gold);padding:13px 16px}
+.flag.ok{border-left-color:var(--green)}
+.flag b{font-size:14px} .flag p{margin:4px 0 0;font-size:13.5px;color:var(--ink-2)}
+
+.ovl{position:fixed;inset:0;background:rgba(18,22,27,.62);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.ovl.on{display:flex}
+.sheet{background:#fff;max-width:640px;width:100%;max-height:92vh;overflow:auto}
+.sheet-top{background:var(--ink);color:#fff;padding:20px 24px 18px;display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+.sheet-top .pos{font-family:var(--disp);letter-spacing:.16em;text-transform:uppercase;font-size:13px;color:#95A2AE;font-weight:600}
+.sheet-top h3{font-size:29px;text-transform:uppercase;margin-top:5px}
+.sheet-top .bignum{font-family:var(--disp);font-size:66px;font-weight:700;line-height:.78;color:var(--red)}
+.sheet-top .ph{display:flex;gap:16px;align-items:center}
+.sheet-top .ava,.sheet-top .ava-ph{width:64px;height:64px;font-size:20px;flex:0 0 auto}
+.sheet-body{padding:6px 24px 22px}
+.sub-h{font-family:var(--disp);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);font-weight:600;margin:20px 0 8px;border-bottom:1px solid var(--line-soft);padding-bottom:5px}
+.dl{display:grid;grid-template-columns:130px 1fr;gap:0}
+.dl dt{padding:9px 0;font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-2);border-bottom:1px solid var(--line-soft);font-weight:600}
+.dl dd{padding:9px 0;margin:0;font-size:14.5px;border-bottom:1px solid var(--line-soft);font-weight:500}
+.mrow{display:grid;grid-template-columns:1fr 68px 44px;gap:10px;align-items:center;font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--line-soft)}
+.mrow .mv{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.mrow .mr{text-align:right;font-size:11.5px;font-weight:700}
+.r1{color:#B8860B} .r2{color:var(--ink-2)} .r3{color:var(--ink-2)}
+.sheet-foot{padding:0 24px 24px;display:flex;gap:9px;flex-wrap:wrap}
+
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(130%);background:var(--ink);color:#fff;
+  padding:13px 20px;font-size:13.5px;max-width:min(560px,92vw);z-index:99;transition:transform .2s;box-shadow:0 6px 24px rgba(0,0,0,.22)}
+#toast.on{transform:translateX(-50%) translateY(0)}
+footer{padding:34px 0 46px;color:var(--ink-2);font-size:12.5px}
+footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
+.hidden{display:none!important}
+@media (max-width:640px){
+  .dl{grid-template-columns:1fr} .dl dt{padding-bottom:0;border-bottom:0}
+  .num{font-size:23px;width:46px} .sec-head{flex-wrap:wrap} .sec-head .note{margin-left:0;flex-basis:100%}
+  .tab{padding:11px 12px;font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{.top .actions,.tabs,.bar,.mini,#toast,.ovl{display:none!important}
+  body{background:#fff} section{page-break-inside:avoid} .hidden{display:block!important}}
+
+/* Segeln: Bootsklassen statt Offense/Defense */
+.chipset{display:flex;gap:6px;flex-wrap:wrap}
+.chip.cc{border-left:4px solid var(--c)}
+.chip.cc[aria-pressed=true]{background:var(--c);border-color:var(--c);color:#fff}
+.brow.wide{grid-template-columns:104px 1fr 40px}
+.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.subage{font-size:12px;color:#4A555F;margin:-4px 0 12px 114px}
+.hero .jn{font-size:clamp(40px,6vw,64px);text-align:right;max-width:40%}
+.sheet-top .bignum{font-size:40px;text-align:right}
+.lb .lbc{font-size:11px;color:#8B97A3;font-weight:500;margin-left:4px}
+.qb{display:inline-block;font-size:10.5px;font-weight:700;background:#EEF1F4;color:#4A555F;padding:1px 6px;border-radius:2px;margin-left:4px;vertical-align:1px}
+.clr{font-size:12.5px;color:#4A555F;padding:10px 0 2px;border-top:1px solid var(--line-soft)}
+.clr.pos{color:#8A5E00;background:var(--gold-soft);padding:8px 10px;border-top:0;margin-top:6px}
+.tst.mx td,.tst.mx th{white-space:nowrap}
+.tst.mx th{text-transform:none;letter-spacing:.02em;font-size:12.5px}
+.tag.cls{text-transform:none;letter-spacing:.02em;font-size:11.5px}
+.lb .n,.lb .t{display:block}
+.reg{display:block}
+#ltbody td.nm{min-width:190px}
+.svgbox{max-width:600px}
+@media (min-width:960px){.spiderpanel{grid-column:span 2}}
+.tst.mx tr.sum td{border-top:1px solid var(--ink);font-weight:700}
+.demo{background:var(--gold-soft);border:1px solid #EBD9A6;border-left:4px solid var(--gold);padding:12px 16px;margin-top:22px;font-size:13.5px;color:#5C4A12}
+.demo code{background:#fff;padding:1px 5px;font-size:12px}
+/* Erweiterte Übersicht */
+.tab{white-space:nowrap}
+.tabs{overflow-x:auto;scrollbar-width:none}
+.ovt{min-width:560px}
+.ovt th,.ovt td{border-bottom:1px solid var(--line-soft);padding:8px 12px;vertical-align:middle}
+.ovt th{cursor:default;border-bottom:2px solid var(--ink);vertical-align:bottom;background:#fff}
+.ovt th:hover{background:#fff}
+.ovt tbody tr,.ovt tr{cursor:default} .ovt tr:hover{background:transparent}
+.ovt .ovm{position:sticky;left:0;background:#fff;z-index:1;min-width:210px;font-size:13.5px;border-right:1px solid var(--line-soft)}
+.ovt th.ovm{text-transform:uppercase}
+.ovt .ovc{min-width:150px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ovt .ovc.akt{background:#F6FAF7}
+.ovh{display:flex;gap:4px;justify-content:flex-end;align-items:center}
+.ovh select{font-weight:600}
+.ovx{background:none;border:1px solid var(--line);padding:3px 8px;font-size:14px;line-height:1;color:var(--ink-2)}
+.ovx:hover{border-color:var(--ink);color:var(--ink)}
+.ovs{font-family:var(--body);font-size:11px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink-2);margin-top:5px}
+.ovv{font-weight:700;font-size:14px}
+.ovd{display:inline-block;min-width:62px;margin-left:8px;font-size:12px;font-weight:700;text-align:right}
+.ovd.g{color:#2E7D4F} .ovd.b{color:#C98A04} .ovd.n{color:#8B97A3}
+.ovq{font-size:11px;color:var(--ink-2);margin-top:2px}
+.ovcalc{font-size:10px;color:#98A2AC;font-weight:600}
+.ovt tr.ovg td{background:var(--paper);font-family:var(--disp);font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ink-2);padding:10px 12px 6px}
+.ovt tr.ovg td:first-child{position:sticky;left:0}
+#ovAdd:disabled{opacity:.45;cursor:not-allowed}
+@media (max-width:700px){.charts .panel[style*="span 2"]{grid-column:auto!important}}
+/*@KV_CSS@*/
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="wrap">
+    <div class="top-grid">
+      <div>
+        <div class="eyebrow">Segeln &middot; Kader-Leistungsdiagnostik</div>
+        <h1>Kadertest Segeln <span class="thin" id="h1thin"></span></h1>
+        <div class="src" id="src">Daten werden geladen …</div>
+      </div>
+      <div class="headright">
+        <img id="logoTop" class="logo-top" alt="Leistungssport Austria">
+        <div class="actions">
+        <button class="btn-p" onclick="exportXlsx()">Gesamtübersicht als Excel</button>
+        <button class="btn-s" onclick="exportAllPdf()">Alle Profile in einem PDF</button>
+        <button class="btn-s" onclick="saveSingles()">Einzel-PDFs in Ordner</button>
+        <button class="btn-s" onclick="document.getElementById('fin').click()">Rohdaten laden</button>
+        <button class="btn-s" onclick="document.getElementById('pin').click()">Fotos laden</button>
+        <input type="file" id="fin" accept=".xlsx,.xlsm,.xls,.csv" class="hidden" onchange="loadData(this)">
+        <input type="file" id="pin" accept="image/*" multiple class="hidden" onchange="loadPhotos(this)">
+        </div>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tabKader" role="tab" aria-selected="true" onclick="setTab('kader')">Kader</button>
+      <button class="tab" id="tabLeistung" role="tab" aria-selected="false" onclick="setTab('leistung')">Leistungsdiagnostik</button>
+      <button class="tab" id="tabEinzel" role="tab" aria-selected="false" onclick="setTab('einzel')">Einzelauswertung</button>
+      <button class="tab" id="tabEntwicklung" role="tab" aria-selected="false" onclick="setTab('entwicklung')">Entwicklung</button>
+      <button class="tab" id="tabUebersicht" role="tab" aria-selected="false" onclick="setTab('uebersicht')">Erweiterte Übersicht</button>
+      <button class="tab" id="tabQualitaet" role="tab" aria-selected="false" onclick="setTab('qualitaet')">Datenqualität</button>
+      <button class="tab" id="tabSprung" role="tab" aria-selected="false" onclick="setTab('sprung')">Sprungdaten</button>
+      <button class="tab" id="tabParameter" role="tab" aria-selected="false" onclick="setTab('parameter')">Parameter</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div id="demoBar" class="demo hidden">
+    <b>Beispieldaten.</b> Die Athlet:innen hier sind erfunden und zeigen nur, wie die Auswertung aussieht.
+    Über „Rohdaten laden“ oben rechts die ausgefüllte Datei <code>Segeln_Kadertest_Rohdaten.xlsx</code> einlesen.
+  </div>
+
+  <div id="viewKader">
+    <section>
+      <div class="sec-head"><h2>Kennzahlen</h2><span class="note" id="kpinote"></span></div>
+      <div class="kpis" id="kpis"></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Kader</h2><span class="note">Zeile anklicken für Einzelprofil und PDF</span></div>
+      <div class="bar">
+        <input type="search" id="q" placeholder="Name, Kader oder Bootsklasse suchen">
+        <span class="chipset" id="chipsK"></span>
+        <label class="toggle"><input type="checkbox" id="onlyTest"> Nur mit Messwerten</label>
+      </div>
+      <div class="tbl-box"><table><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Kaderstruktur</h2></div>
+      <div class="charts">
+        <div class="panel"><h3>Bootsklassen</h3><div class="hint">Verteilung im aktuellen Kader</div>
+          <div class="split" id="split"></div><div id="posbars" style="margin-top:16px"></div></div>
+        <div class="panel"><h3>Altersverteilung</h3><div class="hint">Alter am letzten Testtag, gruppiert</div>
+          <div class="hist" id="hist"></div><div class="xlab" id="histlab"></div></div>
+        <div class="panel"><h3>Jahrgänge</h3><div class="hint">Anzahl je Geburtsjahr</div><div id="years"></div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Kader und Testtermine</h2><span class="note">Stand aus dem jeweils letzten Durchgang</span></div>
+      <div class="charts">
+        <div class="panel" style="grid-column:span 2;min-width:0"><h3>Kader nach Bootsklasse</h3><div class="hint">Anzahl Athlet:innen</div>
+          <div style="overflow-x:auto" id="matrix"></div></div>
+        <div class="panel"><h3>Testtermine</h3><div class="hint">Getestete Athlet:innen je Termin</div><div id="dates"></div></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="viewLeistung" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Bestwerte</h2><span class="note" id="ldnote"></span></div>
+      <div class="kpis" id="ldkpis"></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Rangliste</h2><span class="note">Werte aus dem jeweils letzten Testdurchgang</span></div>
+      <div class="bar">
+        <select id="metric"></select>
+        <span class="chipset" id="chipsM"></span>
+      </div>
+      <div class="charts">
+        <div class="panel" style="grid-column:1/-1"><h3 id="mTitle"></h3><div class="hint" id="mHint"></div><div id="board"></div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Gesamtübersicht Leistung</h2><span class="note">Letzter Test je Athlet:in, Spalten sortierbar</span></div>
+      <div class="tbl-box"><table><thead><tr id="lthead"></tr></thead><tbody id="ltbody"></tbody></table></div>
+    </section>
+
+    <section>
+      <div class="sec-head"><h2>Bootsklassen im Vergleich</h2><span class="note">Mittelwerte der aktuellen Werte</span></div>
+      <div class="charts" id="ldcmp"></div>
+    </section>
+  </div>
+
+  <div id="viewEinzel" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Einzelauswertung</h2><span class="note">Athlet:in wählen — Profil, Lage zur Vergleichsgruppe, Durchgänge</span></div>
+      <div class="bar">
+        <select id="pick" style="min-width:270px;flex:1"></select>
+        <button class="chip" onclick="stepPick(-1)">&#9664; Zurück</button>
+        <button class="chip" onclick="stepPick(1)">Weiter &#9654;</button>
+        <button class="btn-o" onclick="document.getElementById('pinOne').click()">Foto wählen</button>
+        <input type="file" id="pinOne" accept="image/*" class="hidden" onchange="loadOnePhoto(this)">
+        <button class="btn-g" onclick="exportPdfByName(pickName)">Als PDF</button>
+        <button class="btn-o" onclick="saveSingles([findPlayer(pickName)])" title="Speichert nur diese Person als eigene Datei">Diese in Ordner</button>
+      </div>
+      <div id="single"></div>
+    </section>
+  </div>
+
+  <div id="viewEntwicklung" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Entwicklung</h2><span class="note" id="entNote"></span></div>
+      <div class="bar">
+        <select id="entWho" style="min-width:250px"></select>
+        <select id="entMetric" style="min-width:230px"></select>
+        <label class="toggle"><input type="checkbox" id="entNorm"> Auf ersten Test normieren</label>
+      </div>
+      <div id="entwicklung"></div>
+    </section>
+  </div>
+
+  <div id="viewUebersicht" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Erweiterte Übersicht</h2><span class="note" id="ovNote"></span></div>
+      <div class="bar">
+        <select id="ovWho" style="min-width:270px;flex:1"></select>
+        <button class="chip" onclick="ovStep(-1)">&#9664; Zurück</button>
+        <button class="chip" onclick="ovStep(1)">Weiter &#9654;</button>
+        <button class="btn-o" id="ovAdd" onclick="ovAddCol()">+ Test-Spalte</button>
+      </div>
+      <div id="uebersicht"></div>
+    </section>
+  </div>
+
+  <div id="viewQualitaet" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Datenqualität</h2><span class="note">Prüfungen und Hinweise aus dem Rohdatenblatt</span></div>
+      <div class="flags" id="flags"></div>
+    </section>
+  </div>
+
+  <div id="viewSprung" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Sprungdaten</h2><span class="note" id="kvNote"></span></div>
+      <div id="kvSprung"></div>
+    </section>
+  </div>
+
+  <div id="viewParameter" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Parameter</h2><span class="note" id="kvParNote"></span></div>
+      <div id="kvParam"></div>
+    </section>
+  </div>
+
+  <footer>
+    <img id="logoFoot" class="logo-foot" alt="Leistungssport Austria">
+    Quelle: <code id="fname"></code>. Eingabe über <code>Segeln_Kadertest_Rohdaten.xlsx</code>, Blatt „Eingabe raw data“
+    (eine Zeile je Athlet:in und Testtermin), optional Blatt „Fotos“. Über „Rohdaten laden“ wird die Datei direkt eingelesen.
+    Abgeleitete Werte (BMI, PSA, Seitendifferenzen, bilaterales Defizit, relative Kraftwerte, Rumpf- und Screen-Summe)
+    rechnet die App aus den Messwerten nach.
+  </footer>
+</div>
+
+<div class="ovl" id="ovl">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shName">
+    <div class="sheet-top">
+      <div class="ph">
+        <span id="shPhoto"></span>
+        <div><div class="pos" id="shPos"></div><h3 id="shName"></h3></div>
+      </div>
+      <div class="bignum" id="shNum"></div>
+    </div>
+    <div class="sheet-body">
+      <div class="sub-h">Stammdaten</div>
+      <dl class="dl" id="shDl"></dl>
+      <div id="shPerf"></div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn-g" onclick="exportPdf(cur)">Profil als PDF</button>
+      <button class="btn-o" onclick="closeSheet()">Schließen</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+var LOGO_LIGHT="data:image/png;base64,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";
+var LOGO_DARK="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARgAAACHCAMAAAD6F7acAAAAwFBMVEW7ICq/DRnaJCTBEBn/f3////8AAAD////DDRn////////////////////ADRn///+2AQN+AACYAADBDRlVAADBDRm+DBjBDRn/AADBDRnBDBjEChl2Ojq+DRi6ExbGFRhVqqq/DBmqVVV7Wlo/AAA/f39benqyACYA//9mmZmVaWnIBSrBEBsAf38zZmafHx8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD9s5RvAAAAMHRSTlMV3gdPAgEA+/3PK05ujVeuBQMF0ANuJ68Bjy8UBFMUEwNkAwcEBAgGAQUGDS4CBQhNSferAAAbwklEQVR42sVdh3bjWI7lBlyZyZIcZVeaDtsTd/f//25JvoQLgLJdVTvD0+2yKYrkA5FxAXYom/BPyb+2z83fbbvg6+3Ly+PtKR94Pp3OF1EbJH25/FN+K5+ifFg/yf+mfeWofHj+O92i8L3lA1COapdBug29svp7uTTKXS5/d/U76mZE06LcYDpF3VvvJv389Hh/c3P//Pily+S5nJct06RSp91fvWr5BGr1jWSNruWPSsq8eqTP1BOlo1EOaEvXVKonSYegEgJde4xSv6IvgfZnpb1+SunTlRq3zzfrdv/88svT12+FeTby1BVBrVcRrZJN37UmhfkTAvM1y2Iw30Y5ii5ayaAYMa+wk8YClQSZDI1vpPGdeMla919Oy9+vLzdlW5nnNTPP+e78+6VRWZQswHK6ZiDQyivn1OWIOBLmFTZ2kPLICzM0ti8nQWVUxbPSVX4hYrCWEaOFqhpot7n8PJ2JNCt17hfN85SYBw93d6dzk6By1aaDhOSgPCbRiqMJhNY9jXkb72hWgKKsFj5p4qNVRfpOp5Wu0MJZ21pV7BTzcvLfH7KyoW2VrddPl0SdU1Y9gHjJCGUAZhck+CYfLlpRI5JE9wVhnSTSNf5AOxtziRAlWDND01DkYeGar7eWNBt5Xh7/4/XPWbbORfNosW8Ps9GIH7Tw49Y6sfEdlMIg9mr7lYIxar/xcAfDsIqE2p5qTUesIk15b9tKmrushz11nl9uX58yeRbmeaBnqK7X7AWabWflT6KmjIrWh+oQKII29dIcCWgFuIqSoXLzMEBWTV1ULUQ5KIox75Y9Ty83u9uimG+fsmwtZmshkGg9AG3AWT6qMlRCAm9ntMWBpjgUFZU4wzHrKkpNg1r+ALxAkk9CjlpT+7KwwnXSJOZZ7Nb/Ztm6XDbZ0qytTI3RI556CDSOMc3WtDe7TvuMKCmrXL0e78Qp81yfGJpO0jvktJDm9Hh/88a2ytbTas6SWV/MFllzMtvsaEhkodtzh6MmucaKgUC2vkpXR19Dc861KWbaOLdLOaKKdc+nyETtMc/ta7Lql9VsPQjpOuWzkS9M1IE+XnvBmtuZBoa0+rjVj2nyC6NdDbsoXUW6jxlJ+SSXhTSnPT0ckufpa/F5zotseecdmkUUCyiGgNKToQgiMvtaHtM5OxuwQUVChpuUtvWbRNuqVuX1vaQpirl6zOfz6UyBo15VfMWrm/v2lXN0pDWEwwMhjyWOssnLCFyo1eL84+XmQ1tinkSexaHO5GE1Cnc5bzJwfe1a+dpUgHQc4IHlEdpAVXEyjNOCVG3z2rVSqHB/89FNM0/1mDlo1CoAnpu0bbaqFleZJ8VKxid3RNexFaxZ1IGESiKQejy9Ww/7bVPMjTwP3sfnZI4YRacCTwEZO+2C6MAj/d2p7E5z+1qeAU7FNH+o2mkYcgh7RFJCheeb79w2j/mUyLO4PKeHi34YMF6zMJOIze4o1cFxpH60HegbEJV7aKcx9lqHUqKI06yCTimkm1tNlHw/aXK4tTg9Kp4gZx4qd6dvsUUHQuE2Jf50Xi7dcEesISIUVKqnorw4suEw8ayLaqtMnteUzdPLzY9tC/N8ybG6YwXO4Din13jSUZqw8V8XGBPsGPi92D/IrSGyBthM1A+Tpijmr3jD2MS3jN2lknLulAIiewJ/OkoAKykGp29NaM93tJqo79XDljgnnPceQsBNe//E2Z4UEmDPK9DJCthgDBQwCUcyoABcJxNW0nx9fP4JlPmCM4RME/RqEckYNCMY7avS/ZkwOv+hta/26uo5bMrL2T8dt0ZVgMXqLl/6+vT48oOM83x5uIThzpUkMlzMFSeOrY6hckDs1L7hdYPoEtVmlm0NhJbt70+3j88/QJ1XnDiMbMUfvTPKXfCBnHsookSlEsqOUTKPDZHoQ6gkpb9lM2ZriLB4aZe787ka/0+3361yXhbCOF1I9pMjBVMP2I2lmvIVk5cDu2o+DW4dAf5Ie4aJQVaP/rRmWxo9Pn17vX18eb6//36W+beqfk01CaruqQtu2MlX6EpkCwlireu1iBExNl4uB784YA8PKzGWfxs5TqfT6+1Cj5fnn2KYbnH3vRH2W1sngS8fllQDysFkw7b81JrFvWzOXN3+/Ol1I8fz8/1PoYdSvz6cA0mzyVrA5x5UXKMX1lEgpVNCIAdSezdG86x6Y1EcCzM8aFm5+/TtH0+JOX4yOUj9nl1i2AdIzli7JI/3YTtjxLT7RgkzHUKl/xchuZy3kE4xx79/e1pURyLHzf//9lJcGXqQHNQCiMICWF+Wi29dUNMDBdk2JahyNmXrvn5N5PjnUEPLEs5ccCUPAYxnIAZxeQZtyTZzzUVgDa4Qk/7XRl/Onz6dnp6+/CuoobZHnMl50ukQ77SxPSJwAIMttioBqMAmlHMCedg65YPLaVWoC5ts223eviz/fbn952xf7teo4IG8JBWwgQtq4uoGba/WIYV4oblGBN2x8RL+5dv9zfNXudS4x9dFCdMgOgW7nw6n6Bq7H8cVgOK1rdtd/n/9J/1+V7b8+frL5XyXf83HrEfnXedz+mI6Mv13Scdc7tJ57/Jplx+X0/nuvB3z7fkXZ34tU9g4iSEUiOrBmYm6oBalOUrlyKgaSNkHMDqMoEax1ufSM2CSo+CkNTi3m+/ndGfQdVwaikIk+EwVwCCK8rXOVGuESaB1jOZKLgmYkig9B8PZ0DUIDV0Qhv5wtlDLbgNAyOkC5fxzrQ2ET9AQKip96HwFpVg6qNiilUdYJBnBw6GYSTqDUGAQ2LoGASqDRAE4EIXzvfTDYINKuhG6hKGZnCrujoXqro5hFYA49xgMvtAxmopnY3bV6WNduyP3HNf/cfATSmUII54IdMRpfl1klTAq18+hMxgznYkCpdkZ+qmRjGKrSlHqx3mRIgZERXA8AyAUhgFHARxBX4SRQIhSk7rUZFAiKCEBZR3CXLr9lMIHzgobvCGIvbWW4KSGwASmQJThcelTaEJY6AMYSUVFSy5Jg++k5HzpOVGVSNPcRl9R1oGtCXA92RfuxV6QD1fI4ySUzTdqE6kfIxDfhn6EHT0HLuVqvSOcBiJV46J5srww5TlKMFu8oXHcG7Qj9jOpPC02DwWEdYCIEMayJjirEFYPhOTXRlSlhHUkG2WYwzqD3wkDjAPDMbX4+5oMlHNh2ww0EhycEBaqboA8FCiYeAcTaBDskRGiYPC4iBhQ9E7dDv7h7NjshzXtt27n88Pv5/TX+SHvXesuUR7WJBEcsMMV9p36ZBhbBSd6pD8/zwiTgrC21siJoLZHoaqwMDIEZ3dzxKe0rcUAGyPBqARmL7jyUye2EYMcb1e9lwgv/hNSrNuBd69PT09bOiPYvr0+7Z4f77uBjxSCOuUa+vYTTRHl1HB/hYFNv/tufAh1er1aoXy8nA1M5924M1wpxCmnXR3XgaHrToJgHHDuYuGeCadLEGfUubhCyZErtHkB7s4SYBlcmYg8Vod+da1POu6t5+vAO8GdPQJn10w12vfIcH0Btr+EAH+maSkl059uw+Lt89pCdznFyLs4auVwF4TQg+xTtgKHQIVxgtZr6A2BoinIsiAlHxOKpiGo/E7h7eVu8yJuI8a5f3za0IphtIGokA7begHreFqEmrZKXJGNQGoEUWTkPImax3gSisAma2C0Vdq1Ng2uYNbXqK79/GWDU1GdnQHrBslOiDyIBipAnwWkUlO/kq7L8trEoeZ1t4bpr9wDGb2/Mti+nCt2nwKhun/8tLYrsHe+G2BoJwTGUzbdOeSYots1fdjNfO2aS+yWeX2fRnwm9va2yv/rL88Oi/cUIff9mUIM79VydNMBnXBfHAONyI8mJ1uC7qcgjsHeTXB4RsVwJcsPW8cO/u4YZ1HEkSG212JsD2cvAzCPvulOTIO1+MgZ1P1DeEVNP4o5qSVZWL5t/6pOSDpVIOctgXl6vf2iajSPv7xygxZDnBv2n7WtbsQyyRrtCOe0AyzqxuCChTw5C4OBKXdFXXUOhgQHrkTYdFyRE6e4e8G0dWBXZoRylxCfxLNE7OgK2OFMYnwDrYMvOdk2IY8jBffy6pNBDPkTbS4roiT9v21CCFwxzpFBUVpcpW4qtx5jtjQdpYsd60DPHzCpW9N865JUnL2M8OI7JozDMpN6pH56ajWFzYDA97wZOL13eqtr1e2YGMBn78ETAWIw7xXzhTesOPZj95Ad91Fj74+esPdhdxXp6bImgKtOXDfCb98G3hH8ukoXomLjFWw23iazUXCdbhlzT0L14Uf2t4HuLC7LTkowYQzgFgtb67MRmMMSg8uWrgJle4vAHoh72Px3R4U7SudzAgputAhMD5hBHxkDRIWNSNWYABhBt7iFBYpLVjHIB16bhcArBDDCDiZ4CIqywtpYuKU/Gs/CtUvo7i/xxs/FdXBth7Y7yyLfaCQGFeOoD1flYW1l3ZgsdBrBaqI8O/mDgPJABFZ3vasGGYu38P2iM8wO9E3FZm5W9Dkomwn1Pjlkv1emMzrEd2SAWp1gZF8/A5GIe/WgFQQdekHaWqyrqar6wt6dcHcr1ZHFP1UiBaGBQfgCqX4MXK2QWgvI3QyT1Nib0gEfoiCATJoUDXU90JPRsBHddGxq0jB6mfv4EAyi4RJVh6AlFYEljHuhgvkLQSIP2AngvEkMhUJc+h/OR3CVz6C/jB3syGHzAGjLoDzWgqdyeJ8dpktO/CQqdnlgUyC4DlCHR4ch1Jsi4mZSmGhJnP0CxDXrK9QmdAFG50kNhhOgEp7tXLLPQMehekCRy1hQHdRPlBFTmjRNCwz40Nlml5Y2yN0wD5lEiWa0BEPZzKgqdxkNIQNcDRQOwkL4sWiEhy02wGBQQZmOXUtoCmJiQKi+/as9xk4bfJpaYQedRYaDlYF2hTRuyKJ4PJBHTM8yj3Mj20apFeEaOrkTGiEDhqqJhNP/qNjZ2dyprUvAu53WvljYD3OIqTXQGD9xbeU0EBBaasGhvmYNO6rIgR3UfRkolpnWpsa9UULBQJ3DaV2iDbcewiFUGoEHGrHbaqFm2M8+Q2I0shG6OERl9YcgtRkFk5sowUCatbeve83FDNPxCdNweca/hIfj6nCCsQUQ0+zqsI0GgyAIwYx4z3gUkohOjbLgyShii/k60oEBk7n0z7uyIXgzD7A/CUckbqd5P7gAV//uGODMrRZCLbV+emLAmQFQLC77kH2Ahxk6mwSxeUho/KZPPXjP1fUUg1Q3ORGdha1GyTc7ZgPfhfTwo6Y+hBixz+CzfHD7GFqlA80wiponHCKGtFEYOnHHNthtEwrBhDxFUuUwTrkYACYokjXHBYozAPhY6KjqwRrWjSu6A22JYttvzcCN07KNQybUYLb/WS+VviHl1+13DFO7l7K3KbB0VhOBqUvVxzukfRV7pu/WSo8/qeijYfflrTus26TrX+OBtnndN62/9YWrpj5/1k/r3+YL23E4rr8d1QnH9OtcTVOfr5wf/TD3+qThpdLukffRDfTzoPMa9aSHbX9a46QPz2uyazhUwrQkakSYuRJm2Y5EhOCklTC9J8xGrO1m2tmF7/bQj2Vp5lLbNutLDf5RzpdKF33SZZFZzugE231dJUyV7bcIQ+c9fpgwh37AZykcMyNYbVqveQQLr/llHWXnjqOTzhIRpt1YTJjmF14nDH/ch2zYCPNbQJiVMoYw/GiX+xG/NzEMBk9AdwNj8ikme1/5YrO93euEqco3HdOXbTKESU/xOI7TvN7Cr6vMr9uhfu14nWMK+zbC1NX2x2OfmX5dW68vNaTVzlnYln19eaDtjhUfyXBw27iddzaHL/eAwayh16JEhBlIuVfC5Ad9SOw1qnixb7ck8gZhthUpjjkWRln+moooZC10+Nt6qWHMOvuYOWW7fL5Wu+Ohb5onn/S47B+OWvLmwicyVj2p1/DXzY9pyrc4BWO7dPUrHGEmGma1/lbWmVX4dcIs8v63SpjCMKPFDvOlFMFXdQGrFYcmPhtnFHbYtknp6rk82nK24q38JREm1a5JlBRhjvO2TdK4Ly2zSOhxGiippDgGbxNmObJnZ2C9oYVf0jYqqV0EbBoqYYriOM5DDQMUj9drlWUQBx8mEMdUGonjesMxQKRdiTBKdI+jSvH2dXHvEKX1M6PaD6NWNlbP50vR5fvpD+2EbD5gkbR60hI+jfZyUtm8+AHyp8oxmjBgUdJ3SOaalP2xRWUfJYyyeW01RBi2tzMplKI/wDx+rAYsL3+o4WXlyvzJKg9920mEYY4JHTxLmI2levZjUqCgCYPvIozhGOuhzTCOb3nY7qxKYIaqWC1hlM0v+uC/IsK0UO6qKCUiTEfjOH6MMHPkJW1cT4TZHuTUW6+PLj8F5O6VMiqxGZwo8Sm2Y5QoFeWr8ynpFNOYNmuucw5jmGZyM4kwSvmSQqzaYGDCjG09i3+io490qeOBF7laby0GTJhey1dfkjy95SVHF0UYqYTRaYWxOSp130xBZDKpw6Gpqh0dc1DyoAmDodeEIcs66PX8qi8184sTkuJ0hJkLKaoWbEpZm+tCxr80d82L0lzj8Mb5lHbgIHIeYO/WEWaq3tXowr2hhYczlJN+XPhz7Nul/nu5lPCl1od0HBARZub8Qjlpv/D+1PurzZkRx5Yo8oTRfPVWELkt+TgXUaoGTbEhefm9D/dWU5EtzqxMRqzz26WSQ7/FofM091YUBwtU7l1IMJBeGHTQjtAqfYAwJoor9lARJt3a5+NhN7pPqZFJcYFP6fiAMcmlWS7xoSk6jEGoRCEBsUxz8L6TY3r3BSVKs4Jv9UFgOyrzslGmSGKkP82lRrhMRL7eSC5LI894iO61LKayzF/L8T/CMeAkx9SGpRlRWi57ZO8MhjDbX3OpEwy9dRv9pYz5rikaIrcuAOlb6McSWrU44Ki0gV7Daq572rYgg3dt5myq6YRFE1Y3IqULsygd10Nmqr2VA+ehpE1TdJ8J83n5c26JyPHI3r+oS/X5Uuu19OVzmKDPykWJdtJGsraYtNS5fketoXtXlYGwCuuzGBYPZxC4gSVu/u9QjgsnMtdsgj1aPXZzKb8PcbNNBQHkk8K0qF3Maw5MVajbL3wE6DIz6o3fYBRNSzFvm+A5AAbcJwSvExrtHoxpoZkvpqG6/fVZgtqN2NK77u7M6+qC7iKNe6P+gagFNW699kMHsN8TcuXNCrhaLQNCTHhctw0h7Nip5rWJQwSP0uPy1IhaVwODQxBcb7L2bysU2QOIQUxDCM/uBnYq2xadTjzElIlgzSRKdlQiXGna0Ey/+iB4+KarOO68Q4B2jlH9djwJXN+zGViOsNnD9OQgKqMTZF6EW16h35nkkTGmt02CYud+4foDLSFmFBCCV0pea7/UFVo39Ex2MCEaVNkhmlXsu3Sx86IhHkay2/6Bt7pr9vYh6isJXhLmKrMSzFNEDE4PaduJRyOqtlCH6xae7kAzqsJuJ7FQaDd+TuLRN+DXdgqhNcQO7jPzCui1s9qngGs2s13bqotWf6yBdAaLTv2YbMuv9hrBAMQghFgwMDq8idcwzXR4G+Xhe+zfbpMiUbJ9ubB9bjTZVQ88dAvilu9IwwZvxwIs8G6P9fYFkBG+2AU+I24Xqw5VZ5wu8ZoGZrahecUxXPcQJGpAestlidUP3nZQgiYN2520Q5FrLx3tHP6QXnlt382lfoibgRf9fMNbw5WuRPf+Pt+Cdw0auQN+23k2rqm5Y/YQ8yocMyNUj0IkbDJ20YaIZ7S9C1CIK7scuphfhWw6eySY7IiruNnOuPfBy4LYEJmgYb/f1b1OxruerPKDt+UFoDA7s3mnQQbvxInuhjGdcVQkAJITRC7wbRA0dgqBAvJfyL/XhzZM83Gu9VdGuIkGvSnJGWitwxtrDueXhe9FMi817ahZAME7IMBhpY2lHFI5V8UOx0sz1dNhwueaVitZu5pGmgOI2whKAvajOlW71FyyTLjq1tLbi/d7APTSO55cxhbbtqXCTwU2/fIt5ZPTsTuEQUqSzusDH/stU45hnqY1dX+c1nz/kI/Yavxr6XXWhJEKFOl3+rGjGBPvBkqXwTrBS+38OAMJXoAdvOEupTUPx4b4KoQpee+cAJ8KRGOhYkMuTaXIlZK+RXKHPhcJiDDTcpkR13DWdsKdn4YY9EOTjlEof26h5MjA6EQByVbVo/NhkROVTFxW82u+QBElHEtefyFjI+KkyqIrYVpi+wjFMWkZfT/k3e59svTyP4Mkt0BziH/7eMdkEDUfxb8Nx4xi4iYvGkV96PWjDXVMJgyyPi4nmXQhvW/ElVrWrJWsjaDHVKXi+Mu8tFJcS4TJU+jRUqr7RAwhhKVEDM7JZhqDNxqP62NvuJOYMLOiHEudNGhJI0x/IMIV0o5KtN6Bht8fNxVB5mmENJzlIm+Goj9+PRVIBFZxgjQ2YMIkZMPoGxOaqLAoDbneVzlq5ctVaRc4ZzRvmjgk7GI2Hbqt4bUzcH+4iYagHkorRa7JLS3iWJQJGmGyhDZzPW2FZfN2m2yOUTmGFLQSpfXXEb8t9B/tq31MB5QZlmT8Fvi3u0h5VVnQyRaETGI1jUnltKEWc/FCSPlqwuQi21GVfLSfkh/xH4sp2ra1Un10fswmXOkp+MQlv26Ynq9Q3ya/eb3q4I5qJsJjnXVTH1dPqMfPDezJ3L3S57MUG+t0TGqBWIvztUho/BRdoy2g//r51peQDhp8g9wVZfO+NqKOagDs1gbNOQEJXbt0dUU2HQBFGG2uq+L+dZgLkEFZnSJKK7/Mh36oAVvjmGPGN1T1i6DJF2b+lB09rrOSot8G2UFMCxJMW71N1cHMcbRjL9Y7zlhYVb5fdUzBJc30roFtaWzAKkv2BVs5wn6+6u50mWMCI9riWJTxg9gEdVS4yS/QjKeSIb4Q7Lsy4KfJDxHIYario0RJwciH1oXC5jrDQYqz0qySxi2O77PSH9k63e9NE4U4FOKappnkT3mPVfWK/KacshofISHyknkZ+6HSe26OvfdjNvnptZwW1bL8/OO39YzHN12Z4AVMUaZRZfDg3u3g8gqCvR5swL8eRhR+b854ocUJSbFSM1nZv4PiGFo4e77HKn/FzxlLpIXKWDaNoIvYMG9isSMM7Usv8mhs3bxvR7SA5tCAR4PATEeQFBuW2xuLKV1jvfSVoXDRUBGIXsdYz3cNo0cSpYWWo2oBmdz7GvjFba7JH+FrgVS2uIOpO9L4SB67Z6EKEnlG1XrqP1ZybL0Sa45hqo1mfUIZTgerXF1IsNFOccxGVusVX8mDBslw9+peV3Bzk5/dGGLxhVoTQrW4bMw2AsQ+CVK4dSPNfyr3PK+75nXf2Fh+0g2arf9hJaN28GqglTM7I0XIpqYDli8q1MGOtynzfH3mwKbG3ejjaAx/ix/nUWuzecoXym2b86g6gBPcqfZ35p7RsVWvprnlFucEqhrXf/Cf0zwo53O7aDCTD/p9zNC5PrUanndWfvwfX6OZvXzM7lgAAAAASUVORK5CYII=";
+var LOGO_PDF="data:image/png;base64,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";
+
+/* Fiktive Beispieldaten im Format des Blatts „Eingabe raw data“ */
+var DEMO_CSV="Name,Testdatum,Geburtsdatum,Kader,Boat Class,Auslage R/L,Körpergröße [cm],Körpermasse [kg],BMI,ASLR li,ASLR re,Shoulder li,Shoulder re,Clearing li,Clearing re,In-Line li,In-Line re,Deep Squat,Swiss ventral [s],Swiss dorsal [s],Swiss lateral li [s],Swiss lateral re [s],CMJ o.A. [cm],SJ [cm],PSA [%],5er Hopp li [m],Qualität,5er Hopp re [m],Qualität,Seitendifferenz 5er [%],Fmax [N],Fmax li [N],Fmax re [N],Diff Fmax % L/R,Bilaterales Defizit [%],Reaktion [s],Tapping [Kontakte/6 s],Hängen [s],1-RM Bankziehen [kg],Liegestütze,Qualität,max. WH Bankziehen,HBL [s],HBL Höhe\nWende Sophie,10.06.2025,14.03.2004,A-Kader,ILCA 6,R,172,66.6,,2,1,1,1,negativ,negativ,2,2,2,154,100,90,62,26.2,25.0,,10.13,gut,8.8,gut,,1880,1004,1050,,,0.346,61,105,49.7,38,gut,18,155,50\nWende Sophie,14.10.2025,14.03.2004,A-Kader,ILCA 6,R,172,66.1,,1,1,2,3,negativ,negativ,3,2,3,153,144,62,60,28.4,26.3,,10.05,gut,10.12,schwach,,1917,1104,1033,,,0.33,62,49,50.4,34,gut,32,111,45\nWende Sophie,20.01.2026,14.03.2004,A-Kader,ILCA 6,R,172,66.7,,3,3,1,3,negativ,negativ,2,1,3,118,137,73,58,30.7,28.3,,10.19,gut,8.95,gut,,1985,1057,934,,,0.324,60,112,54.7,40,mittel,19,95,50\nWende Sophie,21.04.2026,14.03.2004,A-Kader,ILCA 6,R,172,66.0,,2,2,2,3,negativ,negativ,2,2,2,164,141,97,85,27.5,25.8,,10.27,schwach,9.05,mittel,,1945,1089,953,,,0.278,56,61,52.5,28,schwach,27,122,50\nLuv Paul,10.06.2025,02.09.2001,A-Kader,ILCA 7,L,185,81.7,,2,2,2,3,negativ,negativ,2,3,3,141,108,64,86,34.9,32.6,,10.79,gut,9.62,schwach,,2548,1481,1604,,,0.347,53,86,79.8,33,gut,33,189,40\nLuv Paul,14.10.2025,02.09.2001,A-Kader,ILCA 7,L,185,80.7,,2,1,3,1,negativ,negativ,2,1,2,149,162,95,69,35.6,33.5,,11.72,schwach,10.86,mittel,,2662,1475,1350,,,0.339,65,74,84.4,39,schwach,32,96,45\nLuv Paul,20.01.2026,02.09.2001,A-Kader,ILCA 7,L,185,80.4,,2,2,3,2,negativ,negativ,2,2,3,170,163,98,93,35.0,33.3,,12.12,gut,12.46,gut,,2711,1568,1359,,,0.301,64,95,85.1,38,gut,27,138,50\nLuv Paul,21.04.2026,02.09.2001,A-Kader,ILCA 7,L,185,81.0,,3,2,2,2,negativ,negativ,2,2,2,153,151,102,95,37.8,36.0,,12.09,gut,10.58,schwach,,2723,1587,1607,,,0.326,62,80,82.6,39,mittel,32,138,40\nSchot Hannah,14.10.2025,21.06.2003,A-Kader,49erFX,R,170,62.0,,2,2,2,2,negativ,negativ,2,1,0,124,117,81,92,25.9,24.7,,9.47,schwach,8.71,gut,,1928,1111,1007,,,0.339,55,85,47.7,41,schwach,32,181,40\nSchot Hannah,20.01.2026,21.06.2003,A-Kader,49erFX,R,170,63.3,,3,2,1,2,negativ,negativ,2,2,1,92,160,69,84,29.4,26.6,,10.17,mittel,10.69,mittel,,1867,1106,1086,,,0.309,54,49,53.9,32,mittel,27,160,50\nSchot Hannah,21.04.2026,21.06.2003,A-Kader,49erFX,R,170,63.0,,2,2,2,3,negativ,negativ,2,2,1,96,122,87,66,27.5,25.3,,10.38,gut,9.17,mittel,,1964,1109,1162,,,0.358,53,69,53.0,25,mittel,24,167,45\nPinne Felix,14.10.2025,11.01.2002,A-Kader,49er,R,182,76.3,,2,2,1,2,negativ,negativ,3,3,2,139,148,79,92,34.1,32.4,,11.24,mittel,10.43,schwach,,2490,1392,1511,,,0.31,60,102,76.2,26,gut,19,144,40\nPinne Felix,21.04.2026,11.01.2002,A-Kader,49er,R,182,76.0,,2,2,3,3,negativ,negativ,2,2,2,133,156,71,65,37.0,34.6,,11.4,mittel,11.71,mittel,,2676,1598,1643,,,0.326,55,52,82.4,42,schwach,32,131,40\nKiel Moritz,21.04.2026,30.11.2000,A-Kader,49er,L,188,84.0,,2,2,2,2,negativ,negativ,3,3,1,140,152,63,61,36.2,34.4,,11.82,mittel,12.75,gut,,2592,1548,1465,,,0.28,56,110,84.7,28,gut,29,84,45\nBrise Jakob,14.10.2025,05.05.2006,B-Kader,ILCA 7,R,183,78.3,,2,1,2,2,negativ,negativ,2,2,1,106,159,52,59,32.2,30.0,,10.82,gut,11.38,gut,,2276,1253,1108,,,0.355,56,69,76.8,38,gut,25,128,40\nBrise Jakob,21.04.2026,05.05.2006,B-Kader,ILCA 7,R,183,79.0,,1,2,3,2,negativ,negativ,2,2,2,106,126,67,90,33.0,31.7,,10.42,mittel,9.94,gut,,2465,1379,1186,,,0.325,55,63,73.4,24,mittel,31,124,50\nLee Marie,14.10.2025,19.08.2007,B-Kader,ILCA 6,L,168,61.7,,2,2,2,2,negativ,negativ,2,2,1,88,101,84,86,26.2,25.2,,9.12,mittel,8.71,gut,,1634,944,927,,,0.345,50,52,46.4,23,mittel,23,119,45\nLee Marie,21.04.2026,19.08.2007,B-Kader,ILCA 6,L,168,62.0,,1,2,2,2,negativ,negativ,2,2,2,100,98,54,59,28.0,26.6,,9.38,gut,9.39,mittel,,1899,1017,877,,,0.334,50,79,52.1,34,mittel,28,79,45\nMast Laura,14.10.2025,07.02.2005,B-Kader,470,R,166,57.5,,2,1,2,2,negativ,negativ,2,2,1,102,100,89,77,27.1,25.5,,9.94,gut,8.75,gut,,1768,988,1047,,,0.306,58,46,53.5,30,schwach,27,175,45\nMast Laura,21.04.2026,07.02.2005,B-Kader,470,R,166,58.0,,2,3,2,3,positiv,negativ,3,1,1,102,136,62,92,28.2,26.3,,9.94,gut,8.85,gut,,1943,1059,1156,,,0.303,54,76,51.8,41,schwach,31,172,45\nAnker Lena,21.04.2026,23.10.2005,B-Kader,470,R,178,70.0,,1,2,2,2,negativ,negativ,1,3,2,116,160,65,87,28.3,26.4,,9.57,mittel,9.21,gut,,1869,1009,880,,,0.32,56,92,50.7,25,gut,27,93,40\nSegel Jonas,14.10.2025,12.12.2008,Nachwuchskader,iQFOiL,L,180,71.0,,2,1,2,0,negativ,negativ,1,2,2,108,146,53,82,28.1,26.8,,9.71,mittel,9.97,mittel,,2068,1151,1115,,,0.335,52,61,70.8,35,mittel,22,95,45\nSegel Jonas,21.04.2026,12.12.2008,Nachwuchskader,iQFOiL,L,180,71.0,,1,2,1,1,negativ,negativ,1,1,1,,,,,29.9,27.3,,10.54,schwach,9.54,gut,,2260,1284,1389,,,0.373,51,79,73.4,28,mittel,28,99,45\nHeck Clara,21.04.2026,28.04.2009,Nachwuchskader,ILCA 4,R,165,55.0,,2,2,3,1,negativ,negativ,3,2,3,94,112,48,78,25.4,23.5,,8.83,mittel,8.96,gut,,1732,943,1004,,,0.422,49,74,42.0,,,16,115,50\nBug Tobias,21.04.2026,16.07.2009,Nachwuchskader,ILCA 4,L,174,63.0,,1,2,2,1,negativ,negativ,2,1,1,125,111,73,63,29.9,27.9,,10.09,schwach,10.57,mittel,,2252,1314,1333,,,0.335,52,91,69.9,31,schwach,18,141,40\n";
+
+var FILE="Beispieldaten (fiktiv)", DEMO=true;
+var players=[], tests=[], byName={}, FOTOS={}, UNKNOWN=[];
+var sortKey="name", sortDir=1, clsFilter="", cur=null;
+var lSortKey="name", lSortDir=1, mCls="", tab="kader";
+var $=function(id){return document.getElementById(id);};
+
+/* ---------- Metriken ----------
+   k: interner Schlüssel · t: Bezeichnung · s: Kurzform (Spiderchart, Tabellenkopf) · u: Einheit
+   dir: 1 = größer besser, -1 = kleiner besser, 0 = ohne Wertung · d: Nachkommastellen · g: Gruppe
+   pp: Abweichung zur Gruppe in absoluten Einheiten statt in Prozent (für Punkte und Prozentwerte)
+   calc: wird von der App aus anderen Spalten gerechnet */
+var ANTHRO="Anthropometrische Daten", FMS="Movement Screen";
+var METRICS=[
+ {k:"gr",      t:"Körpergröße",              u:"cm",   dir:0,  d:0, g:ANTHRO},
+ {k:"gew",     t:"Körpermasse",              u:"kg",   dir:0,  d:1, g:ANTHRO},
+ {k:"bmi",     t:"BMI",                      u:"",     dir:0,  d:1, g:ANTHRO, calc:1},
+
+ {k:"fmsSum",  t:"Screen-Summe (max. 12)",   s:"Screen", u:"Pkt", dir:1, d:0, g:FMS, pp:1, calc:1},
+ {k:"ds",      t:"Deep Squat",               u:"Pkt",  dir:1,  d:0, g:FMS, pp:1},
+ {k:"ilL",     t:"In-Line Lunge links",      u:"Pkt",  dir:1,  d:0, g:FMS, pp:1},
+ {k:"ilR",     t:"In-Line Lunge rechts",     u:"Pkt",  dir:1,  d:0, g:FMS, pp:1},
+ {k:"smL",     t:"Shoulder Mobility links",  u:"Pkt",  dir:1,  d:0, g:FMS, pp:1},
+ {k:"smR",     t:"Shoulder Mobility rechts", u:"Pkt",  dir:1,  d:0, g:FMS, pp:1},
+ {k:"aslrL",   t:"ASLR links",               u:"Pkt",  dir:1,  d:0, g:FMS, pp:1},
+ {k:"aslrR",   t:"ASLR rechts",              u:"Pkt",  dir:1,  d:0, g:FMS, pp:1},
+
+ {k:"swSum",   t:"Rumpf gesamt",             s:"Rumpf", u:"s", dir:1, d:0, g:"Rumpfkraftausdauer", calc:1},
+ {k:"swV",     t:"Swiss ventral",            u:"s",    dir:1,  d:0, g:"Rumpfkraftausdauer"},
+ {k:"swD",     t:"Swiss dorsal",             u:"s",    dir:1,  d:0, g:"Rumpfkraftausdauer"},
+ {k:"swLL",    t:"Swiss lateral links",      u:"s",    dir:1,  d:0, g:"Rumpfkraftausdauer"},
+ {k:"swLR",    t:"Swiss lateral rechts",     u:"s",    dir:1,  d:0, g:"Rumpfkraftausdauer"},
+
+ {k:"cmj",     t:"CMJ ohne Arme",            s:"CMJ", u:"cm", dir:1, d:1, g:"Sprungkraft"},
+ {k:"sj",      t:"Squat Jump",               s:"SJ",  u:"cm", dir:1, d:1, g:"Sprungkraft"},
+ {k:"psa",     t:"PSA (Prestretch)",         s:"PSA", u:"%",  dir:1, d:1, g:"Sprungkraft", pp:1, calc:1},
+ {k:"hopL",    t:"5er Hopp links",           u:"m",    dir:1,  d:2, g:"Sprungkraft"},
+ {k:"hopR",    t:"5er Hopp rechts",          u:"m",    dir:1,  d:2, g:"Sprungkraft"},
+ {k:"hopDiff", t:"Seitendifferenz 5er Hopp", u:"%",    dir:-1, d:1, g:"Sprungkraft", pp:1, calc:1},
+
+ {k:"fmax",    t:"Fmax beidseitig",          s:"Fmax", u:"N", dir:1, d:0, g:"Maximalkraft"},
+ {k:"fmaxRel", t:"Fmax relativ",             s:"Fmax rel.", u:"N/kg", dir:1, d:1, g:"Maximalkraft", calc:1},
+ {k:"fmaxL",   t:"Fmax links",               u:"N",    dir:1,  d:0, g:"Maximalkraft"},
+ {k:"fmaxR",   t:"Fmax rechts",              u:"N",    dir:1,  d:0, g:"Maximalkraft"},
+ {k:"fmaxDiff",t:"Seitendifferenz Fmax",     u:"%",    dir:-1, d:1, g:"Maximalkraft", pp:1, calc:1},
+ {k:"bld",     t:"Bilaterales Defizit",      u:"%",    dir:0,  d:1, g:"Maximalkraft", pp:1, calc:1},
+
+ {k:"reakt",   t:"Reaktion",                 u:"s",    dir:-1, d:3, g:"Schnelligkeit"},
+ {k:"tap",     t:"Tapping",                  s:"Tapping", u:"Kont./6 s", dir:1, d:0, g:"Schnelligkeit"},
+
+ {k:"haeng",   t:"Hängen",                   s:"Hängen", u:"s", dir:1, d:0, g:"Oberkörper"},
+ {k:"bz1rm",   t:"1-RM Bankziehen",          s:"1-RM BZ", u:"kg", dir:1, d:1, g:"Oberkörper"},
+ {k:"bz1rmRel",t:"1-RM Bankziehen relativ",  s:"BZ rel.", u:"kg/kg", dir:1, d:2, g:"Oberkörper", calc:1},
+ {k:"bzWh",    t:"Max. WH Bankziehen",       s:"WH BZ", u:"WH", dir:1, d:0, g:"Oberkörper"},
+ {k:"liege",   t:"Liegestütze",              s:"Liegest.", u:"WH", dir:1, d:0, g:"Oberkörper"},
+ {k:"hbl",     t:"HBL",                      s:"HBL", u:"s", dir:1, d:0, g:"Oberkörper"},
+ {k:"hblH",    t:"HBL Höhe",                 u:"",     dir:0,  d:1, g:"Oberkörper"}
+];
+var STATIC_METRICS=METRICS.slice();
+var MET={}; METRICS.forEach(function(m){MET[m.k]=m;});
+/* Sprungkennwerte aus dem Sprungspeicher (VALD) kommen als zusätzliche Metriken dazu; Auswahl steht im Tab „Parameter“ */
+function setDynamicMetrics(defs){
+  METRICS=STATIC_METRICS.concat(defs||[]);
+  MET={}; METRICS.forEach(function(m){MET[m.k]=m;});
+  if(!MET[curMetric]) curMetric="fmsSum";
+  if(!MET[devMetric]) devMetric="fmsSum";
+  var sel=document.getElementById("metric"); if(sel) sel.innerHTML="";   /* Kennzahl-Auswahl der Rangliste neu aufbauen */
+}
+function orderGroups(go){
+  var a=go.filter(function(g){return g===ANTHRO;});
+  return a.concat(go.filter(function(g){return g!==ANTHRO;}));
+}
+function mName(m){ return m.t+(m.u?" ("+m.u+")":""); }
+var curMetric="fmsSum";
+var ASYM_LIMIT=10;   /* Seitendifferenz in %, ab der im Blatt Datenqualität ein Hinweis erscheint */
+
+/* ---------- Spalten des Rohdatenblatts ----------
+   Überschriften wie im Blatt „Eingabe raw data“. Groß-/Kleinschreibung, Umlaute, Leerzeichen und Einheiten
+   in eckigen Klammern spielen beim Einlesen keine Rolle. „Qualität“ gehört immer zur Messung links davon. */
+var COLDEF=[
+ ["Name","name","txt"],["Testdatum","date","date"],["Geburtsdatum","dob","date"],["Kader","kader","txt"],
+ ["Boat Class","cls","txt"],["Bootsklasse","cls","txt"],["Auslage R/L","side","txt"],["Auslage","side","txt"],
+ ["Körpergröße [cm]","gr"],["Körpermasse [kg]","gew"],["Körpergewicht [kg]","gew"],["BMI","bmi"],
+ ["ASLR li","aslrL"],["ASLR re","aslrR"],["Shoulder li","smL"],["Shoulder re","smR"],
+ ["Clearing li","clrL","clr"],["Clearing re","clrR","clr"],["In-Line li","ilL"],["In-Line re","ilR"],["Deep Squat","ds"],
+ ["Swiss ventral [s]","swV"],["Swiss dorsal [s]","swD"],["Swiss lateral li [s]","swLL"],["Swiss lateral re [s]","swLR"],
+ ["CMJ o.A. [cm]","cmj"],["SJ [cm]","sj"],["PSA [%]","psa"],
+ ["5er Hopp li [m]","hopL"],["5er Hopp re [m]","hopR"],["Seitendifferenz 5er [%]","hopDiff"],
+ ["Fmax [N]","fmax"],["Fmax li [N]","fmaxL"],["Fmax re [N]","fmaxR"],["Diff Fmax % L/R","fmaxDiff"],
+ ["Bilaterales Defizit [%]","bld"],["Reaktion [s]","reakt"],["Tapping [Kontakte/6 s]","tap"],["Hängen [s]","haeng"],
+ ["1-RM Bankziehen [kg]","bz1rm"],["Liegestütze","liege"],["max. WH Bankziehen","bzWh"],["HBL [s]","hbl"],["HBL Höhe","hblH"],
+ ["Foto-URL","image","txt"]
+];
+function hnorm(s){ return String(s==null?"":s).trim().replace(/\.\d+$/,"").toLowerCase()
+  .replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").replace(/[^a-z0-9]/g,""); }
+var HMAP={};
+COLDEF.forEach(function(c){
+  var d={k:c[1],t:c[2]||"num",h:c[0]};
+  var a=hnorm(c[0]), b=hnorm(c[0].replace(/\[.*?\]/g,""));
+  if(!HMAP[a]) HMAP[a]=d; if(b && !HMAP[b]) HMAP[b]=d;
+});
+/* Messungen, die mit einer Qualitätsbewertung erfasst werden */
+var QUAL_KEYS=["hopL","hopR","liege"];
+
+/* ---------- Helfer ---------- */
+var tmr;
+function toast(msg,ms){ var t=$("toast"); t.textContent=msg; t.classList.add("on");
+  clearTimeout(tmr); tmr=setTimeout(function(){t.classList.remove("on");}, ms||4200); }
+function parseCsv(t){
+  t=String(t).replace(/^\ufeff/,"").replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  var first=t.split("\n")[0]||"", sep=(first.split(";").length>first.split(",").length)?";":",";
+  var out=[],f="",row=[],q=false,i,c;
+  for(i=0;i<t.length;i++){ c=t[i];
+    if(q){ if(c==='"'){ if(t[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===sep){ row.push(f); f=""; }
+    else if(c==="\n"){ row.push(f); out.push(row); row=[]; f=""; }
+    else f+=c; }
+  row.push(f); if(row.length>1||row[0]!=="") out.push(row);
+  return out;
+}
+function dparts(s){ if(!s) return null; s=String(s).trim(); var m;
+  if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/))) return [+m[3],+m[1],+m[2]];
+  if((m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/))) return [+m[3],+m[2],+m[1]];
+  if((m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2})$/))) return [2000+(+m[3]),+m[2],+m[1]];
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)))    return [+m[1],+m[2],+m[3]];
+  var d=new Date(s); return isNaN(d.getTime())?null:[d.getFullYear(),d.getMonth()+1,d.getDate()]; }
+function pad(n){return (n<10?"0":"")+n;}
+function dobDe(s){ var p=dparts(s); return p?pad(p[2])+"."+pad(p[1])+"."+p[0]:(s||"—"); }
+function dobYear(s){ var p=dparts(s); return p?String(p[0]):"?"; }
+function dobSort(s){ var p=dparts(s); return p?p[0]*10000+p[1]*100+p[2]:0; }
+function serialToIso(n){ var d=new Date(Date.UTC(1899,11,30)+Math.round(n)*86400000);
+  return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate()); }
+function de(n,d){ d=(d==null?1:d); return Number(n||0).toLocaleString("de-AT",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+function heute(){ return new Date().toLocaleDateString("de-AT",{day:"2-digit",month:"2-digit",year:"numeric"}); }
+function stamp(){ return new Date().toISOString().slice(0,10); }
+function num(v){ if(v==null||v==="") return null; if(typeof v==="number") return isFinite(v)?v:null;
+  var n=parseFloat(String(v).trim().replace(",",".")); return isNaN(n)?null:n; }
+function initials(n){ var p=String(n).split(/\s+/); return ((p[0]||"")[0]||"")+((p[1]||"")[0]||""); }
+function rnd(x,d){ var f=Math.pow(10,d); return Math.round(x*f)/f; }
+/* Clearing-Test: positiv (Schmerz) = 1, negativ = 0 */
+function clrVal(v){ v=String(v==null?"":v).trim().toLowerCase(); if(!v) return null;
+  if(/^(pos|\+|ja|j$|x$|1$|schmerz)/.test(v)) return 1;
+  if(/^(neg|-|–|nein|n$|0$|o\.?\s*b)/.test(v)) return 0;
+  return null; }
+function clrTxt(v){ return v===1?"positiv":v===0?"negativ":"—"; }
+
+/* ---------- Einlesen ---------- */
+/* grid: Zeilen als Arrays (aus CSV oder Excel), erste Zeile = Überschriften */
+function parseGrid(grid){
+  if(!grid || grid.length<1) throw new Error("Das Blatt ist leer.");
+  var hr=0;
+  for(var s=0;s<Math.min(grid.length,6);s++){          /* Überschriftenzeile suchen */
+    if((grid[s]||[]).some(function(h){ var d=HMAP[hnorm(h)]; return d&&d.k==="name"; })){ hr=s; break; }
+  }
+  var head=grid[hr]||[], map=[], lastMetric=null, unknown=[];
+  head.forEach(function(h,i){
+    var n=hnorm(h);
+    if(!n){ map[i]=null; return; }
+    if(n.indexOf("qualitaet")===0||n.indexOf("qualitat")===0){ map[i]=lastMetric?{k:lastMetric,t:"q"}:null; return; }
+    var d=HMAP[n];
+    if(d){ map[i]=d; if(d.t==="num") lastMetric=d.k; }
+    else { map[i]=null; unknown.push(String(h).trim()); }
+  });
+  if(!map.some(function(x){return x&&x.k==="name";})) throw new Error("Spalte „Name“ nicht gefunden.");
+  var out=[];
+  for(var r=hr+1;r<grid.length;r++){
+    var row=grid[r]||[], o={q:{},sheetRow:r+1};
+    map.forEach(function(d,i){
+      if(!d) return;
+      var raw=row[i], v=(raw==null?"":raw);
+      if(d.t==="date"){ if(typeof v==="number") v=serialToIso(v); v=String(v).trim(); if(v&&!o[d.k]) o[d.k]=v; }
+      else if(d.t==="txt"){ v=String(v).trim(); if(v&&!o[d.k]) o[d.k]=v; }
+      else if(d.t==="q"){ v=String(v).trim(); if(v) o.q[d.k]=v; }
+      else if(d.t==="clr"){ o[d.k]=clrVal(v); if(String(v).trim()&&o[d.k]==null) (o.bad=o.bad||[]).push(d.h+": „"+String(v).trim()+"“"); }
+      else { var n=num(v); if(n!=null) o[d.k]=n;
+             else if(String(v).trim()) (o.bad=o.bad||[]).push(d.h+": „"+String(v).trim()+"“"); }
+    });
+    if(!o.name) continue;
+    if(/^(summe|mittelwert|durchschnitt|min|max)\b/i.test(o.name)) continue;
+    out.push(o);
+  }
+  UNKNOWN=unknown;
+  return out;
+}
+
+/* Abgeleitete Werte immer aus den Messwerten nachrechnen; steht im Blatt ein abweichender Wert, wird das notiert */
+function derive(o){
+  o.recalc=[];
+  var set=function(k,v,tol){
+    var alt=o[k];
+    if(alt!=null && Math.abs(alt-v)>tol) o.recalc.push(MET[k].t+" (Blatt "+de(alt,MET[k].d)+", gerechnet "+de(v,MET[k].d)+")");
+    o[k]=v;
+  };
+  if(o.gr>0&&o.gew>0) set("bmi",rnd(o.gew/Math.pow(o.gr/100,2),2),0.15);
+  if(o.cmj>0&&o.sj>0) set("psa",rnd((o.cmj-o.sj)/o.sj*100,2),0.6);
+  if(o.hopL>0&&o.hopR>0) set("hopDiff",rnd(Math.abs(o.hopL-o.hopR)/Math.max(o.hopL,o.hopR)*100,2),0.6);
+  if(o.fmaxL>0&&o.fmaxR>0){
+    set("fmaxDiff",rnd(Math.abs(o.fmaxL-o.fmaxR)/Math.max(o.fmaxL,o.fmaxR)*100,2),0.6);
+    if(o.fmax>0) set("bld",rnd((o.fmax/(o.fmaxL+o.fmaxR)-1)*100,2),0.6);
+  }
+  if(o.fmax>0&&o.gew>0) o.fmaxRel=rnd(o.fmax/o.gew,2);
+  if(o.bz1rm>0&&o.gew>0) o.bz1rmRel=rnd(o.bz1rm/o.gew,3);
+  if([o.swV,o.swD,o.swLL,o.swLR].every(function(x){return x!=null;})) o.swSum=o.swV+o.swD+o.swLL+o.swLR;
+  if([o.ds,o.ilL,o.ilR,o.smL,o.smR,o.aslrL,o.aslrR].every(function(x){return x!=null;})){
+    /* FMS-Regel: je Seitentest zählt die schwächere Seite; positiver Clearing-Test setzt Shoulder Mobility dieser Seite auf 0 */
+    var smL=o.clrL===1?0:o.smL, smR=o.clrR===1?0:o.smR;
+    o.fmsSum=o.ds+Math.min(o.ilL,o.ilR)+Math.min(smL,smR)+Math.min(o.aslrL,o.aslrR);
+  }
+  return o;
+}
+function testKey(t){ var d=dparts(t.date); return d? d[0]*10000+d[1]*100+d[2] : null; }
+var BASE_ROWS=[];   /* Zeilen aus Rohdatenblatt bzw. Beispieldaten, unverändert; Sprungwerte werden bei jedem Aufbau frisch dazugemischt */
+function cloneRow(r){ var c={}; Object.keys(r).forEach(function(k){ c[k]=r[k]; }); c.q=Object.assign({},r.q||{}); if(r.bad) c.bad=r.bad.slice(); return c; }
+function rebuildTests(){
+  var rows=BASE_ROWS.map(cloneRow);
+  if(window.KVApp) rows=KVApp.mergeRows(rows);
+  tests=rows.map(function(o,i){ o.row=i; o.date=o.date||""; return derive(o); });
+  buildPlayers();
+}
+function ingestRows(rows){ BASE_ROWS=rows; rebuildTests(); }
+function ageAt(dob,date){
+  var a=dparts(dob); if(!a) return null;
+  var b=dparts(date), ref=b?new Date(b[0],b[1]-1,b[2]):new Date();
+  return rnd((ref-new Date(a[0],a[1]-1,a[2]))/(365.2425*86400000),1);
+}
+var PAL=["#1B3A5C","#D8232A","#2E7D4F","#C98A04","#7B4397","#0F7B8A","#B3541E","#4A6FA5","#8A6D3B","#5E6B78"];
+var CCOL={};
+function classes(){ var c=[]; players.forEach(function(p){ if(p.cls&&c.indexOf(p.cls)<0) c.push(p.cls); });
+  return c.sort(function(a,b){return a.localeCompare(b,"de",{numeric:true});}); }
+function kaders(){ var c=[]; players.forEach(function(p){ if(p.kader&&c.indexOf(p.kader)<0) c.push(p.kader); });
+  return c.sort(function(a,b){return a.localeCompare(b,"de",{numeric:true});}); }
+function colorOfCls(c){ return CCOL[c]||"#6E7882"; }
+function colorOf(p){ return colorOfCls(p&&p.cls); }
+function hexRgb(h){ h=h.replace("#",""); return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)]; }
+function clsTag(c){ var col=colorOfCls(c);
+  return c?'<span class="tag cls" style="background:'+col+'1C;color:'+col+'">'+esc(c)+'</span>':'<span class="tag t-warn">ohne Klasse</span>'; }
+
+function buildPlayers(){
+  byName={};
+  tests.forEach(function(t){ (byName[t.name]=byName[t.name]||[]).push(t); });
+  players=Object.keys(byName).map(function(n){
+    var ts=byName[n].slice().sort(function(a,b){
+      var ka=testKey(a), kb=testKey(b);
+      if(ka!=null && kb!=null && ka!==kb) return ka-kb;   /* nach Testdatum */
+      if(ka!=null && kb==null) return 1; if(ka==null && kb!=null) return -1;
+      return (a.row||0)-(b.row||0);                        /* sonst nach Zeilenfolge */
+    });
+    var pick=function(k){ for(var i=ts.length-1;i>=0;i--) if(ts[i][k]) return ts[i][k]; return ""; };
+    var uniq=function(k){ var u=[]; ts.forEach(function(t){ var v=k==="dob"?dobDe(t[k]):t[k]; if(t[k]&&u.indexOf(v)<0) u.push(v); }); return u; };
+    var p={ name:n, tests:ts, cur:ts[ts.length-1], cls:pick("cls"), kader:pick("kader"),
+            side:String(pick("side")).toUpperCase().charAt(0), dob:pick("dob"), image:pick("image")||FOTOS[n]||"",
+            clsAll:uniq("cls"), dobAll:uniq("dob"), kaderAll:uniq("kader") };
+    p.age=ageAt(p.dob,p.cur.date);
+    p.val={};
+    METRICS.forEach(function(m){ p.val[m.k]=num(p.cur[m.k]); });
+    p.hasVal=METRICS.some(function(m){ return p.val[m.k]!=null; });
+    p.nurFrueher=[];
+    if(ts.length>1) METRICS.forEach(function(m){
+      if(p.val[m.k]!=null) return;
+      for(var i=0;i<ts.length-1;i++) if(num(ts[i][m.k])!=null){ p.nurFrueher.push(m.t); return; }
+    });
+    return p;
+  }).sort(function(a,b){ return a.name.localeCompare(b.name,"de"); });
+  CCOL={}; classes().forEach(function(c,i){ CCOL[c]=PAL[i%PAL.length]; });
+}
+function withMetric(k,cls){
+  return players.filter(function(p){ return p.val && p.val[k]!=null && (!cls||p.cls===cls); })
+    .sort(function(a,b){ var d=MET[k].dir||1; return (a.val[k]-b.val[k])*(d===-1?1:-1); });
+}
+/* Vergleichsgruppen: "team" = alle, "c:<Bootsklasse>", "k:<Kader>" */
+function groupList(g){
+  return players.filter(function(p){
+    if(!p.hasVal) return false;
+    if(g==="team") return true;
+    if(g.indexOf("c:")===0) return p.cls===g.slice(2);
+    if(g.indexOf("k:")===0) return p.kader===g.slice(2);
+    return false;
+  });
+}
+function glabel(g){ return g==="team"?"Gesamtdurchschnitt":"Durchschnitt "+g.slice(2); }
+function groupStat(g,k){
+  var v=groupList(g).map(function(p){return p.val[k];}).filter(function(x){return x!=null;});
+  if(!v.length) return null;
+  var mean=v.reduce(function(a,b){return a+b;},0)/v.length;
+  var sd=Math.sqrt(v.reduce(function(a,b){return a+(b-mean)*(b-mean);},0)/v.length);
+  return {mean:mean,sd:sd,n:v.length,min:Math.min.apply(null,v),max:Math.max.apply(null,v)};
+}
+function zOf(p,k,g){
+  var st=groupStat(g,k), v=p.val[k];
+  if(!st||v==null) return null;
+  if(!st.sd) return 0;
+  var z=(v-st.mean)/st.sd;
+  return (MET[k].dir===-1)? -z : z;   /* nach außen = besser */
+}
+function devUnit(m){ return m.pp ? (m.u==="%"?"PP":m.u) : "%"; }
+function devRaw(m,v,mean){
+  if(m.pp) return v-mean;
+  if(!mean) return null;
+  return (v-mean)/Math.abs(mean)*100;
+}
+function devOf(p,k,g){
+  var m=MET[k], st=groupStat(g,k), v=p.val[k];
+  if(!st||v==null) return null;
+  var pct=devRaw(m,v,st.mean); if(pct==null) return null;
+  var better = (m.dir===0||Math.abs(pct)<1e-9) ? null : (m.dir===-1 ? pct<0 : pct>0);
+  return {pct:pct,better:better,mean:st.mean,n:st.n,unit:devUnit(m)};
+}
+function devTxt(d){ return (d.pct>0?"+":d.pct<0?"\u2212":"\u00b1")+de(Math.abs(d.pct),1)+"\u2009"+d.unit; }
+function devSpan(m,g,st){
+  var devs=groupList(g).map(function(x){ return x.val[m.k]==null?null:devRaw(m,x.val[m.k],st.mean); })
+    .filter(function(x){return x!=null;}).map(Math.abs);
+  var mx=devs.length?Math.max.apply(null,devs):0;
+  return Math.max(m.pp?1:3,Math.ceil(mx));
+}
+function meanD(m){ return m.u==="Pkt"?1:m.d; }
+/* Rang mit Gleichstand: gleiche Werte teilen sich den Platz */
+function rankIn(list,k,v){
+  var d=MET[k].dir===-1?-1:1, better=0;
+  list.forEach(function(x){ var w=x.val[k]; if(w!=null && (d===1?w>v+1e-9:w<v-1e-9)) better++; });
+  return better+1;
+}
+function rankOf(p,k){
+  var l=withMetric(k,""), v=p.val[k];
+  if(v==null||!l.length) return null;
+  return {r:rankIn(l,k,v),n:l.length};
+}
+
+/* ---------- Kaderkennzahlen ---------- */
+function stats(){
+  var ages=players.map(function(p){return p.age;}).filter(function(a){return a!=null;}).sort(function(a,b){return a-b;});
+  var avg=function(a){ return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:0; };
+  var med=ages.length?(ages.length%2?ages[(ages.length-1)/2]:(ages[ages.length/2-1]+ages[ages.length/2])/2):0;
+  var wa=players.filter(function(p){return p.age!=null;});
+  var dates={}; tests.forEach(function(t){ var k=testKey(t); if(k) dates[k]=t.date; });
+  var dk=Object.keys(dates).sort();
+  return { avg:avg(ages), med:med,
+    yng:wa.slice().sort(function(a,b){return a.age-b.age;})[0],
+    old:wa.slice().sort(function(a,b){return b.age-a.age;})[0],
+    withTests:players.filter(function(p){return p.hasVal;}),
+    noTests:players.filter(function(p){return !p.hasVal;}),
+    lastDate:dk.length?dates[dk[dk.length-1]]:"", nDates:dk.length,
+    ageOf:function(list){ return avg(list.map(function(p){return p.age;}).filter(function(a){return a!=null;})); } };
+}
+
+/* ---------- Navigation ---------- */
+function setTab(t){
+  tab=t;
+  ["kader","leistung","einzel","entwicklung","uebersicht","qualitaet","sprung","parameter"].forEach(function(x){
+    $("view"+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle("hidden",x!==t);
+    $("tab"+x.charAt(0).toUpperCase()+x.slice(1)).setAttribute("aria-selected",x===t);
+  });
+  if(t==="einzel") renderSingle();
+  if(t==="entwicklung") renderTrend();
+  if(t==="uebersicht") renderOverview();
+  if(window.KVApp) KVApp.onTab(t);
+  if(window.scrollTo) window.scrollTo(0,0);
+}
+function setCls(c){ clsFilter=c; render(); }
+function setMCls(c){ mCls=c; renderLeistung(); }
+function sortBy(k){ if(sortKey===k) sortDir*=-1; else {sortKey=k;sortDir=1;} render(); }
+function lSortBy(k){ if(lSortKey===k) lSortDir*=-1; else {lSortKey=k;lSortDir=(MET[k]&&MET[k].dir===1)?-1:1;} renderLTable(); }
+function chips(active,fn){
+  return '<button class="chip" aria-pressed="'+(active==="")+'" onclick="'+fn+'(\'\')">Alle</button>'+
+    classes().map(function(c){
+      return '<button class="chip cc" style="--c:'+colorOfCls(c)+'" aria-pressed="'+(active===c)+'" data-v="'+esc(c)+
+        '" onclick="'+fn+'(this.dataset.v)">'+esc(c)+'</button>'; }).join("");
+}
+
+/* ---------- Aufbau ---------- */
+var COLS=[{k:"name",t:"Name"},{k:"cls",t:"Bootsklasse"},{k:"kader",t:"Kader"},{k:"side",t:"Auslage"},
+          {k:"dob",t:"Geburtsdatum"},{k:"age",t:"Alter"},{k:"tn",t:"Tests"},{k:"_",t:""}];
+var LCOLS=["fmsSum","swSum","cmj","sj","fmaxRel","reakt","tap","haeng","bz1rm","liege","hbl"];
+
+function avatar(p,cls){
+  var u=photoOf(p);
+  return u ? '<img class="ava '+(cls||"")+'" src="'+esc(u)+'" alt="">'
+           : '<span class="ava-ph '+(cls||"")+'">'+esc(initials(p.name))+'</span>';
+}
+function kpiHtml(a){ return '<div class="kpi '+a[0]+'"><div class="val">'+esc(a[1])+'</div><div class="lab">'+esc(a[2])+
+  '</div><div class="sub">'+esc(a[3])+'</div></div>'; }
+
+function render(){
+  var s=stats(), cl=classes();
+  if(clsFilter && cl.indexOf(clsFilter)<0) clsFilter="";
+  if(mCls && cl.indexOf(mCls)<0) mCls="";
+  $("src").textContent=players.length+" Athlet:innen · "+tests.length+" Testzeilen · ausgewertet: jeweils letzter Durchgang"+
+    (s.nDates?"":" (nach Zeilenfolge, kein Testdatum hinterlegt)")+" · Stand "+heute();
+  $("h1thin").textContent=s.lastDate?"/ "+dobDe(s.lastDate).slice(3):"";
+  document.title="Kadertest Segeln — Kader & Leistungsdiagnostik";
+  $("fname").textContent=FILE;
+  $("demoBar").classList.toggle("hidden",!DEMO);
+  $("kpinote").textContent="Basis: "+players.length+" eindeutige Namen";
+
+  var cn=cl.map(function(c){ return [c,players.filter(function(p){return p.cls===c;}).length]; });
+  var bmx=Math.max.apply(null,[0].concat(cn.map(function(a){return a[1];})));
+  var bl=cn.filter(function(a){return a[1]===bmx;}).map(function(a){return a[0];});
+  var big=bl.length?[bl.length>3?bl.length+" Klassen":bl.join(", "),bmx]:null;
+  $("kpis").innerHTML=[
+    ["k-red",players.length,"Athlet:innen",tests.length+" Testzeilen im Blatt"],
+    ["",cl.length,"Bootsklassen",big?"größte: "+big[0]+" ("+(bl.length>1?"je ":"")+big[1]+")":"keine angegeben"],
+    ["k-navy",de(s.avg),"Ø Alter","Median "+de(s.med)],
+    ["",s.yng?de(s.yng.age):"—","Jüngste Person",s.yng?s.yng.name:"—"],
+    ["",s.old?de(s.old.age):"—","Älteste Person",s.old?s.old.name:"—"],
+    ["k-gold",s.withTests.length+"/"+players.length,"Mit Messwerten",s.lastDate?"letzter Test "+dobDe(s.lastDate):"kein Testdatum"]
+  ].map(kpiHtml).join("");
+
+  $("chipsK").innerHTML=chips(clsFilter,"setCls");
+  $("thead").innerHTML=COLS.map(function(c){
+    if(c.k==="_") return "<th></th>";
+    var arw=sortKey===c.k?' <span class="arw">'+(sortDir>0?"▲":"▼")+'</span>':"";
+    return '<th onclick="sortBy(\''+c.k+'\')">'+c.t+arw+'</th>'; }).join("");
+
+  var q=$("q").value.trim().toLowerCase(), onlyT=$("onlyTest").checked;
+  var list=players.filter(function(p){
+    return (!clsFilter||p.cls===clsFilter) && (!onlyT||p.hasVal) &&
+      (!q||(p.name+" "+p.cls+" "+p.kader).toLowerCase().indexOf(q)>=0);
+  }).slice().sort(function(a,b){
+    var x,y;
+    if(sortKey==="dob"){ x=dobSort(a.dob); y=dobSort(b.dob); }
+    else if(sortKey==="tn"){ x=a.tests.length; y=b.tests.length; }
+    else { x=a[sortKey]; y=b[sortKey]; }
+    if(typeof x==="string"||typeof y==="string") return String(x||"").localeCompare(String(y||""),"de",{numeric:true})*sortDir;
+    return ((x||0)-(y||0))*sortDir;
+  });
+
+  $("tbody").innerHTML=list.length?list.map(function(p){
+    return '<tr data-n="'+esc(p.name)+'" onclick="openSheet(this.dataset.n)">'+
+      '<td><div class="pcell">'+avatar(p)+'<span class="nm">'+esc(p.name)+'</span></div></td>'+
+      '<td>'+clsTag(p.cls)+'</td>'+
+      '<td>'+esc(p.kader||"—")+'</td>'+
+      '<td class="tnum">'+esc(p.side||"—")+'</td>'+
+      '<td class="tnum">'+dobDe(p.dob)+'</td>'+
+      '<td class="tnum">'+(p.age!=null?de(p.age):"—")+'</td>'+
+      '<td class="tnum">'+(p.hasVal?'<span class="tag t-ok">'+p.tests.length+'×</span>':'<span class="tag t-warn">keine Werte</span>')+'</td>'+
+      '<td style="text-align:right"><button class="mini" data-n="'+esc(p.name)+'" onclick="event.stopPropagation();exportPdfByName(this.dataset.n)">PDF</button></td></tr>';
+  }).join(""):'<tr><td colspan="8" style="padding:26px;text-align:center;color:#4A555F">Kein Treffer. Suchbegriff oder Filter anpassen.</td></tr>';
+
+  /* Bootsklassen */
+  var tot=players.length||1;
+  var cc=cl.map(function(c){ var l=players.filter(function(p){return p.cls===c;}); return [c,l.length,s.ageOf(l),colorOfCls(c)]; });
+  var ohne=players.filter(function(p){return !p.cls;});
+  if(ohne.length) cc.push(["ohne Klasse",ohne.length,s.ageOf(ohne),"#AEB6BE"]);
+  $("split").innerHTML=cc.map(function(a){ var w=a[1]/tot*100;
+    return '<div style="background:'+a[3]+';width:'+w+'%" title="'+esc(a[0])+': '+a[1]+'">'+(w>=11?a[1]:"")+'</div>'; }).join("");
+  $("posbars").innerHTML=cc.map(function(a){ return '<div class="brow wide"><span class="ell">'+esc(a[0])+'</span><span class="track"><span class="fill" style="width:'+
+      (a[1]/tot*100)+'%;background:'+a[3]+'"></span></span><span class="v">'+a[1]+'</span></div>'+
+      '<div class="subage">Ø Alter '+(a[2]?de(a[2]):"—")+'</div>'; }).join("") ||
+    '<div class="hint">Keine Bootsklassen eingetragen.</div>';
+
+  /* Altersverteilung, Klassenbreite je nach Spannweite */
+  var ages=players.map(function(p){return p.age;}).filter(function(a){return a!=null;});
+  if(ages.length){
+    var lo=Math.floor(Math.min.apply(null,ages)), hi=Math.floor(Math.max.apply(null,ages));
+    var w=(hi-lo)<=10?2:(hi-lo)<=20?3:5, bk=[];
+    for(var a0=lo;a0<=hi;a0+=w) bk.push([a0,a0+w-1]);
+    var cnt=bk.map(function(b){ return players.filter(function(p){return p.age!=null&&p.age>=b[0]&&p.age<b[1]+1;}).length; });
+    var mx=Math.max.apply(null,[1].concat(cnt));
+    $("hist").innerHTML=cnt.map(function(c){ return '<div class="col"><span class="cnt">'+(c||"")+
+      '</span><span class="bar" style="height:'+(c/mx*100)+'%;background:#1B3A5C"></span></div>'; }).join("");
+    $("histlab").innerHTML=bk.map(function(b){return "<span>"+b[0]+"–"+b[1]+"</span>";}).join("");
+  } else { $("hist").innerHTML='<div class="hint">Keine Geburtsdaten eingetragen.</div>'; $("histlab").innerHTML=""; }
+
+  var yr={}; players.forEach(function(p){ var y=dobYear(p.dob); yr[y]=(yr[y]||0)+1; });
+  var ks=Object.keys(yr).sort(), ymx=Math.max.apply(null,ks.map(function(k){return yr[k];}).concat([1]));
+  $("years").innerHTML=ks.map(function(y){ return '<div class="brow" style="grid-template-columns:52px 1fr 30px"><span class="tnum">'+y+
+    '</span><span class="track"><span class="fill" style="width:'+(yr[y]/ymx*100)+'%;background:#12161B"></span></span><span class="v">'+yr[y]+'</span></div>'; }).join("");
+
+  /* Kader x Bootsklasse */
+  var kd=kaders(); if(players.some(function(p){return !p.kader;})) kd.push("");
+  var cols=cl.slice(); if(ohne.length) cols.push("");
+  if(!players.length) $("matrix").innerHTML='<div class="hint">Keine Daten.</div>';
+  else $("matrix").innerHTML='<table class="tst mx"><tr><th style="text-align:left">Kader</th>'+
+    cols.map(function(c){ return '<th style="text-align:right;color:'+(c?colorOfCls(c):"#8B97A3")+'">'+esc(c||"ohne")+'</th>'; }).join("")+
+    '<th style="text-align:right">Gesamt</th></tr>'+
+    kd.map(function(k){
+      var row=players.filter(function(p){return (p.kader||"")===k;});
+      return '<tr><td>'+esc(k||"ohne Angabe")+'</td>'+cols.map(function(c){
+        var n=row.filter(function(p){return (p.cls||"")===c;}).length;
+        return '<td style="text-align:right'+(n?';font-weight:700':';color:#C3CAD1')+'">'+(n||"·")+'</td>'; }).join("")+
+        '<td style="text-align:right;font-weight:700">'+row.length+'</td></tr>';
+    }).join("")+
+    '<tr class="sum"><td>Gesamt</td>'+cols.map(function(c){
+      return '<td style="text-align:right">'+players.filter(function(p){return (p.cls||"")===c;}).length+'</td>'; }).join("")+
+    '<td style="text-align:right">'+players.length+'</td></tr></table>';
+
+  /* Testtermine */
+  var dm={}, od=0;
+  tests.forEach(function(t){ var k=testKey(t); if(!k){ od++; return; } (dm[k]=dm[k]||{d:t.date,n:{}}).n[t.name]=1; });
+  var dk=Object.keys(dm).sort(), dmx=Math.max.apply(null,[1].concat(dk.map(function(k){return Object.keys(dm[k].n).length;})));
+  $("dates").innerHTML=dk.map(function(k){ var n=Object.keys(dm[k].n).length;
+    return '<div class="brow" style="grid-template-columns:86px 1fr 30px"><span class="tnum">'+dobDe(dm[k].d)+
+      '</span><span class="track"><span class="fill" style="width:'+(n/dmx*100)+'%;background:#12161B"></span></span><span class="v">'+n+'</span></div>'; }).join("")+
+    (od?'<div class="hint" style="margin:8px 0 0">'+od+' Testzeile'+(od>1?"n":"")+' ohne Testdatum</div>':"")+
+    (!dk.length&&!od?'<div class="hint">Keine Testzeilen.</div>':"");
+
+  renderLeistung(); renderFlags();
+  if(tab==="einzel") renderSingle(); else fillPick();
+  if(tab==="entwicklung") renderTrend();
+  if(tab==="uebersicht") renderOverview();
+  if(window.KVApp) KVApp.afterRender();
+}
+
+/* ---------- Leistung ---------- */
+function renderLeistung(){
+  var s=stats();
+  $("ldnote").textContent=tests.length+" Testzeilen · "+s.withTests.length+" Athlet:innen mit Messwerten";
+  var mk=function(k,cls){
+    var l=withMetric(k,""), p=l.length?l[0]:null, m=MET[k];
+    return [cls||"", p?de(p.val[k],m.d):"—", mName(m), p?p.name:"keine Daten"];
+  };
+  $("ldkpis").innerHTML=[mk("fmsSum","k-red"),mk("swSum"),mk("cmj","k-navy"),mk("fmaxRel"),mk("bz1rm","k-gold"),mk("hbl")]
+    .map(kpiHtml).join("");
+  $("chipsM").innerHTML=chips(mCls,"setMCls");
+  if(!$("metric").options.length){
+    var groups={},go=[];
+    METRICS.forEach(function(m){ if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+    $("metric").innerHTML=go.map(function(g){
+      return '<optgroup label="'+esc(g)+'">'+groups[g].map(function(m){
+        return '<option value="'+m.k+'"'+(m.k===curMetric?" selected":"")+'>'+esc(mName(m))+'</option>';
+      }).join("")+'</optgroup>'; }).join("");
+  }
+  renderBoard(); renderLTable(); renderCmp();
+}
+function renderBoard(){
+  var m=MET[curMetric], list=withMetric(curMetric,mCls);
+  $("mTitle").textContent=mName(m);
+  $("mHint").textContent = (m.dir===-1?"Kleinerer Wert ist besser.":m.dir===1?"Größerer Wert ist besser.":"Ohne Wertung — reiner Messwert.")+
+    (m.calc?" Von der App aus den Messwerten gerechnet.":"")+(mCls?" Nur "+mCls+".":"");
+  if(!list.length){ $("board").innerHTML='<div style="color:#4A555F;font-size:13.5px">Für diese Messung liegen keine Werte vor.</div>'; return; }
+  var vals=list.map(function(p){return p.val[curMetric];});
+  var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals), span=(hi-lo)||1;
+  $("board").innerHTML=list.map(function(p,i){
+    var v=p.val[curMetric];
+    var frac = m.dir===-1 ? (hi-v)/span : (v-lo)/span;
+    var w=12+frac*88;
+    return '<div class="lb" data-n="'+esc(p.name)+'" onclick="openSheet(this.dataset.n)" style="cursor:pointer">'+
+      '<span class="r">'+rankIn(list,curMetric,v)+'</span>'+
+      '<span><span class="n">'+esc(p.name)+' <span class="lbc">'+esc(p.cls||"")+'</span></span><span class="t"><i style="width:'+w+'%;background:'+colorOf(p)+'"></i></span></span>'+
+      '<span class="v">'+de(v,m.d)+'</span></div>';
+  }).join("");
+}
+function renderLTable(){
+  $("lthead").innerHTML='<th onclick="lSortBy(\'name\')">Name'+(lSortKey==="name"?' <span class="arw">'+(lSortDir>0?"▲":"▼")+'</span>':"")+'</th>'+
+    LCOLS.map(function(k){ var m=MET[k];
+      var arw=lSortKey===k?' <span class="arw">'+(lSortDir>0?"▲":"▼")+'</span>':"";
+      return '<th onclick="lSortBy(\''+k+'\')" title="'+esc(mName(m))+'">'+esc(m.s||m.t)+
+        (m.u?" <span style='color:#8B97A3'>"+esc(m.u)+"</span>":"")+arw+'</th>'; }).join("");
+  var list=players.filter(function(p){return p.hasVal && (!mCls||p.cls===mCls);}).slice().sort(function(a,b){
+    if(lSortKey==="name") return a.name.localeCompare(b.name,"de")*lSortDir;
+    var x=a.val[lSortKey], y=b.val[lSortKey];
+    if(x==null&&y==null) return 0; if(x==null) return 1; if(y==null) return -1;
+    return (x-y)*lSortDir;
+  });
+  $("ltbody").innerHTML=list.length?list.map(function(p){
+    return '<tr data-n="'+esc(p.name)+'" onclick="openSheet(this.dataset.n)">'+
+      '<td class="nm" style="border-left:4px solid '+colorOf(p)+'">'+esc(p.name)+'<div class="alt">'+esc(p.cls||"ohne Klasse")+(p.kader?' · '+esc(p.kader):'')+
+      ' · '+p.tests.length+' Durchgang'+(p.tests.length>1?"e":"")+'</div></td>'+
+      LCOLS.map(function(k){ var m=MET[k], v=p.val[k];
+        if(v==null) return '<td class="tnum" style="color:#AEB6BE">—</td>';
+        var rk=rankOf(p,k);
+        var hi=rk&&rk.r===1&&rk.n>1?' style="font-weight:700;color:#B8860B"':"";
+        return '<td class="tnum"'+hi+'>'+de(v,m.d)+'</td>'; }).join("")+'</tr>';
+  }).join(""):'<tr><td colspan="'+(LCOLS.length+1)+'" style="padding:26px;text-align:center;color:#4A555F">Keine Testdaten geladen.</td></tr>';
+}
+function renderCmp(){
+  var cl=classes().filter(function(c){ return groupList("c:"+c).length; });
+  if(!cl.length){ $("ldcmp").innerHTML='<div class="panel"><h3>Kein Vergleich möglich</h3><div class="hint">In den Testzeilen ist keine Bootsklasse eingetragen.</div></div>'; return; }
+  var groups={},go=[];
+  METRICS.forEach(function(m){ if(m.dir===0) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  $("ldcmp").innerHTML=go.map(function(g){
+    return '<div class="panel"><h3>'+esc(g)+'</h3><div class="hint">Mittelwert je Bootsklasse, Zahl in Klammern = Anzahl Werte</div>'+
+      groups[g].map(function(m){
+        var rows=cl.map(function(c){ var l=withMetric(m.k,c).map(function(p){return p.val[m.k];});
+          return [c, l.length? l.reduce(function(a,b){return a+b;},0)/l.length : null, l.length]; });
+        if(rows.every(function(r){return r[1]==null;})) return "";
+        var mx=Math.max.apply(null,rows.map(function(r){return Math.abs(r[1]||0);}))||1;
+        return '<div style="margin-bottom:13px"><div style="font-size:12.5px;font-weight:600;margin-bottom:5px">'+
+          esc(m.t)+(m.u?' <span style="color:#8B97A3;font-weight:400">'+esc(m.u)+'</span>':'')+'</div>'+
+          rows.map(function(a){
+            return '<div class="brow" style="grid-template-columns:78px 1fr 70px;margin-bottom:4px">'+
+              '<span class="ell" style="font-size:11px;color:#4A555F">'+esc(a[0])+'</span><span class="track" style="height:14px">'+
+              '<span class="fill" style="width:'+(a[1]==null?0:(Math.abs(a[1])/mx*100))+'%;background:'+colorOfCls(a[0])+'"></span></span>'+
+              '<span class="v" style="font-size:12px">'+(a[1]==null?"—":de(a[1],meanD(m))+' <span style="color:#98A2AC;font-weight:400">('+a[2]+')</span>')+'</span></div>';
+          }).join("")+'</div>';
+      }).join("")+'</div>';
+  }).join("");
+}
+
+/* ---------- Datenqualität ---------- */
+function renderFlags(){
+  var s=stats(), f=[];
+  if(DEMO) f.push(["Beispieldaten aktiv",
+    "Alle Namen und Werte sind erfunden. Über „Rohdaten laden“ die ausgefüllte Rohdaten-Datei einlesen, dann verschwindet dieser Hinweis."]);
+  if(UNKNOWN.length) f.push(["Nicht erkannte Spalten",
+    UNKNOWN.join(", ")+" — diese Spalten wurden ignoriert. Überschrift an die Vorlage angleichen, wenn sie ausgewertet werden sollen."]);
+  if(s.noTests.length) f.push(["Zeilen ohne Messwerte",
+    s.noTests.map(function(p){return p.name;}).join(", ")+" — Name steht im Blatt, aber im letzten Durchgang ist kein Messwert eingetragen."]);
+  var multi=players.filter(function(p){return p.tests.length>1;});
+  if(multi.length) f.push(["Wiederholungstests",
+    multi.map(function(p){return p.name+" ("+p.tests.length+"×)";}).join("; ")+". Ausgewertet wird jeweils der letzte Durchgang.","ok"]);
+  var ohneDatum=tests.filter(function(t){return !testKey(t);}).length;
+  if(ohneDatum) f.push(["Testdatum fehlt",
+    ohneDatum+" von "+tests.length+" Testzeilen haben kein gültiges Testdatum. Sie gelten als älter als datierte Zeilen und werden untereinander nach Zeilenfolge sortiert."]);
+  var dup=[]; players.forEach(function(p){ var seen={}; p.tests.forEach(function(t){ var k=testKey(t); if(!k) return;
+    if(seen[k]) dup.push(p.name+" am "+dobDe(t.date)); seen[k]=1; }); });
+  if(dup.length) f.push(["Doppelte Testzeilen",dup.join("; ")+" — gleicher Name, gleiches Datum. Ausgewertet wird die untere Zeile."]);
+  var luecken=players.filter(function(p){return p.nurFrueher.length;});
+  if(luecken.length) f.push(["Messungen fehlen im aktuellen Durchgang",
+    luecken.map(function(p){return p.name+" ("+p.nurFrueher.join(", ")+")";}).join("; ")+
+    " — diese Werte gab es in einem früheren Test, im ausgewerteten nicht. Sie erscheinen deshalb als „—“."]);
+  var noCls=players.filter(function(p){return !p.cls;});
+  if(noCls.length) f.push(["Bootsklasse fehlt",noCls.map(function(p){return p.name;}).join(", ")+" — ohne Bootsklasse fehlt die Vergleichsgruppe in der Einzelauswertung."]);
+  var noDob=players.filter(function(p){return !dparts(p.dob);});
+  if(noDob.length) f.push(["Geburtsdatum fehlt oder ist unlesbar",noDob.map(function(p){return p.name;}).join(", ")]);
+  var wid=players.filter(function(p){return p.dobAll.length>1;});
+  if(wid.length) f.push(["Unterschiedliche Geburtsdaten",wid.map(function(p){return p.name+" ("+p.dobAll.join(" / ")+")";}).join("; ")+
+    " — bitte im Blatt vereinheitlichen. Verwendet wird das Datum aus dem letzten Durchgang."]);
+  var wcl=players.filter(function(p){return p.clsAll.length>1;});
+  if(wcl.length) f.push(["Bootsklasse gewechselt",wcl.map(function(p){return p.name+" ("+p.clsAll.join(" → ")+")";}).join("; ")+
+    ". Zugeordnet wird die Klasse aus dem letzten Durchgang.","ok"]);
+  var bad=[]; tests.forEach(function(t){ if(t.bad) bad.push(t.name+(t.date?" "+dobDe(t.date):"")+": "+t.bad.join(", ")); });
+  if(bad.length) f.push(["Nicht lesbare Einträge",bad.join("; ")+" — der Eintrag ist keine Zahl bzw. kein gültiger Clearing-Wert und wurde übergangen."]);
+  var fmsBad=[]; tests.forEach(function(t){ ["ds","ilL","ilR","smL","smR","aslrL","aslrR"].forEach(function(k){
+    if(t[k]!=null && (t[k]<0||t[k]>3||t[k]!==Math.round(t[k]))) fmsBad.push(t.name+" · "+MET[k].t+" = "+de(t[k],1)); }); });
+  if(fmsBad.length) f.push(["Screen-Werte außerhalb 0–3",fmsBad.join("; ")+" — Movement-Screen-Tests werden mit ganzen Punkten von 0 bis 3 bewertet."]);
+  var clr=players.filter(function(p){return p.cur.clrL===1||p.cur.clrR===1;});
+  if(clr.length) f.push(["Clearing-Test positiv",clr.map(function(p){
+      return p.name+" ("+[p.cur.clrL===1?"links":"",p.cur.clrR===1?"rechts":""].filter(Boolean).join(" und ")+")"; }).join("; ")+
+    " — Schmerz im Clearing-Test. Shoulder Mobility dieser Seite zählt in der Screen-Summe mit 0 Punkten; ärztliche bzw. physiotherapeutische Abklärung empfohlen."]);
+  var asy=[]; players.forEach(function(p){ var c=p.cur, a=[];
+    [["ilL","ilR","In-Line"],["smL","smR","Shoulder"],["aslrL","aslrR","ASLR"]].forEach(function(x){
+      if(c[x[0]]!=null&&c[x[1]]!=null&&c[x[0]]!==c[x[1]]) a.push(x[2]+" "+c[x[0]]+"/"+c[x[1]]); });
+    if(a.length) asy.push(p.name+" ("+a.join(", ")+")"); });
+  if(asy.length) f.push(["Seitenunterschiede im Movement Screen",asy.join("; ")+" — Werte links/rechts. Im Screen gilt jeder Seitenunterschied als Hinweis."]);
+  var sd=[]; players.forEach(function(p){
+    if(p.val.hopDiff!=null&&p.val.hopDiff>ASYM_LIMIT) sd.push(p.name+" 5er Hopp "+de(p.val.hopDiff,1)+" %");
+    if(p.val.fmaxDiff!=null&&p.val.fmaxDiff>ASYM_LIMIT) sd.push(p.name+" Fmax "+de(p.val.fmaxDiff,1)+" %"); });
+  if(sd.length) f.push(["Seitendifferenz über "+ASYM_LIMIT+" %",sd.join("; ")+
+    ". Die Grenze von "+ASYM_LIMIT+" % ist ein gängiger Richtwert, keine Norm, und lässt sich im Code (ASYM_LIMIT) ändern."]);
+  var rc=[]; tests.forEach(function(t){ if(t.recalc&&t.recalc.length) rc.push(t.name+(t.date?" "+dobDe(t.date):"")+": "+t.recalc.join(", ")); });
+  if(rc.length) f.push(["Berechnete Werte weichen vom Blatt ab",rc.join("; ")+" — die App verwendet durchgehend den nachgerechneten Wert."]);
+  f.push(["So rechnet die App",
+    "BMI = Masse ÷ Größe². PSA = (CMJ − SJ) ÷ SJ × 100. Seitendifferenz = |links − rechts| ÷ größerer Wert × 100. "+
+    "Bilaterales Defizit = (Fmax beidseitig ÷ (links + rechts) − 1) × 100, negativ heißt Defizit. "+
+    "Fmax relativ und Bankziehen relativ je kg Körpermasse. Rumpf gesamt = Summe der vier Swiss-Positionen. "+
+    "Screen-Summe = Deep Squat + jeweils schwächere Seite von In-Line, Shoulder Mobility und ASLR (max. 12).","ok"]);
+  var noPhoto=players.filter(function(p){return !photoOf(p);}).length;
+  if(noPhoto) f.push(["Fotos fehlen",
+    noPhoto+" von "+players.length+" Athlet:innen ohne Bild. Entweder im Blatt „Fotos“ eine Bild-URL eintragen oder oben über „Fotos laden“ hochladen — "+
+    "Dateiname wie der Name im Blatt (z. B. Wende Sophie.jpg), dann ordnet die App automatisch zu.","ok"]);
+  if(window.KVApp) f=KVApp.flags(f);
+  $("flags").innerHTML=f.map(function(a){ return '<div class="flag '+(a[2]||"")+'"><b>'+esc(a[0])+'</b><p>'+esc(a[1])+'</p></div>'; }).join("");
+}
+
+/* ---------- Detail ---------- */
+function findPlayer(n){ for(var i=0;i<players.length;i++) if(players[i].name===n) return players[i]; return null; }
+function openSheet(name){
+  cur=findPlayer(name); if(!cur) return;
+  var p=cur;
+  $("shPhoto").innerHTML=avatar(p);
+  $("shPos").textContent=[p.cls||"ohne Klasse",p.kader].filter(Boolean).join(" · ");
+  $("shName").textContent=p.name;
+  $("shNum").textContent=p.cls||"—";
+  $("shNum").style.color=colorOf(p)==="#1B3A5C"?"#5B84B1":colorOf(p);
+  $("shDl").innerHTML=[["Bootsklasse",p.cls||"—"],["Kader",p.kader||"—"],["Auslage",p.side||"—"],["Geburtsdatum",dobDe(p.dob)],
+    ["Alter",p.age!=null?de(p.age)+" Jahre":"—"],["Tests",p.tests.length+"×"],
+    ["Letzter Test",p.cur.date?dobDe(p.cur.date):"ohne Datum"]].map(function(a){return "<dt>"+a[0]+"</dt><dd>"+esc(a[1])+"</dd>";}).join("");
+
+  if(!p.hasVal){
+    $("shPerf").innerHTML='<div class="sub-h">Leistungsdiagnostik</div>'+
+      '<p style="font-size:13.5px;color:#4A555F">Für '+esc(p.name)+' ist im letzten Durchgang kein Messwert eingetragen.</p>';
+    $("ovl").classList.add("on"); return;
+  }
+  var groups={},go=[];
+  METRICS.forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  var html=orderGroups(go).map(function(g){
+    return '<div class="sub-h">'+esc(g)+'</div>'+groups[g].map(function(m){
+      var v=p.val[m.k], rk=(m.dir!==0)?rankOf(p,m.k):null, qq=p.cur.q[m.k];
+      var rc=rk?(rk.r===1?"r1":rk.r<=3?"r2":"r3"):"";
+      return '<div class="mrow"><span>'+esc(m.t)+(m.u?' <span style="color:#8B97A3">'+esc(m.u)+'</span>':'')+
+        (qq?' <span class="qb">Q '+esc(qq)+'</span>':'')+'</span>'+
+        '<span class="mv">'+de(v,m.d)+'</span>'+
+        '<span class="mr '+rc+'">'+(rk?rk.r+"/"+rk.n:"—")+'</span></div>';
+    }).join("")+(g===FMS?clrLine(p.cur):"");
+  }).join("");
+  if(p.tests.length>1){
+    html+='<div class="sub-h">Einzelne Durchgänge — Screen / CMJ / Fmax rel. / 1-RM BZ</div>'+
+      p.tests.map(function(t,i){
+        var c=function(k,d,u){ return '<span class="mv">'+(t[k]!=null?de(t[k],d)+" "+u:"—")+'</span>'; };
+        return '<div class="mrow" style="grid-template-columns:84px 1fr 1fr 1fr 1fr"><span style="color:#4A555F;font-size:12px">'+esc(testLabel(t,i))+
+          '</span>'+c("fmsSum",0,"Pkt")+c("cmj",1,"cm")+c("fmaxRel",1,"N/kg")+c("bz1rm",1,"kg")+'</div>';
+      }).join("");
+  }
+  html+='<p style="font-size:12px;color:#8B97A3;margin-top:12px">Rangspalte: Platz im gesamten Kader über alle mit Wert für diese Messung. Bei mehreren Durchgängen zählt der letzte.</p>';
+  $("shPerf").innerHTML='<div class="sub-h" style="margin-top:24px">Leistungsdiagnostik — letzter Test</div>'+html;
+  $("ovl").classList.add("on");
+}
+function closeSheet(){ $("ovl").classList.remove("on"); }
+function clrLine(t){
+  if(t.clrL==null&&t.clrR==null) return "";
+  var pos=(t.clrL===1||t.clrR===1);
+  return '<div class="clr'+(pos?" pos":"")+'">Clearing-Test: links <b>'+clrTxt(t.clrL)+'</b> · rechts <b>'+clrTxt(t.clrR)+'</b>'+
+    (pos?' — Schmerz, bitte abklären':'')+'</div>';
+}
+
+/* ---------- Fotos ---------- */
+var PHOTOS={};   /* Name -> dataURL */
+function norm(s){ return String(s||"").toLowerCase()
+  .replace(/[äáàâ]/g,"a").replace(/[öóòô]/g,"o").replace(/[üúùû]/g,"u").replace(/ß/g,"ss")
+  .replace(/[^a-z0-9]/g,""); }
+function photoOf(p){ return PHOTOS[p.name] || p.image || FOTOS[p.name] || ""; }
+function squareDataUrl(img,px){
+  px=px||420;
+  var c=document.createElement("canvas"); c.width=c.height=px;
+  var g=c.getContext("2d");
+  var side=Math.min(img.naturalWidth||img.width,img.naturalHeight||img.height);
+  var sx=((img.naturalWidth||img.width)-side)/2, sy=((img.naturalHeight||img.height)-side)/2;
+  g.fillStyle="#DDE1E6"; g.fillRect(0,0,px,px);
+  g.drawImage(img,sx,sy,side,side,0,0,px,px);
+  return c.toDataURL("image/jpeg",0.86);
+}
+function fileToSquare(file){
+  return new Promise(function(ok,no){
+    var rd=new FileReader();
+    rd.onload=function(e){
+      var im=new Image();
+      im.onload=function(){ try{ ok(squareDataUrl(im)); }catch(err){ ok(e.target.result); } };
+      im.onerror=function(){ no(new Error("Bild nicht lesbar")); };
+      im.src=e.target.result;
+    };
+    rd.onerror=function(){ no(new Error("Datei nicht lesbar")); };
+    rd.readAsDataURL(file);
+  });
+}
+function matchPlayer(filename){
+  var base=filename.replace(/\.[^.]+$/,""), n=norm(base), i, p, hits;
+  for(i=0;i<players.length;i++) if(norm(players[i].name)===n) return players[i];
+  for(i=0;i<players.length;i++){
+    p=players[i]; var q=p.name.split(/\s+/).map(norm);
+    if(n===q[1]+q[0]) return p;
+    if(n.indexOf(q[0])>=0 && q.length>1 && n.indexOf(q[1])>=0) return p;
+  }
+  hits=players.filter(function(x){
+    var q=x.name.split(/\s+/).map(norm);
+    return q.some(function(t){ return t.length>=4 && (n===t || n.indexOf(t)>=0); });
+  });
+  return hits.length===1 ? hits[0] : null;
+}
+function loadPhotos(inp){
+  var fs=Array.prototype.slice.call(inp.files||[]);
+  if(!fs.length) return;
+  var done=0, hit=[], miss=[];
+  fs.forEach(function(f){
+    var p=matchPlayer(f.name);
+    fileToSquare(f).then(function(url){
+      if(p){ PHOTOS[p.name]=url; hit.push(p.name); } else miss.push(f.name);
+      if(++done===fs.length) finish();
+    }).catch(function(){ miss.push(f.name); if(++done===fs.length) finish(); });
+  });
+  function finish(){
+    render(); inp.value="";
+    var msg=hit.length+" Foto"+(hit.length===1?"":"s")+" zugeordnet";
+    if(miss.length) msg+=" · nicht zuzuordnen: "+miss.join(", ")+
+      ". Datei so benennen wie im Blatt (z. B. Wende Sophie.jpg) oder in der Einzelauswertung direkt wählen.";
+    toast(msg, miss.length?9000:4000);
+  }
+}
+function loadOnePhoto(inp){
+  var f=inp.files[0]; if(!f||!pickName) return;
+  fileToSquare(f).then(function(url){
+    PHOTOS[pickName]=url; render(); inp.value="";
+    toast("Foto für "+pickName+" gesetzt.");
+  }).catch(function(){ toast("Bild nicht lesbar."); inp.value=""; });
+}
+function urlToDataUrl(url){
+  return new Promise(function(ok){
+    if(!url) return ok(null);
+    if(url.indexOf("data:")===0) return ok(url);
+    var im=new Image(); im.crossOrigin="anonymous";
+    im.onload=function(){ try{ ok(squareDataUrl(im)); }catch(e){ ok(null); } };
+    im.onerror=function(){ ok(null); };
+    im.src=url;
+    setTimeout(function(){ ok(null); },5000);
+  });
+}
+
+/* ---------- Einzelauswertung ---------- */
+var pickName="", refGroup="auto";
+function autoRef(p){ return p.cls?"c:"+p.cls:"team"; }
+function effRef(p){
+  var g = refGroup==="auto" ? autoRef(p) : refGroup;
+  return groupList(g).length>=2 ? g : "team";
+}
+function setRef(v){
+  if(v!=="auto" && groupList(v).length<2){
+    toast("In dieser Gruppe gibt es nur "+groupList(v).length+" Person mit Messwerten \u2014 daraus l\u00e4sst sich kein Durchschnitt bilden.",5000);
+    renderSingle(); return; }
+  refGroup=v; renderSingle();
+}
+function refSelect(p){
+  var auto=autoRef(p);
+  var opts=[["auto","\u00d8 Eigene Bootsklasse \u2014 "+(p.cls||"Gesamt")+" ("+groupList(auto).length+")"],
+            ["team","\u00d8 Gesamt ("+groupList("team").length+")"]];
+  classes().forEach(function(c){ opts.push(["c:"+c,"\u00d8 "+c+" ("+groupList("c:"+c).length+")"]); });
+  kaders().forEach(function(k){ opts.push(["k:"+k,"\u00d8 Kader "+k+" ("+groupList("k:"+k).length+")"]); });
+  return '<select class="refsel" onchange="setRef(this.value)" title="Bezugsgruppe f\u00fcr z-Werte und Regler">'+
+    opts.map(function(a){ return '<option value="'+esc(a[0])+'"'+(a[0]===refGroup?" selected":"")+'>'+esc(a[1])+'</option>'; }).join("")+
+    '</select>';
+}
+function pickList(){ return players.slice(); }
+function fillPick(){
+  var sel=$("pick"), list=pickList();
+  if(!pickName||!findPlayer(pickName)) pickName=list.length?list[0].name:"";
+  sel.innerHTML=list.map(function(p){
+    return '<option value="'+esc(p.name)+'"'+(p.name===pickName?" selected":"")+'>'+
+      esc(p.name)+"  ·  "+esc(p.cls||"ohne Klasse")+(p.kader?"  ·  "+esc(p.kader):"")+
+      (p.hasVal?"":"  (ohne Messwerte)")+'</option>'; }).join("");
+}
+function stepPick(d){
+  var list=pickList(); if(!list.length) return;
+  var i=0; for(var k=0;k<list.length;k++) if(list[k].name===pickName) i=k;
+  i=(i+d+list.length)%list.length; pickName=list[i].name;
+  fillPick(); renderSingle();
+}
+var SPIDER=["fmsSum","swSum","cmj","fmaxRel","tap","haeng","bz1rmRel","hbl"];
+var SPW=440, SPH=330, SP_REF="#6E7C8C";   /* Farbe des Durchschnitts-Layers */
+/* Skala der Spiderchart:
+   "range" = Spannweite des gesamten Kaders je Test (Mitte = schwächster, Rand = bester Wert).
+             Person und Gruppendurchschnitt werden als echte Werte eingezeichnet, der Durchschnitt hat eine eigene Form.
+   "z"     = z-Werte gegen die Vergleichsgruppe (Durchschnitt liegt immer auf dem Null-Ring). */
+var spScale="range";
+function setSpScale(v){ spScale=v; renderSingle(); }
+function spRange(k){ return groupStat("team",k); }
+/* Anteil 0..1 innerhalb der Kader-Spannweite, 1 = bester Wert */
+function spFrac(k,v){
+  var st=spRange(k); if(!st||v==null) return null;
+  var sp=st.max-st.min; if(!sp) return 0.5;
+  var f=(v-st.min)/sp; if(MET[k].dir===-1) f=1-f;
+  return Math.max(0,Math.min(1,f));
+}
+function spiderChart(p,g){
+  var W=SPW,H=SPH,cx=W/2,cy=H/2+2,R=92,ZMAX=2.5,RIN=0.1, isZ=(spScale==="z");
+  var ax=SPIDER.map(function(k){ return {k:k,m:MET[k],z:zOf(p,k,g),v:p.val[k],st:groupStat(g,k)}; });
+  ax.forEach(function(a){
+    a.pos = isZ ? a.z : spFrac(a.k,a.v);
+    a.ref = a.st ? (isZ ? 0 : spFrac(a.k,a.st.mean)) : null;
+  });
+  if(!ax.filter(function(a){return a.pos!=null;}).length) return "";
+  var n=ax.length;
+  var ang=function(i){ return -Math.PI/2 + i*2*Math.PI/n; };
+  var rad = isZ
+    ? function(z){ var c=Math.max(-ZMAX,Math.min(ZMAX,z)); return R*(c+ZMAX)/(2*ZMAX); }
+    : function(f){ return R*(RIN+(1-RIN)*f); };
+  var px=function(i,r){ return (cx+r*Math.cos(ang(i))).toFixed(1); };
+  var py=function(i,r){ return (cy+r*Math.sin(ang(i))).toFixed(1); };
+  var poly=function(r){ var q=[]; for(var i=0;i<n;i++) q.push(px(i,r)+","+py(i,r)); return q.join(" "); };
+
+  var ringVals = isZ ? [-2,-1,0,1,2] : [0,0.25,0.5,0.75,1];
+  var rings="";
+  ringVals.forEach(function(v){
+    var outer=(!isZ&&v===1);
+    rings+='<polygon points="'+poly(rad(v))+'" fill="none" stroke="'+(outer?"#C9D0D7":"#E6E9ED")+'" stroke-width="1"/>';
+  });
+  var spokes="";
+  for(var i=0;i<n;i++) spokes+='<line x1="'+px(i,rad(ringVals[0]))+'" y1="'+py(i,rad(ringVals[0]))+'" x2="'+px(i,rad(ringVals[4]))+'" y2="'+py(i,rad(ringVals[4]))+'" stroke="#E6E9ED"/>';
+
+  /* Durchschnitts-Layer */
+  var refPts=[]; ax.forEach(function(a,i){ var r=rad(a.ref!=null?a.ref:(isZ?0:0)); refPts.push(px(i,r)+","+py(i,r)); });
+  var refLayer='<defs><pattern id="spRefHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'+
+    '<rect width="6" height="6" fill="'+SP_REF+'" fill-opacity="0.20"/>'+
+    '<line x1="0" y1="0" x2="0" y2="6" stroke="'+SP_REF+'" stroke-width="1.6" stroke-opacity="0.45"/></pattern></defs>'+
+    '<polygon points="'+refPts.join(" ")+'" fill="url(#spRefHatch)" stroke="'+SP_REF+'" stroke-width="1.6" stroke-dasharray="4 3"/>';
+  var refDots=isZ?"":ax.map(function(a,i){ if(a.ref==null) return "";
+    var r=rad(a.ref); return '<circle cx="'+px(i,r)+'" cy="'+py(i,r)+'" r="2.6" fill="'+SP_REF+'"/>'; }).join("");
+
+  var pts=[],dots="",fehlt=[], col=colorOf(p);
+  ax.forEach(function(a,i){
+    if(a.pos==null){
+      /* ohne eigenen Wert: Punkt auf den Durchschnitt legen, damit die Fläche nicht verzerrt */
+      var r0=rad(a.ref!=null?a.ref:(isZ?0:0.5)); pts.push(px(i,r0)+","+py(i,r0)); fehlt.push(a.m.s||a.m.t);
+      dots+='<circle cx="'+px(i,r0)+'" cy="'+py(i,r0)+'" r="4.5" fill="#FFFFFF" stroke="#AEB6BE" stroke-width="1.8"/>';
+      return;
+    }
+    var r=rad(a.pos); pts.push(px(i,r)+","+py(i,r));
+    dots+='<circle cx="'+px(i,r)+'" cy="'+py(i,r)+'" r="4" fill="'+col+'"/>';
+  });
+  if(fehlt.length) dots+='<text x="'+cx+'" y="'+(H-3)+'" text-anchor="middle" font-size="9" fill="#C98A04">'+
+    'Ohne Messwert: '+esc(fehlt.join(", "))+'</text>';
+  var area='<polygon points="'+pts.join(" ")+'" fill="'+col+'" fill-opacity="0.16" stroke="'+col+'" stroke-width="2.4"/>';
+
+  var labs="";
+  ax.forEach(function(a,i){
+    var lr=R+24, x=+px(i,lr), y=+py(i,lr);
+    var anc = Math.abs(x-cx)<6 ? "middle" : (x>cx?"start":"end");
+    var dy = Math.abs(x-cx)<6 ? (y<cy?-6:8) : 0;
+    var zt = a.z==null? "—" : (a.z>0?"+":"")+de(a.z,2);
+    var line2 = a.v==null ? "ohne Wert" : esc(de(a.v,a.m.d)+" "+a.m.u)+(isZ?"  ·  z "+zt:"");
+    labs+='<text x="'+x+'" y="'+(y-3+dy)+'" text-anchor="'+anc+'" font-size="10.5" font-weight="700" fill="#12161B">'+
+      esc(a.m.s||a.m.t)+'</text>'+
+      '<text x="'+x+'" y="'+(y+9+dy)+'" text-anchor="'+anc+'" font-size="9.5" fill="#4A555F">'+line2+'</text>'+
+      (a.st?'<text x="'+x+'" y="'+(y+20+dy)+'" text-anchor="'+anc+'" font-size="9" fill="'+SP_REF+'">\u00d8 '+esc(de(a.st.mean,meanD(a.m)))+'</text>':'');
+  });
+  var scale="";
+  if(isZ) [-2,0,2].forEach(function(z){
+    scale+='<text x="'+(cx+3)+'" y="'+(cy-rad(z)+0.5)+'" font-size="8.5" fill="#98A2AC">'+(z>0?"+":"")+z+'</text>';
+  });
+  var gl2=glabel(g).replace("Durchschnitt ","\u00d8 ").replace("Gesamtdurchschnitt","\u00d8 Gesamt");
+  var legend='<g font-size="9.5" fill="#4A555F">'+
+    '<rect x="10" y="10" width="14" height="9" fill="'+col+'" fill-opacity="0.25" stroke="'+col+'" stroke-width="1.6"/>'+
+    '<text x="29" y="18">'+esc(p.name)+'</text>'+
+    '<rect x="10" y="25" width="14" height="9" fill="url(#spRefHatch)" stroke="'+SP_REF+'" stroke-width="1.2" stroke-dasharray="3 2"/>'+
+    '<text x="29" y="33">'+esc(gl2)+' ('+groupList(g).length+')</text>'+
+    '<text x="10" y="48" font-size="8.5" fill="#98A2AC">'+(isZ?"Skala: z-Werte":"Skala: Spannweite im Kader")+'</text>'+
+    (isZ?'':'<text x="'+(W-10)+'" y="18" text-anchor="end" font-size="8.5" fill="#98A2AC">Mitte = schw\u00e4chster Wert</text>'+
+       '<text x="'+(W-10)+'" y="30" text-anchor="end" font-size="8.5" fill="#98A2AC">Rand = bester Wert im Kader</text>')+'</g>';
+  return '<svg class="svgbox" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" '+
+    'xmlns="http://www.w3.org/2000/svg" role="img" font-family="Arial, Helvetica, sans-serif">'+
+    '<rect width="'+W+'" height="'+H+'" fill="#FFFFFF"/>'+rings+refLayer+spokes+refDots+area+dots+labs+scale+legend+'</svg>';
+}
+function spScaleSelect(){
+  return '<select class="refsel" onchange="setSpScale(this.value)" title="Skala der Spiderchart">'+
+    '<option value="range"'+(spScale==="range"?" selected":"")+'>Skala: Spannweite Kader</option>'+
+    '<option value="z"'+(spScale==="z"?" selected":"")+'>Skala: z-Werte</option></select>';
+}
+function spHint(g){
+  return spScale==="z"
+    ? 'z-Werte gegen den '+esc(glabel(g))+'. Der Durchschnitt liegt dabei immer auf dem Null-Ring; ein Ring = eine Standardabweichung. Weiter au\u00dfen ist besser.'
+    : 'Jede Achse reicht vom schw\u00e4chsten (Mitte) bis zum besten Wert im gesamten Kader ('+groupList("team").length+
+      ' Athlet:innen), Ringe in Vierteln. Eingezeichnet sind die echten Werte der Person und der '+esc(glabel(g))+
+      ' als schraffierte Fl\u00e4che. Weiter au\u00dfen ist besser.';
+}
+
+function renderSingle(){
+  var box=$("single");
+  if(!players.length){ box.innerHTML='<p style="color:#4A555F">Keine Daten geladen.</p>'; return; }
+  fillPick();
+  var p=findPlayer(pickName); if(!p){ box.innerHTML=""; return; }
+  var ph=photoOf(p), g=effRef(p), col=colorOf(p);
+  var head='<div class="hero" style="border-top-color:'+col+'">'+
+    (ph?'<img class="big" src="'+esc(ph)+'" alt="">':'<span class="bigph">'+esc(initials(p.name))+'</span>')+
+    '<div><h2>'+esc(p.name)+'</h2><div class="meta">'+esc([p.cls||"ohne Bootsklasse",p.kader,p.side?"Auslage "+p.side:""].filter(Boolean).join(" \u00b7 "))+
+    '<br>'+dobDe(p.dob)+(p.age!=null?" \u00b7 "+de(p.age)+" Jahre":"")+' \u00b7 '+p.tests.length+
+    (p.tests.length===1?' Testdurchgang':' Testdurchg\u00e4nge')+
+    ' \u00b7 ausgewertet: '+(p.cur.date?dobDe(p.cur.date):'letzter Durchgang')+
+    (ph?"":' \u00b7 <span style="color:#C98A04">kein Foto hinterlegt</span>')+'</div></div>'+
+    '<div class="jn" style="color:'+col+'">'+esc(p.cls||"\u2014")+'</div>'+
+    '<img class="logo-hero" src="'+LOGO_LIGHT+'" alt="Leistungssport Austria"></div>';
+
+  if(!p.hasVal){
+    box.innerHTML=head+'<div class="panel"><h3>Leistungsdiagnostik</h3><div class="hint">F\u00fcr '+esc(p.name)+
+      ' ist im letzten Durchgang kein Messwert eingetragen.</div></div>'; return;
+  }
+
+  var gl=groupList(g).length;
+  var spider=spiderChart(p,g);
+  var chart=spider?'<div class="panel spiderpanel"><div class="phead"><h3>Leistungsprofil</h3><span style="display:flex;gap:6px;flex-wrap:wrap">'+spScaleSelect()+refSelect(p)+'</span></div>'+
+    '<div class="hint">'+spHint(g)+(refGroup==="auto"&&g!==autoRef(p)?' In der eigenen Bootsklasse gibt es zu wenige Werte, daher Vergleich gegen alle ('+gl+').':
+     refGroup==="auto"?' Vergleichsgruppe automatisch nach Bootsklasse ('+gl+').':' Vergleichsgruppe: '+gl+' Athlet:innen.')+'</div>'+spider+'</div>':"";
+
+  var groups={},go=[];
+  METRICS.forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  var mkCard=function(gr,extra){
+    return '<div class="panel"'+(extra||"")+'><h3>'+esc(gr)+'</h3><div class="hint">Regler zeigt die Lage zum '+esc(glabel(g))+
+      ' \u2014 Mitte ist der Durchschnitt.</div>'+
+      groups[gr].map(function(m){ return metricSlider(p,m,g); }).join("")+(gr===FMS?clrLine(p.cur):"")+'</div>';
+  };
+  var anthro=groups[ANTHRO]?'<div class="anthro">'+mkCard(ANTHRO,' style="border-top-color:var(--gold)"')+'</div>':"";
+  var cards=go.filter(function(gr){return gr!==ANTHRO;}).map(function(gr){ return mkCard(gr); }).join("");
+
+  var runs="";
+  if(p.tests.length>1){
+    var RC=[["gew","Masse kg",1],["fmsSum","Screen Pkt",0],["swSum","Rumpf s",0],["cmj","CMJ cm",1],["fmaxRel","Fmax N/kg",1],["bz1rm","1-RM BZ kg",1],["haeng","H\u00e4ngen s",0]];
+    runs='<div class="panel" style="grid-column:1/-1"><h3>Durchg\u00e4nge im Vergleich</h3>'+
+      '<div class="hint">'+p.tests.length+' Messungen \u2014 die Werte oben stammen aus dem letzten Durchgang.</div>'+
+      '<div style="overflow-x:auto"><table class="tst"><tr><th style="text-align:left">Durchgang</th>'+
+      RC.map(function(c){return '<th style="text-align:right">'+c[1]+'</th>';}).join("")+'</tr>'+
+      p.tests.map(function(t,i){
+        var f=function(v,d){ return v==null?'<td style="text-align:right;color:#AEB6BE">\u2014</td>':
+          '<td style="text-align:right">'+de(v,d)+'</td>'; };
+        var akt=(t===p.cur);
+        return '<tr'+(akt?' style="background:#F3F6F4"':'')+'><td>'+(akt?'<b>'+esc(testLabel(t,i))+'</b> <span class="tag t-ok">aktuell</span>':esc(testLabel(t,i)))+
+          (t.cls&&t.cls!==p.cls?'<div class="alt">'+esc(t.cls)+'</div>':'')+'</td>'+
+          RC.map(function(c){ return f(t[c[0]],c[2]); }).join("")+'</tr>';
+      }).join("")+'</table></div></div>';
+  }
+  box.innerHTML=head+anthro+'<div class="mgrid">'+chart+cards+runs+'</div>';
+}
+function metricSlider(p,m,g){
+  var v=p.val[m.k], d=devOf(p,m.k,g), st=groupStat(g,m.k), qq=p.cur.q[m.k];
+  var lbl='<span class="lbl">'+esc(m.t)+(m.u?' <span style="color:#8B97A3">'+esc(m.u)+'</span>':'')+
+    (qq?' <span class="qb" title="Qualit\u00e4t der Ausf\u00fchrung">Q '+esc(qq)+'</span>':'')+'</span>';
+  if(!d||!st||st.n<2){
+    return '<div class="mline">'+lbl+'<span class="mv2">'+de(v,m.d)+'</span>'+
+      '<span class="dev n">\u2014</span><span class="regwrap"><span class="reg"></span>'+
+      '<span class="scale"><b>&nbsp;</b><b>zu wenig Vergleichswerte</b><b>&nbsp;</b></span></span></div>';
+  }
+  var span=devSpan(m,g,st);
+  var pos=50+(d.pct/span)*50;
+  pos=Math.max(1.5,Math.min(98.5,pos));
+  var cls=d.better===null?"n":(d.better?"g":"b");
+  var col=d.better===null?"#8B97A3":(d.better?"#2E7D4F":"#C98A04");
+  var title=m.t+": "+de(v,m.d)+" "+m.u+", "+glabel(g)+" "+de(st.mean,meanD(m))+" "+m.u;
+  return '<div class="mline" title="'+esc(title)+'">'+lbl+
+    '<span class="mv2">'+de(v,m.d)+'</span>'+
+    '<span class="dev '+cls+'">'+devTxt(d)+'</span>'+
+    '<span class="regwrap">'+
+      '<span class="reg"><u></u><i style="left:calc('+pos+'% - 2px);background:'+col+'"></i></span>'+
+      '<span class="scale"><b>\u2212'+span+'\u2009'+esc(d.unit)+'</b><b>\u00d8 '+de(st.mean,meanD(m))+'</b><b>+'+span+'\u2009'+esc(d.unit)+'</b></span>'+
+    '</span></div>';
+}
+
+/* ================= Entwicklung ================= */
+var devWho="", devMetric="fmsSum";
+var LPAL=["#D8232A","#1B3A5C","#2E7D4F","#C98A04","#7B4397","#0F7B8A","#B3541E","#4A6FA5"];
+
+function testLabel(t,i){ return t.date ? dobDe(t.date) : "Test "+(i+1); }
+function multiPlayers(){ return players.filter(function(p){ return p.tests.length>1; }); }
+function seriesFor(p,k){
+  var pts=[];
+  p.tests.forEach(function(t,i){
+    var v=num(t[k]);
+    if(v!=null) pts.push({i:i,y:v,lab:testLabel(t,i),akt:(t===p.cur)});
+  });
+  return pts;
+}
+function signed(v,d){
+  var a=Math.abs(v), eps=Math.pow(10,-d)/2;
+  if(a<eps) return "\u00b1"+de(0,d);
+  return (v>0?"+":"\u2212")+de(a,d);
+}
+function trendOf(pts,m){
+  if(pts.length<2) return null;
+  var a=pts[0].y, b=pts[pts.length-1].y, d=b-a;
+  var pct=a?d/Math.abs(a)*100:0;
+  var better = m.dir===0 ? null : (m.dir===-1 ? d<0 : d>0);
+  return {von:a,bis:b,d:d,pct:pct,better:better,n:pts.length};
+}
+
+function lineChart(series,m,opts){
+  opts=opts||{};
+  var W=680,H=300,L=54,R=opts.legend?150:40,T=18,B=46;
+  var maxI=0, all=[];
+  series.forEach(function(s2){ s2.pts.forEach(function(q){ all.push(q.y); if(q.i>maxI) maxI=q.i; }); });
+  if(!all.length) return "";
+  var lo=Math.min.apply(null,all), hi=Math.max.apply(null,all);
+  if(opts.refLine!=null){ lo=Math.min(lo,opts.refLine); hi=Math.max(hi,opts.refLine); }
+  var pad=(hi-lo)||Math.abs(hi)*0.1||1; pad*=0.22;
+  lo-=pad; hi+=pad;
+  var steps=Math.max(1,maxI);
+  var x=function(i){ return L+(steps?i/steps:0.5)*(W-L-R); };
+  var y=function(v){ return T+(hi-v)/(hi-lo)*(H-T-B); };
+
+  var grid="",ticks=4,i;
+  for(i=0;i<=ticks;i++){
+    var gv=lo+(hi-lo)*i/ticks, gy=y(gv);
+    grid+='<line x1="'+L+'" y1="'+gy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+gy.toFixed(1)+'" stroke="#EBEEF1"/>'+
+      '<text x="'+(L-8)+'" y="'+(gy+3.5).toFixed(1)+'" text-anchor="end" font-size="11" fill="#8B97A3">'+de(gv,Math.max(m.d,(hi-lo)<4?1:0))+'</text>';
+  }
+  var ref="";
+  if(opts.refLine!=null){
+    ref='<line x1="'+L+'" y1="'+y(opts.refLine).toFixed(1)+'" x2="'+(W-R)+'" y2="'+y(opts.refLine).toFixed(1)+
+      '" stroke="#9AA4AE" stroke-width="1.6" stroke-dasharray="6 4"/>'+
+      '<text x="'+(W-R-4)+'" y="'+(y(opts.refLine)-6).toFixed(1)+'" text-anchor="end" font-size="10.5" fill="#7C8894">'+
+      esc(opts.refLabel||"Durchschnitt")+' '+de(opts.refLine,meanD(m))+'</text>';
+  }
+  var xlab="";
+  for(i=0;i<=steps;i++){
+    var lb="";
+    for(var s3=0;s3<series.length&&!lb;s3++){ series[s3].pts.forEach(function(q){ if(q.i===i&&!lb) lb=q.lab; }); }
+    xlab+='<text x="'+x(i).toFixed(1)+'" y="'+(H-24)+'" text-anchor="middle" font-size="11" fill="#8B97A3">'+esc(lb||("Test "+(i+1)))+'</text>';
+  }
+  xlab+='<text x="'+((W-R+L)/2)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10.5" fill="#98A2AC">'+
+    (opts.xTitle||"Testdurchgang")+'</text>';
+
+  var body="",leg="";
+  series.forEach(function(s2,si){
+    var col=s2.color||LPAL[si%LPAL.length], d="";
+    s2.pts.forEach(function(q,qi){ d+=(qi?" L":"M")+x(q.i).toFixed(1)+" "+y(q.y).toFixed(1); });
+    if(s2.pts.length===1){
+      body+='<circle cx="'+x(s2.pts[0].i).toFixed(1)+'" cy="'+y(s2.pts[0].y).toFixed(1)+'" r="5.5" fill="'+col+'"/>';
+    } else body+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.6" stroke-linejoin="round"/>';
+    s2.pts.forEach(function(q){
+      body+='<circle cx="'+x(q.i).toFixed(1)+'" cy="'+y(q.y).toFixed(1)+'" r="'+(q.akt?5:4)+'" fill="'+
+        (q.akt?col:"#FFFFFF")+'" stroke="'+col+'" stroke-width="2"/>';
+      if(opts.values) body+='<text x="'+x(q.i).toFixed(1)+'" y="'+(y(q.y)-11).toFixed(1)+
+        '" text-anchor="middle" font-size="11" font-weight="700" fill="'+col+'">'+de(q.y,m.d)+'</text>';
+    });
+    if(opts.legend){
+      var ly=T+8+si*17;
+      leg+='<line x1="'+(W-R+8)+'" y1="'+ly+'" x2="'+(W-R+26)+'" y2="'+ly+'" stroke="'+col+'" stroke-width="2.6"/>'+
+        '<text x="'+(W-R+31)+'" y="'+(ly+3.5)+'" font-size="11" fill="#12161B">'+esc(s2.name)+'</text>';
+    }
+  });
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" role="img" '+
+    'font-family="Inter, Arial, sans-serif">'+grid+ref+body+xlab+leg+'</svg>';
+}
+
+function spark(pts,m){
+  if(pts.length<2) return "";
+  var W=150,H=40,P=5;
+  var ys=pts.map(function(q){return q.y;});
+  var lo=Math.min.apply(null,ys), hi=Math.max.apply(null,ys), sp=(hi-lo)||1;
+  var maxI=pts[pts.length-1].i||1;
+  var x=function(i){ return P+(i/(maxI||1))*(W-2*P); };
+  var y=function(v){ return H-P-((v-lo)/sp)*(H-2*P); };
+  var t=trendOf(pts,m);
+  var col=(t.better===null||Math.abs(t.pct)<0.05)?"#8B97A3":(t.better?"#2E7D4F":"#C98A04");
+  var d="";
+  pts.forEach(function(q,i){ d+=(i?" L":"M")+x(q.i).toFixed(1)+" "+y(q.y).toFixed(1); });
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="spk" xmlns="http://www.w3.org/2000/svg">'+
+    '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.2" stroke-linejoin="round"/>'+
+    pts.map(function(q){ return '<circle cx="'+x(q.i).toFixed(1)+'" cy="'+y(q.y).toFixed(1)+'" r="2.6" fill="'+col+'"/>'; }).join("")+
+    '</svg>';
+}
+
+function fillTrendPick(){
+  var sel=$("entWho"), multi=multiPlayers();
+  var opts='<optgroup label="Vergleich">'+
+    '<option value="__multi__"'+(devWho==="__multi__"?" selected":"")+'>Alle mit mehreren Durchg\u00e4ngen ('+multi.length+')</option>'+
+    classes().map(function(c){ var n=multi.filter(function(p){return p.cls===c;}).length; if(!n) return "";
+      var v="__c:"+c; return '<option value="'+esc(v)+'"'+(devWho===v?" selected":"")+'>'+esc(c)+' mit mehreren Durchg\u00e4ngen ('+n+')</option>'; }).join("")+
+    '</optgroup><optgroup label="Einzeln">'+
+    players.map(function(p){
+      return '<option value="'+esc(p.name)+'"'+(p.name===devWho?" selected":"")+'>'+
+        esc(p.name)+"  ·  "+p.tests.length+(p.tests.length===1?" Durchgang":" Durchg\u00e4nge")+'</option>';
+    }).join("")+'</optgroup>';
+  sel.innerHTML=opts;
+  if(!devWho){ devWho="__multi__"; sel.value="__multi__"; }
+
+  var groups={},go=[];
+  METRICS.forEach(function(m){ if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  $("entMetric").innerHTML=orderGroups(go).map(function(g){
+    return '<optgroup label="'+esc(g)+'">'+groups[g].map(function(m){
+      return '<option value="'+m.k+'"'+(m.k===devMetric?" selected":"")+'>'+esc(mName(m))+'</option>';
+    }).join("")+'</optgroup>';
+  }).join("");
+}
+
+function renderTrend(){
+  var box=$("entwicklung");
+  if(!players.length){ box.innerHTML='<p style="color:#4A555F">Keine Daten geladen.</p>'; return; }
+  fillTrendPick();
+  var m=MET[devMetric], nrm=$("entNorm").checked;
+  var multi=multiPlayers();
+  $("entNote").textContent=multi.length+" von "+players.length+" Athlet:innen mit mehr als einem Durchgang";
+
+  var list, titel, einzel=null;
+  if(devWho==="__multi__"){ list=multi; titel="Alle mit mehreren Durchg\u00e4ngen"; }
+  else if(devWho.indexOf("__c:")===0){ var c=devWho.slice(4); list=multi.filter(function(p){return p.cls===c;}); titel=c; }
+  else { einzel=findPlayer(devWho); list=einzel?[einzel]:[]; titel=devWho; }
+
+  if(!list.length){
+    box.innerHTML='<div class="panel"><h3>Kein Verlauf vorhanden</h3><div class="hint">'+
+      'In dieser Auswahl gibt es niemanden mit mehreren Durchg\u00e4ngen. Ein Verlauf entsteht, sobald eine Person eine zweite Zeile mit neuem Testdatum hat.</div></div>';
+    return;
+  }
+
+  var series=list.map(function(p,i){
+    var pts=seriesFor(p,devMetric);
+    if(nrm && pts.length && pts[0].y){
+      var base=pts[0].y;
+      pts=pts.map(function(q){ return {i:q.i,y:(q.y-base)/Math.abs(base)*100,lab:q.lab,akt:q.akt}; });
+    }
+    return { name:p.name, color:(list.length===1? colorOf(p) : LPAL[i%LPAL.length]), pts:pts, p:p };
+  }).filter(function(s2){ return s2.pts.length; });
+
+  if(!series.length){
+    box.innerHTML='<div class="panel"><h3>'+esc(m.t)+'</h3><div class="hint">F\u00fcr diese Messung gibt es in der Auswahl keine Werte.</div></div>';
+    return;
+  }
+  var mm = nrm ? {t:m.t+" \u2014 Ver\u00e4nderung",u:"%",d:1,dir:m.dir} : m;
+  var rg = list.length===1?effRef(list[0]):"team";
+  var st = nrm ? null : groupStat(rg,devMetric);
+
+  var main='<div class="panel"><div class="phead"><h3>'+esc(m.t)+(m.u?' <span style="font-weight:500;color:#8B97A3">'+esc(m.u)+'</span>':'')+
+    '</h3><span class="hint" style="margin:0">'+esc(titel)+'</span></div>'+
+    '<div class="hint">'+(nrm
+      ? 'Prozentuale Ver\u00e4nderung gegen\u00fcber dem ersten Durchgang. Null bedeutet unver\u00e4ndert.'
+      : (m.dir===-1?'Kleinerer Wert ist besser.':m.dir===1?'Gr\u00f6\u00dferer Wert ist besser.':'Reiner Messwert ohne Wertung.')+
+        (st?' Gestrichelt der '+esc(glabel(rg))+' des letzten Tests.':''))+
+    ' Gef\u00fcllte Punkte sind der aktuell ausgewertete Durchgang.</div>'+
+    lineChart(series,mm,{legend:series.length>1, values:series.length<=2,
+      refLine:(st&&!nrm)?st.mean:null, refLabel:"\u00d8"}) + '</div>';
+
+  var rows=series.map(function(s2){
+    var raw=seriesFor(s2.p,devMetric), tr=trendOf(raw,m);
+    if(!tr) return '<tr><td>'+esc(s2.name)+'</td><td class="tnum">'+de(raw[0].y,m.d)+'</td>'+
+      '<td colspan="3" style="color:#98A2AC">nur ein Durchgang</td></tr>';
+    var unveraendert=Math.abs(tr.pct)<0.05;
+    var cls2=(tr.better===null||unveraendert)?"":(tr.better?"dev g":"dev b");
+    return '<tr><td><span style="display:inline-block;width:9px;height:9px;background:'+s2.color+
+      ';margin-right:7px"></span>'+esc(s2.name)+'</td>'+
+      '<td class="tnum">'+de(tr.von,m.d)+'</td><td class="tnum">'+de(tr.bis,m.d)+'</td>'+
+      '<td class="tnum '+cls2+'">'+signed(tr.d,m.d)+'</td>'+
+      '<td class="tnum '+cls2+'">'+signed(tr.pct,1)+'\u2009%</td></tr>';
+  }).join("");
+  var tabH='<div class="panel"><h3>Ver\u00e4nderung erster zu letztem Durchgang</h3>'+
+    '<table class="tst"><tr><th style="text-align:left">Athlet:in</th><th style="text-align:right">erster</th>'+
+    '<th style="text-align:right">letzter</th><th style="text-align:right">Differenz</th><th style="text-align:right">relativ</th></tr>'+
+    rows+'</table></div>';
+
+  var mini="";
+  if(einzel){
+    var cards=METRICS.map(function(mm2){
+      var pts=seriesFor(einzel,mm2.k);
+      if(pts.length<2) return "";
+      var t=trendOf(pts,mm2), flach=Math.abs(t.pct)<0.05;
+      var cls=(t.better===null||flach)?"n":(t.better?"g":"b");
+      return '<div class="spkcard" onclick="devMetric=\''+mm2.k+'\';renderTrend()" title="'+esc(mm2.t)+' anzeigen">'+
+        '<div class="spktop"><span>'+esc(mm2.t)+'</span><span class="dev '+cls+'">'+
+        (mm2.pp?signed(t.d,meanD(mm2)===0?1:Math.max(1,mm2.d))+'\u2009'+esc(devUnit(mm2)):signed(t.pct,1)+'\u2009%')+'</span></div>'+
+        spark(pts,mm2)+
+        '<div class="spkfoot">'+de(t.von,mm2.d)+' \u2192 <b>'+de(t.bis,mm2.d)+'</b> '+esc(mm2.u)+'</div></div>';
+    }).join("");
+    if(cards) mini='<div class="panel" style="grid-column:1/-1"><h3>Alle Messungen im Verlauf</h3>'+
+      '<div class="hint">Zum Umschalten auf eine Kachel klicken. Gr\u00fcn hei\u00dft Verbesserung, Gelb Verschlechterung.</div>'+
+      '<div class="spkgrid">'+cards+'</div></div>';
+    else if(einzel.tests.length<2) mini='<div class="panel" style="grid-column:1/-1"><h3>Noch kein Verlauf</h3>'+
+      '<div class="hint">F\u00fcr '+esc(einzel.name)+' liegt nur ein Testdurchgang vor. Ein Trend entsteht ab dem zweiten.</div></div>';
+  }
+  box.innerHTML='<div class="tgrid">'+main+tabH+mini+'</div>';
+}
+
+/* ================= Erweiterte Übersicht =================
+   Eine Person, bis zu fünf frei wählbare Testtermine nebeneinander.
+   Neben jedem Wert die prozentuale Veränderung zur Spalte links davon. */
+var OV_MAX=5, ovWho="", ovSel=[];
+function ovLabels(p){
+  var seen={};
+  return p.tests.map(function(t,i){
+    var l=testLabel(t,i); seen[l]=(seen[l]||0)+1;
+    return seen[l]>1 ? l+" ("+seen[l]+")" : l;
+  });
+}
+function ovDefault(p){ var n=p.tests.length, a=[]; for(var i=Math.max(0,n-OV_MAX);i<n;i++) a.push(i); return a; }
+function ovFill(){
+  var sel=$("ovWho");
+  if(!ovWho||!findPlayer(ovWho)){ ovWho=players.length?players[0].name:""; ovSel=[]; }
+  sel.innerHTML=players.map(function(p){
+    return '<option value="'+esc(p.name)+'"'+(p.name===ovWho?" selected":"")+'>'+esc(p.name)+"  ·  "+esc(p.cls||"ohne Klasse")+
+      "  ·  "+p.tests.length+(p.tests.length===1?" Test":" Tests")+'</option>'; }).join("");
+}
+function ovStep(d){
+  if(!players.length) return;
+  var i=0; for(var k=0;k<players.length;k++) if(players[k].name===ovWho) i=k;
+  ovWho=players[(i+d+players.length)%players.length].name; ovSel=[]; renderOverview();
+}
+function ovSetCol(ci,v){ ovSel[ci]=parseInt(v,10); renderOverview(); }
+function ovDelCol(ci){ if(ovSel.length>1){ ovSel.splice(ci,1); renderOverview(); } }
+function ovAddCol(){
+  var p=findPlayer(ovWho); if(!p||ovSel.length>=OV_MAX) return;
+  /* nächsten noch nicht gezeigten Test nehmen, sonst den letzten */
+  var free=p.tests.map(function(t,i){return i;}).filter(function(i){return ovSel.indexOf(i)<0;});
+  ovSel.push(free.length?free[free.length-1]:p.tests.length-1); renderOverview();
+}
+function ovChange(m,prev,v){
+  if(prev==null||v==null) return '<span class="ovd n">—</span>';
+  if(m.pp){   /* Punkte- und Prozentwerte: absolute Differenz statt relativer Veränderung */
+    var dd=m.u==="Pkt"?0:1, diff=v-prev, u=devUnit(m);
+    if(Math.abs(diff)<Math.pow(10,-dd)/2) return '<span class="ovd n">±0\u2009'+esc(u)+'</span>';
+    var c2=m.dir===0?"n":((m.dir===1?diff>0:diff<0)?"g":"b");
+    return '<span class="ovd '+c2+'" title="Differenz gegenüber '+de(prev,m.d)+' '+esc(m.u)+'">'+signed(diff,dd)+'\u2009'+esc(u)+'</span>';
+  }
+  if(!prev) return '<span class="ovd n" title="Vorwert 0 – keine prozentuale Veränderung möglich">—</span>';
+  var pct=(v-prev)/Math.abs(prev)*100;
+  if(Math.abs(pct)<0.05) return '<span class="ovd n">±0,0\u2009%</span>';
+  var cls=m.dir===0?"n":((m.dir===1?pct>0:pct<0)?"g":"b");
+  return '<span class="ovd '+cls+'" title="gegenüber '+de(prev,m.d)+' '+esc(m.u)+'">'+signed(pct,1)+'\u2009%</span>';
+}
+function renderOverview(){
+  var box=$("uebersicht");
+  if(!players.length){ box.innerHTML='<p style="color:#4A555F">Keine Daten geladen.</p>'; $("ovWho").innerHTML=""; return; }
+  ovFill();
+  var p=findPlayer(ovWho); if(!p){ box.innerHTML=""; return; }
+  ovSel=ovSel.filter(function(i){return i>=0&&i<p.tests.length;});
+  if(!ovSel.length) ovSel=ovDefault(p);
+  var labs=ovLabels(p), T=ovSel.map(function(i){return p.tests[i];}), n=T.length;
+  $("ovAdd").disabled=(n>=OV_MAX);
+  $("ovAdd").title=n>=OV_MAX?"Maximal "+OV_MAX+" Tests nebeneinander":"Weitere Test-Spalte hinzufügen";
+  $("ovNote").textContent=p.tests.length+(p.tests.length===1?" Testtermin":" Testtermine")+" vorhanden · "+n+" von max. "+OV_MAX+" angezeigt";
+
+  var head='<tr><th class="ovm">Test</th>'+T.map(function(t,ci){
+    return '<th class="ovc'+(t===p.cur?' akt':'')+'"><div class="ovh">'+
+      '<select class="refsel" onchange="ovSetCol('+ci+',this.value)" aria-label="Testdatum Spalte '+(ci+1)+'">'+
+      p.tests.map(function(x,i){ return '<option value="'+i+'"'+(i===ovSel[ci]?" selected":"")+'>'+esc(labs[i])+'</option>'; }).join("")+
+      '</select>'+(n>1?'<button class="ovx" onclick="ovDelCol('+ci+')" title="Spalte entfernen" aria-label="Spalte entfernen">×</button>':'')+
+      '</div><div class="ovs">'+esc([t.cls,t.kader].filter(Boolean).join(" · ")||"—")+
+      (t===p.cur?' · <span style="color:#2E7D4F">aktuell</span>':'')+'</div></th>'; }).join("")+'</tr>';
+
+  var groups={},go=[];
+  METRICS.forEach(function(m){
+    if(!T.some(function(t){return num(t[m.k])!=null;})) return;
+    if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  var body=orderGroups(go).map(function(g){
+    var rows=groups[g].map(function(m){
+      return '<tr><td class="ovm">'+esc(m.t)+(m.u?' <span style="color:#8B97A3">'+esc(m.u)+'</span>':'')+
+        (m.calc?' <span class="ovcalc" title="von der App gerechnet">ber.</span>':'')+'</td>'+
+        T.map(function(t,ci){
+          var v=num(t[m.k]), prev=ci?num(T[ci-1][m.k]):null, qq=t.q&&t.q[m.k];
+          return '<td class="ovc'+(t===p.cur?' akt':'')+'"><span class="ovv">'+(v==null?'<span style="color:#AEB6BE">—</span>':de(v,m.d))+'</span>'+
+            (ci?ovChange(m,prev,v):'<span class="ovd n"></span>')+
+            (qq?'<div class="ovq">Q '+esc(qq)+'</div>':'')+'</td>';
+        }).join("")+'</tr>';
+    }).join("");
+    if(g===FMS && T.some(function(t){return t.clrL!=null||t.clrR!=null;})){
+      rows+='<tr><td class="ovm">Clearing-Test <span style="color:#8B97A3">li / re</span></td>'+T.map(function(t){
+        var pos=t.clrL===1||t.clrR===1;
+        return '<td class="ovc'+(t===p.cur?' akt':'')+'"'+(pos?' style="color:#8A5E00;font-weight:700"':'')+'>'+
+          clrTxt(t.clrL)+' / '+clrTxt(t.clrR)+'</td>'; }).join("")+'</tr>';
+    }
+    return '<tr class="ovg"><td colspan="'+(n+1)+'">'+esc(g)+'</td></tr>'+rows;
+  }).join("");
+
+  box.innerHTML='<div class="panel" style="padding:0"><div style="overflow-x:auto">'+
+    '<table class="ovt">'+head+body+'</table></div></div>'+
+    '<p class="hint" style="font-size:12px;color:#8B97A3;margin:12px 0 0">Veränderung in % gegenüber dem Test in der Spalte links davon. '+
+    'Grün = Verbesserung, Gelb = Verschlechterung, Grau = ohne Wertung (z. B. Körpermasse). '+
+    'Ausnahme: Bei Werten in Punkten oder Prozent (Movement Screen, PSA, Seitendifferenzen, bilaterales Defizit) steht die absolute Differenz – Pkt = Punkte, PP = Prozentpunkte. '+
+    'Spalten lassen sich über das Datum frei wählen, auch in anderer Reihenfolge.</p>';
+}
+$("ovWho").addEventListener("change",function(){ ovWho=this.value; ovSel=[]; renderOverview(); });
+
+/* ---------- Bibliotheken ---------- */
+function loadLib(url){
+  return new Promise(function(ok,no){
+    var s=document.createElement("script");
+    s.src=url; s.onload=function(){ok();}; s.onerror=function(){no(new Error("nicht erreichbar"));};
+    document.head.appendChild(s);
+    setTimeout(function(){no(new Error("Zeitüberschreitung"));},8000);
+  });
+}
+function needXlsx(){ if(window.XLSX) return Promise.resolve(true);
+  return loadLib("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js")
+    .then(function(){return !!window.XLSX;}).catch(function(){return false;}); }
+function needPdf(){ if(window.jspdf) return Promise.resolve(true);
+  return loadLib("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+    .then(function(){return !!window.jspdf;}).catch(function(){return false;}); }
+function saveBlob(blob,name){
+  var a=document.createElement("a"),u=URL.createObjectURL(blob);
+  a.href=u; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(u); a.remove();},900);
+}
+
+/* ---------- Excel ---------- */
+function buildTables(){
+  var s=stats();
+  var kader=[["Name","Bootsklasse","Kader","Auslage","Geburtsdatum","Alter","Testdurchgänge","Letzter Test","Foto-URL"]];
+  players.forEach(function(p){
+    kader.push([p.name,p.cls,p.kader,p.side,dobDe(p.dob),p.age,p.tests.length,p.cur.date?dobDe(p.cur.date):"",p.image||""]); });
+
+  var lh=["Name","Bootsklasse","Kader","Letzter Test"].concat(METRICS.map(mName));
+  var leist=[lh];
+  players.filter(function(p){return p.hasVal;}).forEach(function(p){
+    leist.push([p.name,p.cls,p.kader,p.cur.date?dobDe(p.cur.date):""].concat(METRICS.map(function(m){return p.val[m.k];}))); });
+
+  var rh=["Name","Testdatum","Bootsklasse","Kader","Clearing li","Clearing re"].concat(METRICS.map(mName)).concat(QUAL_KEYS.map(function(k){return "Qualität "+MET[k].t;}));
+  var roh=[rh];
+  tests.slice().sort(function(a,b){ return a.name.localeCompare(b.name,"de")||((testKey(a)||0)-(testKey(b)||0)); }).forEach(function(t){
+    roh.push([t.name,t.date?dobDe(t.date):"",t.cls||"",t.kader||"",clrTxt(t.clrL),clrTxt(t.clrR)]
+      .concat(METRICS.map(function(m){return t[m.k]==null?"":t[m.k];}))
+      .concat(QUAL_KEYS.map(function(k){return t.q[k]||"";}))); });
+
+  var rank=[["Messung","Einheit","Richtung","1.","Wert","2.","Wert","3.","Wert","Ø Gesamt","n"]];
+  METRICS.forEach(function(m){
+    if(m.dir===0) return;
+    var l=withMetric(m.k,""); if(!l.length) return;
+    var avg=l.reduce(function(a,p){return a+p.val[m.k];},0)/l.length;
+    var row=[m.t,m.u,m.dir===-1?"kleiner ist besser":"größer ist besser"];
+    for(var i=0;i<3;i++){ row.push(l[i]?l[i].name:""); row.push(l[i]?l[i].val[m.k]:""); }
+    row.push(+avg.toFixed(3)); row.push(l.length); rank.push(row);
+  });
+
+  var kz=[["Kennzahl","Wert"],["Athlet:innen",players.length],["Bootsklassen",classes().length],
+    ["Ø Alter",+s.avg.toFixed(2)],["Median Alter",+s.med.toFixed(2)],
+    ["Testzeilen gesamt",tests.length],["Testtermine",s.nDates],["Letzter Testtermin",s.lastDate?dobDe(s.lastDate):""],
+    ["Mit Messwerten",s.withTests.length],["Ohne Messwerte",s.noTests.length],
+    ["Export erstellt",heute()],["Quelldatei",FILE]];
+
+  var cl=classes(), km=[["Kader"].concat(cl).concat(["Gesamt"])];
+  kaders().concat(players.some(function(p){return !p.kader;})?[""]:[]).forEach(function(k){
+    var row=players.filter(function(p){return (p.kader||"")===k;});
+    km.push([k||"ohne Angabe"].concat(cl.map(function(c){ return row.filter(function(p){return p.cls===c;}).length; })).concat([row.length]));
+  });
+  var cm=[["Bootsklasse","Anzahl","Ø Alter"].concat(METRICS.filter(function(m){return m.dir!==0;}).map(function(m){return "Ø "+mName(m);}))];
+  cl.forEach(function(c){
+    var l=players.filter(function(p){return p.cls===c;});
+    cm.push([c,l.length,+s.ageOf(l).toFixed(1)].concat(METRICS.filter(function(m){return m.dir!==0;}).map(function(m){
+      var v=l.map(function(p){return p.val[m.k];}).filter(function(x){return x!=null;});
+      return v.length?+(v.reduce(function(a,b){return a+b;},0)/v.length).toFixed(3):""; })));
+  });
+  return {kader:kader,leist:leist,roh:roh,rank:rank,kz:kz,km:km,cm:cm};
+}
+function exportXlsx(){
+  needXlsx().then(function(ok){
+    var t=buildTables();
+    if(!ok){
+      var all=[["GESAMTÜBERSICHT — KADERTEST SEGELN"],["Erstellt",heute()],[],["KADER"]].concat(t.kader)
+        .concat([[],["LEISTUNG — LETZTER TEST"]]).concat(t.leist)
+        .concat([[],["RANGLISTEN"]]).concat(t.rank)
+        .concat([[],["BOOTSKLASSEN — MITTELWERTE"]]).concat(t.cm)
+        .concat([[],["KENNZAHLEN"]]).concat(t.kz);
+      var csv=all.map(function(r){ return r.map(function(c){
+        var v=(c==null?"":String(c)); return /[",;\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(";"); }).join("\r\n");
+      saveBlob(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),"Segeln_Kadertest_Gesamtuebersicht_"+stamp()+".csv");
+      toast("Ohne Internetzugang kein XLSX — stattdessen als CSV gespeichert. Excel öffnet die Datei direkt.",6500);
+      return;
+    }
+    var wb=XLSX.utils.book_new();
+    var add=function(aoa,name,cols){ var w=XLSX.utils.aoa_to_sheet(aoa); if(cols) w["!cols"]=cols;
+      XLSX.utils.book_append_sheet(wb,w,name); };
+    var mc=function(n){ var a=[]; for(var i=0;i<n;i++) a.push({wch:13}); return a; };
+    add(t.kader,"Kader",[{wch:28},{wch:14},{wch:14},{wch:8},{wch:13},{wch:7},{wch:14},{wch:12},{wch:32}]);
+    add(t.leist,"Leistung aktuell",[{wch:28},{wch:14},{wch:14},{wch:12}].concat(mc(METRICS.length)));
+    add(t.rank,"Ranglisten",[{wch:28},{wch:10},{wch:18},{wch:26},{wch:9},{wch:26},{wch:9},{wch:26},{wch:9},{wch:10},{wch:5}]);
+    add(t.cm,"Bootsklassen",[{wch:16},{wch:8},{wch:8}].concat(mc(METRICS.length)));
+    add(t.km,"Kader x Bootsklasse",[{wch:18}].concat(mc(classes().length+1)));
+    add(t.roh,"Leistung Rohdaten",[{wch:28},{wch:12},{wch:14},{wch:14},{wch:11},{wch:11}].concat(mc(METRICS.length+QUAL_KEYS.length)));
+    add(t.kz,"Kennzahlen",[{wch:30},{wch:32}]);
+    XLSX.writeFile(wb,"Segeln_Kadertest_Gesamtuebersicht_"+stamp()+".xlsx");
+    toast("Excel gespeichert: 7 Blätter, inklusive Ranglisten und Bootsklassen-Mittelwerten.");
+  });
+}
+
+/* ---------- PDF ---------- */
+/* Maße und Schriftgrößen des PDF an einer Stelle */
+var PDF={ rh:16.5, gh:14.5, fLabel:8.8, fValue:10.5, fDev:8.5, fScale:6.8, fGroup:8.8,
+          trackY:4.8, scaleY:11.2, W:210, foot:277, top:40 };
+function pdfTxt(s){ return String(s==null?"":s).replace(/\u2212/g,"-").replace(/\u2009/g," "); }
+function pdfMetricItems(p){
+  var groups={},go=[],items=[];
+  METRICS.forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  orderGroups(go).forEach(function(g){
+    if(g===ANTHRO) return;
+    items.push({h:true,t:g,hh:PDF.gh});
+    groups[g].forEach(function(m){ items.push({h:false,m:m,hh:PDF.rh}); });
+    if(g===FMS && (p.cur.clrL!=null||p.cur.clrR!=null)) items.push({h:false,clr:true,hh:9});
+  });
+  return items;
+}
+/* Messwerte auf Spalten verteilen: je Seite zwei Spalten, Überschriften nie allein am Spaltenende */
+function pdfColumns(p){
+  var items=pdfMetricItems(p), cap=PDF.foot-8-PDF.top;
+  var n=pdfFill(items,cap).length, tot=0;
+  items.forEach(function(it){ tot+=it.hh; });
+  var even=n+(n%2);   /* auf ganze Seiten auffüllen und gleichmäßig verteilen */
+  for(var c=Math.ceil(tot/even); c<cap; c+=4){ var r=pdfFill(items,c); if(r.length<=even) return r; }
+  return pdfFill(items,cap);
+}
+function pdfFill(items,cap){
+  var cols=[], col=[], h=0, lastHead="";
+  items.forEach(function(it,i){
+    if(it.h){
+      lastHead=it.t;
+      var need=it.hh+(items[i+1]&&!items[i+1].h?items[i+1].hh:0);
+      if(h+need>cap && col.length){ cols.push(col); col=[]; h=0; }
+      col.push(it); h+=it.hh; return;
+    }
+    if(h+it.hh>cap){ cols.push(col); col=[{h:true,t:lastHead+" (Fortsetzung)",hh:PDF.gh}]; h=PDF.gh; }
+    col.push(it); h+=it.hh;
+  });
+  if(col.length) cols.push(col);
+  return cols;
+}
+function pdfMetricRow(doc,p,m,g,x,y){
+  var v=p.val[m.k], st=groupStat(g,m.k), dv=devOf(p,m.k,g), qq=p.cur.q[m.k];
+  doc.setFont("helvetica","normal"); doc.setFontSize(PDF.fLabel); doc.setTextColor(55,65,75);
+  doc.text(m.t+(m.u?" ("+m.u+")":"")+(qq?"  Q "+qq:""),x[0],y);
+  doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fValue); doc.setTextColor(18,22,27);
+  doc.text(de(v,m.d),x[1],y,{align:"right"});
+
+  var x0=x[0], x1=x[2], wdt=x1-x0, mid=x0+wdt/2, ty=y+PDF.trackY;
+  if(!dv||!st||st.n<2){
+    doc.setFont("helvetica","normal"); doc.setFontSize(PDF.fDev); doc.setTextColor(150,160,170);
+    doc.text("-",x[2],y,{align:"right"});
+    doc.setFillColor(238,240,243); doc.rect(x0,ty,wdt,1.6,"F");
+    doc.setFont("helvetica","normal"); doc.setFontSize(PDF.fScale); doc.setTextColor(160,170,180);
+    doc.text("zu wenig Vergleichswerte",mid,y+PDF.scaleY,{align:"center"});
+    return;
+  }
+  doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fDev);
+  if(dv.better===null) doc.setTextColor(139,151,163); else if(dv.better) doc.setTextColor(46,125,79); else doc.setTextColor(201,138,4);
+  doc.text(pdfTxt(devTxt(dv)),x[2],y,{align:"right"});
+
+  var span=devSpan(m,g,st);
+  var frac=Math.max(-1,Math.min(1,dv.pct/span));
+  var mx=mid+frac*(wdt/2-1);
+  doc.setFillColor(233,236,240); doc.rect(x0,ty,wdt,1.6,"F");
+  doc.setDrawColor(150,160,172); doc.setLineWidth(0.3); doc.line(mid,ty-1.3,mid,ty+2.9);
+  if(dv.better===null) doc.setFillColor(139,151,163);
+  else if(dv.better) doc.setFillColor(46,125,79); else doc.setFillColor(201,138,4);
+  doc.rect(mx-0.9,ty-1.5,1.9,4.6,"F");
+  doc.setLineWidth(0.2);
+  doc.setFont("helvetica","normal"); doc.setFontSize(PDF.fScale); doc.setTextColor(150,160,170);
+  doc.text("-"+span+" "+dv.unit,x0,y+PDF.scaleY);
+  doc.setTextColor(120,131,142);
+  doc.text("\u00d8 "+de(st.mean,meanD(m)),mid,y+PDF.scaleY,{align:"center"});
+  doc.setTextColor(150,160,170);
+  doc.text("+"+span+" "+dv.unit,x1,y+PDF.scaleY,{align:"right"});
+}
+function pdfFoot(doc,p,seite,total){
+  var W=PDF.W;
+  doc.setDrawColor(213,218,224); doc.setLineWidth(0.2); doc.line(18,PDF.foot,W-18,PDF.foot);
+  doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(130,140,150);
+  doc.text(p.name+"  ·  Erstellt am "+heute()+"  ·  Quelle: "+FILE,18,286,{maxWidth:148});
+  doc.setFont("helvetica","bold");
+  doc.text("Seite "+seite+" von "+total,W-18,290,{align:"right"});
+  try{ doc.addImage(LOGO_PDF,"PNG",W-18-27,280.5,27,13); }catch(e){}
+}
+function pdfCol(p){ return hexRgb(colorOf(p)); }
+
+/* ---------- Seite 1: Profil ---------- */
+function pdfPageOne(doc,p,photo,chart,refG,total){
+  var W=PDF.W, col=pdfCol(p);
+  var hasPh=!!photo, tx=hasPh?54:18;
+  doc.setFillColor(18,22,27); doc.rect(0,0,W,48,"F");
+  doc.setFillColor(col[0],col[1],col[2]); doc.rect(0,48,W,2.5,"F");
+  if(hasPh){
+    try{
+      var fmt=/^data:image\/png/i.test(photo)?"PNG":"JPEG";
+      doc.addImage(photo,fmt,18,9,30,30);
+      doc.setDrawColor(col[0],col[1],col[2]); doc.setLineWidth(0.9); doc.rect(18,9,30,30); doc.setLineWidth(0.2);
+    }catch(e){ tx=18; }
+  }
+  doc.setTextColor(149,162,174); doc.setFont("helvetica","bold"); doc.setFontSize(9);
+  doc.text("SEGELN  ·  KADERTEST"+(p.cur.date?"  ·  "+dobDe(p.cur.date):""),tx,17);
+  doc.setTextColor(255,255,255); doc.setFontSize(p.name.length>24?19:23);
+  doc.text(p.name.toUpperCase(),tx,29,{maxWidth:W-tx-58});
+  doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(149,162,174);
+  doc.text([p.kader,p.side?"Auslage "+p.side:""].filter(Boolean).join("  ·  ")||" ",tx,37);
+  var lc=(col[0]+col[1]+col[2]<200)?[91,132,177]:col;
+  doc.setTextColor(lc[0],lc[1],lc[2]); doc.setFont("helvetica","bold");
+  var ct=p.cls||"-"; doc.setFontSize(ct.length>8?20:ct.length>5?26:32);
+  doc.text(ct,W-18,33,{align:"right"});
+
+  var y=64;
+  doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fGroup); doc.setTextColor(col[0],col[1],col[2]);
+  doc.text("STAMMDATEN",18,y);
+  doc.setDrawColor(205,212,219); doc.line(18,y+2,96,y+2);
+  var st=[["Bootsklasse",p.cls||"-"],["Kader",p.kader||"-"],["Auslage",p.side||"-"],["Geburtsdatum",dobDe(p.dob)],
+          ["Alter",p.age!=null?de(p.age)+" Jahre":"-"],["Testdurchg\u00e4nge",String(p.tests.length)]];
+  var sy=y+10;
+  st.forEach(function(a){
+    doc.setDrawColor(236,239,242); doc.line(18,sy+3.2,96,sy+3.2);
+    doc.setFont("helvetica","normal"); doc.setFontSize(8.2); doc.setTextColor(110,120,130);
+    doc.text(a[0].toUpperCase(),18,sy);
+    doc.setFont("helvetica","bold"); doc.setFontSize(9.8); doc.setTextColor(18,22,27);
+    doc.text(String(a[1]),96,sy,{align:"right"});
+    sy+=8.6;
+  });
+
+  doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fGroup); doc.setTextColor(201,138,4);
+  doc.text(ANTHRO.toUpperCase(),112,y);
+  doc.setDrawColor(205,212,219); doc.line(112,y+2,192,y+2);
+  var ay=y+10, AX=[112,170,192];
+  if(p.hasVal){
+    [MET.gr,MET.gew,MET.bmi].forEach(function(m){
+      if(p.val[m.k]==null) return;
+      pdfMetricRow(doc,p,m,refG,AX,ay); ay+=16.5;
+    });
+  } else {
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(110,120,130);
+    doc.text("Keine Messwerte vorhanden.",112,ay);
+  }
+
+  var cw=104, cy0=Math.max(sy,ay)+8, ch=cw*SPH/SPW;
+  if(chart){
+    try{
+      doc.addImage(chart,"PNG",(W-cw)/2,cy0,cw,ch);
+      doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fGroup); doc.setTextColor(col[0],col[1],col[2]);
+      doc.text("LEISTUNGSPROFIL",18,cy0-4);
+      doc.setDrawColor(205,212,219); doc.line(18,cy0-2,192,cy0-2);
+      doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(130,140,150);
+      doc.text((spScale==="z"?"z-Werte  ·  schraffiert: "+glabel(refG)+"  ·  ein Ring = eine Standardabweichung":"Achse: schw\u00e4chster (Mitte) bis bester Wert im Kader  ·  schraffiert: "+glabel(refG))+"  ·  weiter au\u00dfen ist besser",
+        W/2,cy0+ch+5,{align:"center"});
+    }catch(e){}
+  } else ch=0;
+
+  if(p.tests.length>1){
+    var ty2=cy0+ch+14;
+    if(ty2<PDF.foot-26){
+      doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fGroup); doc.setTextColor(col[0],col[1],col[2]);
+      doc.text("DURCHG\u00c4NGE IM VERGLEICH",18,ty2);
+      doc.setDrawColor(205,212,219); doc.line(18,ty2+2,192,ty2+2);
+      var cols=[["Durchgang",18,"left"],["Masse kg",70,"right"],["Screen Pkt",94,"right"],["CMJ cm",118,"right"],
+                ["Fmax N/kg",144,"right"],["1-RM BZ kg",170,"right"],["H\u00e4ngen s",192,"right"]];
+      var hy=ty2+8;
+      doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(110,120,130);
+      cols.forEach(function(c){ doc.text(c[0],c[1],hy,{align:c[2]}); });
+      doc.setDrawColor(205,212,219); doc.line(18,hy+2,192,hy+2);
+      var ry=hy+7.5, gezeigt=0;
+      p.tests.forEach(function(t,i){
+        if(ry+4 > PDF.foot-6) return;
+        gezeigt++;
+        var akt=(t===p.cur);
+        doc.setFont("helvetica",akt?"bold":"normal"); doc.setFontSize(9);
+        doc.setTextColor(akt?46:60,akt?125:70,akt?79:80);
+        doc.text(testLabel(t,i)+(akt?"  (aktuell)":""),18,ry);
+        var vals=[[t.gew,1,70],[t.fmsSum,0,94],[t.cmj,1,118],[t.fmaxRel,1,144],[t.bz1rm,1,170],[t.haeng,0,192]];
+        doc.setFont("helvetica","bold"); doc.setTextColor(18,22,27);
+        vals.forEach(function(a){
+          if(a[0]==null){ doc.setTextColor(175,182,190); doc.text("-",a[2],ry,{align:"right"}); doc.setTextColor(18,22,27); }
+          else doc.text(de(a[0],a[1]),a[2],ry,{align:"right"});
+        });
+        doc.setDrawColor(238,240,243); doc.line(18,ry+2.8,192,ry+2.8);
+        ry+=8.5;
+      });
+      if(gezeigt<p.tests.length){
+        doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(150,160,170);
+        doc.text("und "+(p.tests.length-gezeigt)+" weitere Durchg\u00e4nge - vollst\u00e4ndig in der Webansicht",18,ry+1);
+      }
+    }
+  }
+  pdfFoot(doc,p,1,total);
+}
+
+/* ---------- Folgeseiten: Leistungsdiagnostik ---------- */
+function pdfPageN(doc,p,refG,cols,seite,total){
+  var W=PDF.W, col=pdfCol(p);
+  doc.setFillColor(18,22,27); doc.rect(0,0,W,26,"F");
+  doc.setFillColor(col[0],col[1],col[2]); doc.rect(0,26,W,1.8,"F");
+  doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(14);
+  doc.text(p.name.toUpperCase(),18,14);
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(149,162,174);
+  doc.text("Leistungsdiagnostik  ·  letzter Testdurchgang  ·  Vergleich gegen "+glabel(refG),18,21);
+  var lc=(col[0]+col[1]+col[2]<200)?[91,132,177]:col;
+  doc.setTextColor(lc[0],lc[1],lc[2]); doc.setFont("helvetica","bold"); doc.setFontSize(16);
+  doc.text(p.cls||"",W-18,17,{align:"right"});
+
+  if(!cols.length){
+    doc.setFont("helvetica","normal"); doc.setFontSize(10.5); doc.setTextColor(110,120,130);
+    doc.text("Im letzten Durchgang sind keine Messwerte eingetragen.",18,PDF.top);
+    pdfFoot(doc,p,seite,total); return;
+  }
+  var X=[[18,78,96],[112,172,190]];
+  cols.forEach(function(list,ci){
+    var cy=PDF.top, x=X[ci];
+    list.forEach(function(it){
+      if(it.h){
+        doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fGroup); doc.setTextColor(col[0],col[1],col[2]);
+        doc.text(it.t.toUpperCase(),x[0],cy+3.5);
+        doc.setDrawColor(205,212,219); doc.setLineWidth(0.3); doc.line(x[0],cy+5.6,x[2],cy+5.6); doc.setLineWidth(0.2);
+        cy+=it.hh; return;
+      }
+      if(it.clr){
+        var pos=(p.cur.clrL===1||p.cur.clrR===1);
+        doc.setFont("helvetica",pos?"bold":"normal"); doc.setFontSize(8.2);
+        if(pos) doc.setTextColor(201,138,4); else doc.setTextColor(90,100,110);
+        doc.text("Clearing-Test: links "+clrTxt(p.cur.clrL)+"  ·  rechts "+clrTxt(p.cur.clrR)+(pos?"  - abkl\u00e4ren":""),x[0],cy+1);
+        cy+=it.hh; return;
+      }
+      pdfMetricRow(doc,p,it.m,refG,x,cy);
+      cy+=it.hh;
+    });
+  });
+  pdfFoot(doc,p,seite,total);
+}
+function pdfPage(doc,p,photo,chart,refG){
+  var cols=p.hasVal?pdfColumns(p):[];
+  var nExtra=Math.max(1,Math.ceil(cols.length/2)), total=1+nExtra;
+  pdfPageOne(doc,p,photo,chart,refG,total);
+  for(var i=0;i<nExtra;i++){
+    doc.addPage();
+    pdfPageN(doc,p,refG,cols.slice(i*2,i*2+2),i+2,total);
+  }
+}
+
+function printFallback(list,phs,chs){
+  phs=phs||[]; chs=chs||[];
+  var css='<style>@page{size:A4;margin:0}body{margin:0;font-family:Arial,sans-serif}'+
+    '.pg{page-break-after:always}.hd{background:#12161B;color:#fff;padding:13mm 18mm 9mm;display:flex;justify-content:space-between}'+
+    '.hd .e{font-size:8pt;letter-spacing:.18em;color:#95A2AE}.hd h1{font-size:18pt;margin:2mm 0 1mm;text-transform:uppercase}'+
+    '.hd .s{font-size:9pt;color:#95A2AE}.hd .n{font-size:22pt;font-weight:700;line-height:.9}.rule{height:2mm}'+
+    'h2{font-size:8.5pt;letter-spacing:.1em;color:#4A555F;margin:7mm 18mm 2mm}'+
+    'table{width:calc(100% - 36mm);margin:0 18mm;border-collapse:collapse}'+
+    'td{padding:1.6mm 0;border-bottom:.3mm solid #EEF0F3;font-size:9pt}'+
+    'td.k{color:#6E7882;font-size:8pt;width:60mm}td.v{font-weight:700;text-align:right}td.r{color:#8C96A0;font-size:8pt;text-align:right;width:30mm}'+
+    '.ft{margin:8mm 18mm 0;font-size:7pt;color:#828C96;border-top:.3mm solid #D5DAE0;padding-top:2mm;display:flex;justify-content:space-between;align-items:flex-end;gap:6mm}.ft img{height:11mm;width:auto}</style>';
+  var body=list.map(function(p,pi){
+    var c=colorOf(p);
+    var ph=phs[pi]||photoOf(p), ch=chs[pi]||null;
+    var st=[["Bootsklasse",p.cls||"—"],["Kader",p.kader||"—"],["Auslage",p.side||"—"],["Geburtsdatum",dobDe(p.dob)],
+            ["Alter",p.age!=null?de(p.age)+" Jahre":"—"],["Testdurchgänge",String(p.tests.length)]];
+    var perf="";
+    if(p.hasVal){
+      var groups={},go=[];
+      METRICS.forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+      perf=orderGroups(go).map(function(g){ return '<h2>'+esc(g).toUpperCase()+'</h2><table>'+groups[g].map(function(m){
+        var rk=(m.dir!==0)?rankOf(p,m.k):null, qq=p.cur.q[m.k];
+        return '<tr><td class="k">'+esc(mName(m))+(qq?" · Q "+esc(qq):"")+'</td><td class="v">'+de(p.val[m.k],m.d)+
+          '</td><td class="r">'+(rk?"Platz "+rk.r+"/"+rk.n:"")+'</td></tr>'; }).join("")+'</table>'; }).join("");
+    } else perf='<h2>LEISTUNGSDIAGNOSTIK</h2><table><tr><td class="k">Keine Messwerte vorhanden.</td></tr></table>';
+    return '<div class="pg"><div class="hd"><div style="display:flex;gap:6mm;align-items:center">'+
+      (ph?'<img src="'+esc(ph)+'" style="width:26mm;height:26mm;object-fit:cover;border:.6mm solid '+c+'">':'')+
+      '<div><div class="e">SEGELN · KADERTEST</div>'+
+      '<h1>'+esc(p.name)+'</h1><div class="s">'+esc([p.kader,p.side?"Auslage "+p.side:""].filter(Boolean).join(" · "))+'</div></div></div>'+
+      '<div class="n" style="color:'+c+'">'+esc(p.cls||"—")+'</div></div><div class="rule" style="background:'+c+'"></div>'+
+      '<h2>STAMMDATEN</h2><table>'+st.map(function(a){return '<tr><td class="k">'+a[0]+'</td><td class="v">'+esc(a[1])+'</td><td class="r"></td></tr>';}).join("")+'</table>'+
+      (ch?'<div style="margin:6mm 18mm 0"><img src="'+ch+'" style="width:80mm"></div>':'')+
+      perf+'<div class="ft"><span>'+esc(p.name)+' · Erstellt am '+heute()+' · Quelle: '+esc(FILE)+
+      '</span><img src="'+LOGO_PDF+'" alt=""></div></div>';
+  }).join("");
+  var f=document.createElement("iframe");
+  f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+  document.body.appendChild(f);
+  var d=f.contentWindow.document; d.open();
+  d.write("<!DOCTYPE html><html><head><meta charset='utf-8'>"+css+"</head><body>"+body+"</body></html>"); d.close();
+  setTimeout(function(){ f.contentWindow.focus(); f.contentWindow.print(); setTimeout(function(){f.remove();},1500); },350);
+  toast("Ohne Internetzugang kein direktes PDF — es öffnet der Druckdialog. Dort „Als PDF speichern“ wählen.",7000);
+}
+function resolvePhotos(list){
+  return Promise.all(list.map(function(p){ return urlToDataUrl(photoOf(p)); }));
+}
+/* SVG in PNG umwandeln, damit die Chart ins PDF kann */
+function svgToPng(svg,W,H,scale){
+  scale=scale||3;
+  return new Promise(function(ok){
+    if(!svg) return ok(null);
+    var done=false, fin=function(v){ if(!done){ done=true; ok(v); } };
+    try{
+      var src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+      var im=new Image();
+      im.onload=function(){
+        try{
+          var c=document.createElement("canvas");
+          c.width=W*scale; c.height=H*scale;
+          var g=c.getContext("2d");
+          g.fillStyle="#FFFFFF"; g.fillRect(0,0,c.width,c.height);
+          g.drawImage(im,0,0,c.width,c.height);
+          fin(c.toDataURL("image/png"));
+        }catch(e){ fin(null); }
+      };
+      im.onerror=function(){ fin(null); };
+      im.src=src;
+      setTimeout(function(){ fin(null); },6000);
+    }catch(e){ fin(null); }
+  });
+}
+function resolveCharts(list){
+  return Promise.all(list.map(function(p){
+    if(!p.hasVal) return Promise.resolve(null);
+    return svgToPng(spiderChart(p,effRef(p)),SPW,SPH,3);
+  }));
+}
+function makePdf(list,filename){
+  buildDocs(list).then(function(r){
+    if(!r.doc){ printFallback(list,r.photos,r.charts); return; }
+    r.doc.save(filename);
+    var n=r.photos.filter(function(x){return x;}).length;
+    var c=r.charts.filter(function(x){return x;}).length;
+    toast((list.length===1?"Profil gespeichert.":list.length+" Profile in einem PDF gespeichert.")+
+      (n<list.length?" "+(list.length-n)+" ohne Foto.":"")+(c<list.length?" "+(list.length-c)+" ohne Chart.":""));
+  });
+}
+function buildDocs(list){
+  return Promise.all([needPdf(),resolvePhotos(list),resolveCharts(list)]).then(function(res){
+    var ok=res[0], photos=res[1], charts=res[2];
+    if(!ok) return {doc:null,photos:photos,charts:charts};
+    var doc=new jspdf.jsPDF({unit:"mm",format:"a4"});
+    list.forEach(function(p,i){ if(i) doc.addPage(); pdfPage(doc,p,photos[i],charts[i],effRef(p)); });
+    return {doc:doc,photos:photos,charts:charts};
+  });
+}
+function safeName(p){
+  return "Profil_"+(p.cls?p.cls.replace(/[^\w]+/g,"")+"_":"")+
+    p.name.replace(/[^\wÄÖÜäöüß]+/g,"_").replace(/^_|_$/g,"")+".pdf";
+}
+/* Einzel-PDFs: je Person eine Datei, wenn möglich direkt in einen gewählten Ordner */
+var DIRH=null;
+function saveSingles(list){
+  list=(list||players.slice()).filter(Boolean);
+  if(!list.length){ toast("Keine Daten geladen."); return; }
+  var canDir=(typeof window.showDirectoryPicker==="function");
+  var step=canDir
+    ? (DIRH?Promise.resolve(DIRH):window.showDirectoryPicker({mode:"readwrite",id:"segelkader"}).then(function(d){DIRH=d;return d;}))
+    : Promise.resolve(null);
+  step.then(function(dir){
+    toast("Erzeuge "+list.length+" Einzel-PDFs \u2026",20000);
+    return Promise.all([needPdf(),resolvePhotos(list),resolveCharts(list)]).then(function(res){
+      if(!res[0]){ toast("Ohne Internetzugang k\u00f6nnen keine PDF-Dateien erzeugt werden. Der Druckdialog bleibt als Weg.",7000);
+        printFallback(list,res[1],res[2]); return; }
+      var photos=res[1], charts=res[2], i=0, written=0;
+      function next(){
+        if(i>=list.length){
+          toast(dir?written+" Einzel-PDFs im Ordner \u201e"+(dir.name||"gew\u00e4hlt")+"\u201c gespeichert."
+                   :written+" Einzel-PDFs heruntergeladen \u2014 sie liegen im Download-Ordner des Browsers.",7000);
+          return;
+        }
+        var p=list[i], doc=new jspdf.jsPDF({unit:"mm",format:"a4"});
+        pdfPage(doc,p,photos[i],charts[i],effRef(p));
+        var blob=doc.output("blob"), fn=safeName(p);
+        i++;
+        if(dir){
+          dir.getFileHandle(fn,{create:true})
+            .then(function(fh){ return fh.createWritable(); })
+            .then(function(ws){ return ws.write(blob).then(function(){ return ws.close(); }); })
+            .then(function(){ written++; next(); })
+            .catch(function(err){ toast("Konnte "+fn+" nicht schreiben: "+err.message,7000); next(); });
+        } else {
+          saveBlob(blob,fn); written++;
+          setTimeout(next,350);
+        }
+      }
+      next();
+    });
+  }).catch(function(err){
+    if(err && err.name==="AbortError") return;
+    toast("Speichern nicht m\u00f6glich: "+(err&&err.message||err),7000);
+  });
+}
+function exportPdf(p){ if(!p){toast("Niemand ausgewählt.");return;} makePdf([p],safeName(p)); }
+function exportPdfByName(n){ exportPdf(findPlayer(n)); }
+function exportAllPdf(){ if(!players.length){toast("Keine Daten geladen.");return;}
+  makePdf(players.slice(),"Segeln_Kadertest_Profile_"+stamp()+".pdf"); }
+
+/* ---------- Rohdaten laden ---------- */
+function readFotos(grid){
+  var out={}; if(!grid||grid.length<2) return out;
+  var h=grid[0].map(hnorm), iN=h.indexOf("name"), iU=-1;
+  h.forEach(function(x,i){ if(iU<0 && (x.indexOf("foto")===0 || x==="url" || x==="bild")) iU=i; });
+  if(iN<0||iU<0) return out;
+  for(var r=1;r<grid.length;r++){ var n=String(grid[r][iN]||"").trim(), u=String(grid[r][iU]||"").trim(); if(n&&u) out[n]=u; }
+  return out;
+}
+function applyData(rows,fname,fotos){
+  var keep={t:tests,p:players,f:FILE,d:DEMO,fo:FOTOS};
+  try{
+    if(!rows.length) throw new Error("Im Blatt stehen keine Namen.");
+    FOTOS=fotos||{}; FILE=fname; DEMO=false;
+    ingestRows(rows);
+    pickName=""; devWho=""; ovWho=""; ovSel=[];
+    render();
+    if(window.KVApp) KVApp.rememberBase(rows,fname,FOTOS);
+    return true;
+  }catch(err){
+    tests=keep.t; players=keep.p; FILE=keep.f; DEMO=keep.d; FOTOS=keep.fo; render();
+    throw err;
+  }
+}
+function loadData(inp){
+  var f=inp.files[0]; if(!f) return;
+  var isXls=/\.(xlsx|xlsm|xls)$/i.test(f.name);
+  if(isXls){
+    needXlsx().then(function(ok){
+      if(!ok){ toast("Für Excel-Dateien wird eine Internetverbindung gebraucht. Alternativ das Blatt „Eingabe raw data“ als CSV speichern und laden.",7500); inp.value=""; return; }
+      var rd=new FileReader();
+      rd.onload=function(e){
+        try{
+          var wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});
+          var find=function(names){ for(var i=0;i<wb.SheetNames.length;i++){
+            var L=wb.SheetNames[i].trim().toLowerCase();
+            for(var j=0;j<names.length;j++) if(L===names[j]) return wb.SheetNames[i]; } return null; };
+          var grid=function(n){ return XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:"",blankrows:false}); };
+          var sName=find(["eingabe raw data","raw data","rohdaten","leistungsdaten","eingabe"]);
+          if(!sName){ for(var i=0;i<wb.SheetNames.length&&!sName;i++){ try{ parseGrid(grid(wb.SheetNames[i])); sName=wb.SheetNames[i]; }catch(x){} } }
+          if(!sName) throw new Error("Kein Blatt mit einer Spalte „Name“ gefunden.");
+          var fName=find(["fotos","foto","bilder"]);
+          var rows=parseGrid(grid(sName));
+          applyData(rows,f.name,fName?readFotos(grid(fName)):{});
+          toast(players.length+" Athlet:innen und "+tests.length+" Testzeilen aus „"+sName+"“ geladen."+
+            (UNKNOWN.length?" Nicht erkannte Spalten: "+UNKNOWN.join(", ")+".":""),7000);
+        }catch(err){ toast("Datei nicht lesbar: "+err.message,8000); }
+        inp.value="";
+      };
+      rd.readAsArrayBuffer(f);
+    });
+  } else {
+    var rd=new FileReader();
+    rd.onload=function(e){
+      try{
+        var rows=parseGrid(parseCsv(e.target.result));
+        applyData(rows,f.name,{});
+        toast(players.length+" Athlet:innen und "+tests.length+" Testzeilen aus "+f.name+" geladen.",6000);
+      }catch(err){ toast("Datei nicht lesbar: "+err.message,8000); }
+      inp.value="";
+    };
+    rd.readAsText(f,"utf-8");
+  }
+}
+
+/* ---------- Start ---------- */
+$("q").addEventListener("input",render);
+$("onlyTest").addEventListener("change",render);
+$("metric").addEventListener("change",function(){ curMetric=this.value; renderBoard(); });
+$("pick").addEventListener("change",function(){ pickName=this.value; renderSingle(); });
+$("entWho").addEventListener("change",function(){ devWho=this.value; renderTrend(); });
+$("entMetric").addEventListener("change",function(){ devMetric=this.value; renderTrend(); });
+$("entNorm").addEventListener("change",renderTrend);
+
+$("ovl").addEventListener("click",function(e){ if(e.target===this) closeSheet(); });
+window.addEventListener("keydown",function(e){ if(e.key==="Escape") closeSheet(); });
+
+$("logoTop").src=LOGO_DARK;
+$("logoFoot").src=LOGO_LIGHT;
+
+try{
+  ingestRows(parseGrid(parseCsv(DEMO_CSV))); render();
+}catch(err){
+  $("src").textContent="Fehler beim Aufbau: "+err.message;
+}
+
+</script>
+<!--@KV_MODULES@-->
+
+</body>
+</html>
