@@ -22,17 +22,20 @@ const libPdf = process.env.JSPDF_JS || "/tmp/claude-0/-home-user-Endurance-Build
 if (!fs.existsSync(libPdf)) { console.error("jsPDF fehlt (JSPDF_JS) – dieser Test prüft den PDF-Inhalt."); process.exit(2); }
 
 /* Text aus dem PDF: Inhaltsströme (ggf. mit Flate gepackt) lesen, Textanzeigen (…) Tj einsammeln */
+/* Briefpapier (Leistungssport Austria): dieselben Zeichenbefehle, die der Export auf jede Seite schreibt */
+const LSA = new Function(fs.readFileSync(new URL("../src/letterhead.js", import.meta.url), "utf8") + "; return LSA;")();
 function pdfText(file) {
-  const buf = fs.readFileSync(file), raw = buf.toString("latin1"), out = [];
+  const buf = fs.readFileSync(file), raw = buf.toString("latin1"), out = []; let letterheads = 0;
   const re = /stream\r?\n([\s\S]*?)\r?\nendstream/g; let m;
   while ((m = re.exec(raw))) {
     let s = m[1];
     try { s = zlib.inflateSync(Buffer.from(s, "latin1")).toString("latin1"); } catch (e) { /* ungepackt */ }
+    if (s.includes(LSA.ops.slice(0, 400))) letterheads++;
     if (!/\bTj\b|\bTJ\b/.test(s)) continue;
     const t = /\(((?:\\.|[^\\)])*)\)\s*Tj/g; let x;
     while ((x = t.exec(s))) out.push(x[1].replace(/\\([()\\])/g, "$1"));
   }
-  return { all: out.join("\n"), pages: (raw.match(/\/Type\s*\/Page[^s]/g) || []).length };
+  return { all: out.join("\n"), pages: (raw.match(/\/Type\s*\/Page[^s]/g) || []).length, letterheads };
 }
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "kader-tpl-"));
@@ -76,6 +79,12 @@ try {
   const pdfAll = await pdfOf("Wende Sophie", "profil_alle.pdf");
   for (const t of ["Swiss ventral", "Fmax beidseitig", "CMJ ohne Arme", "Jump Height (Imp-Mom)", "LEISTUNGSPROFIL", "DURCHG"]) assert.ok(pdfAll.all.includes(t), "PDF (alle) ohne „" + t + "“");
   ok(`PDF ${pdfAll.pages} Seiten, enthält Rumpf, Maximalkraft, CMJ, Sprungkennwerte und Netzdiagramm`);
+  /* Design: auf jeder Seite das Briefpapier (Formen + Logo als Vektor) und die Adresszeilen der Fußzeile, nichts unterhalb der Fußlinie */
+  assert.equal(pdfAll.letterheads, pdfAll.pages, `Briefpapier auf ${pdfAll.letterheads} von ${pdfAll.pages} Seiten`);
+  const addr = (pdfAll.all.match(/ZVR-Nr\. 284274244/g) || []).length, head = (pdfAll.all.match(/LEISTUNGSSPORT AUSTRIA/g) || []).length;
+  assert.equal(addr, pdfAll.pages, "Adresszeilen nicht auf jeder Seite"); assert.equal(head, pdfAll.pages);
+  assert.ok(/Seite 1 von \d+/.test(pdfAll.all) && pdfAll.all.includes("Erstellt am"), "eigene Fußzeile mit Seitenzahl fehlt");
+  ok(`LSA-Briefpapier auf allen ${pdfAll.pages} Seiten (Formen, Logo, Adresszeilen), eigene Fußzeile mit Seitenzahl`);
 
   console.log("3. Neue Vorlage anlegen: Auswahl, Bausteine, Speichern unter …");
   await page.evaluate(() => setTab("templates"));
@@ -250,6 +259,24 @@ try {
   assert.equal(back.tpl, "Testtag Kurz neu", "Datei enthält: " + inFile.join(", ")); assert.equal(back.results, jumpFiles.length); assert.equal(back.custom, 2); assert.ok(back.players >= 13);
   ok(`nach „Alles löschen“ und Neustart aus dem Ordner wiederhergestellt: Vorlage, ${back.results} Sprünge, ${back.custom} eigene Parameter, ${back.players} Athlet:innen`);
   await shot("05_nach_wiederherstellung");
+
+  console.log("12. Ohne Internet (jsPDF nicht erreichbar): Druckansicht im selben Design");
+  const pg2 = await ctx.newPage();
+  pg2.on("pageerror", e => errors.push("PAGEERROR " + e.message));
+  await pg2.route("**/jspdf.umd.min.js", r => r.abort());
+  await pg2.goto(url); await pg2.waitForFunction(() => window.KVApp && KVApp.S.ready);
+  await pg2.evaluate(() => {   /* Der Druckdialog selbst lässt sich nicht bedienen: das Dokument abgreifen und print() stummschalten */
+    window.__html = null;
+    const t = setInterval(() => { const f = document.querySelector("iframe[style*='width: 0']"); if (f && f.contentDocument && f.contentDocument.body && f.contentDocument.body.innerHTML.length > 500) { window.__html = f.contentDocument.documentElement.outerHTML; f.contentWindow.print = () => {}; clearInterval(t); } }, 40);
+    exportPdfByName(players[0].name);
+  });
+  await pg2.waitForFunction(() => window.__html, null, { timeout: 30000 });
+  const fb = await pg2.evaluate(() => window.__html);
+  assert.ok(/class="bg"/.test(fb), "Briefpapier als Hintergrund fehlt");
+  assert.ok(fb.includes("LEISTUNGSSPORT AUSTRIA") && fb.includes("ZVR-Nr. 284274244"), "Adresszeilen des Briefpapiers fehlen in der Druckansicht");
+  assert.ok(fb.includes("data:image/svg+xml") && fb.includes("%23E3000A"), "Briefpapier-Formen (SVG, LSA-Rot) fehlen");
+  await pg2.close();
+  ok("Druckansicht mit Briefpapier (Formen, Logo, Adresszeilen) auf jeder Seite");
 
   assert.deepEqual(errors, [], "Fehler im Browser:\n" + errors.join("\n"));
   console.log("\nALLES OK (Vorlagen) – Screenshots in " + shots);

@@ -32,7 +32,7 @@ Eine **Vorlage** legt fest, was Einzelauswertung, Profilblatt, **PDF** (inklusiv
 - **Sportmotorische Tests ankreuzen**: Anthropometrie, Movement Screen, Rumpfkraftausdauer, Sprungkraft (CMJ, SJ, PSA, Hopp), Maximalkraft, Schnelligkeit, Oberkörper – mit Suche und „alle/keine“ je Gruppe. Eigene Parameter aus CSV-Importen stehen ebenfalls in der Liste.
 - **Sprungkennwerte ankreuzen**: erst die Sprungarten (CMJ, SJ, SL-CMJ links/rechts, Seitenvergleich), dann die Kennwerte aus dem ForceDecks-Katalog – dieselbe Auswahl wie im Reiter „Parameter“, aber je Vorlage gespeichert.
 - **Bausteine**: Leistungsprofil (Netzdiagramm; braucht mindestens drei angekreuzte Netzdiagramm-Tests), Vergleich zur Gruppe (Regler mit Abweichung und Durchschnitt; aus = nur Name und Wert), Rangplatz im Kader („Platz 3/12“), Durchgänge im Vergleich (Entwicklungstabelle mit den angekreuzten Tests).
-- Die **Stammdaten** (Name, Bootsklasse, Kader, Alter) stehen immer im Kopf des PDF; der Name der Vorlage steht im Kopf der Folgeseiten.
+- Die **Stammdaten** (Name, Bootsklasse, Kader, Alter) stehen immer im Kopf des PDF; der Name der Vorlage steht im Kopf der Folgeseiten und in der Fußzeile.
 - Nicht von der Vorlage gefiltert: die Teamansichten (Kader, Leistungsdiagnostik mit Rangliste und Gesamtübersicht, Entwicklung, Erweiterte Übersicht). Dort stehen weiterhin alle Kennwerte.
 - Die Sprungkennwerte der aktiven Vorlage stehen immer zur Verfügung, auch wenn sie im Reiter „Parameter“ nicht angehakt sind.
 
@@ -46,6 +46,17 @@ Für Messwerte, die nicht im Segeln-Blatt stehen oder später dazukommen (neue T
 4. Ein späterer Import mit gleicher Bezeichnung ergänzt **denselben** Parameter. Importe lassen sich einzeln entfernen; eigene Parameter lassen sich umbenennen, anders einstellen und löschen.
 
 Eigene Parameter erscheinen unter „Alle Kennwerte“ automatisch (Einzelauswertung, PDF, Excel, Rangliste, Entwicklung …), in eigenen Vorlagen nach dem Anhaken.
+
+## PDF im Design von Leistungssport Austria
+
+Das PDF-Profil nutzt das Briefpapier `LSA_Briefpapier_2026-07-30-druck.pdf` (Formen oben und unten, Logo „Leistungssport Austria“, Adresszeilen am Seitenende):
+
+- Das Briefpapier liegt als **Vektorgrafik** auf jeder Seite (scharf in jeder Vergrößerung, ca. 30 KB). Rot und Grau sind aus dem Druck-PDF (CMYK) in Bildschirmfarben umgerechnet: Rot `#E3000A`, dunkles Rot `#B30500`, Grau `#7A7A7A`.
+- Der Inhalt sitzt im freien Bereich zwischen Logo und Fußform (ca. 47 bis 262 mm). Darunter steht eine eigene Fußzeile mit Name, Vorlage, Erstelldatum, Quelle und „Seite x von y“; die Adresszeilen des Briefpapiers folgen darunter. Überschriften, Linien und das Netzdiagramm sind im LSA-Rot gehalten.
+- Lange Namen, Kader- und Klassenbezeichnungen werden verkleinert beziehungsweise gekürzt, damit nichts überlappt. Der Platz ist kleiner als beim alten Layout, deshalb braucht ein PDF mit vielen Kennwerten etwas mehr Seiten.
+- Die Adresszeilen sind in **Helvetica** gesetzt (das Original verwendet die Hausschrift Outfit; eine Schrift in der Datei würde das PDF um ein Vielfaches vergrößern). Die Logos in der Bildschirmoberfläche der Auswertung sind unverändert.
+- **Ohne Internetzugang** (jsPDF lässt sich nicht laden) öffnet sich der Druckdialog; die Druckansicht trägt dasselbe Briefpapier. Dort „Als PDF speichern“ wählen.
+- Anderes Briefpapier verwenden: Datei nach `assets/` legen und `python3 -I tools/letterhead.py assets/<Datei>.pdf src/letterhead.js` ausführen (`pypdf` nötig), danach `node tools/build.mjs`. Das Skript liest Formen, Logo-Umrisse und die Lage der Fußzeilenschrift aus dem PDF und berechnet daraus den freien Bereich. Bei neuen Farben die Tabelle `RGB` in `tools/letterhead.py` anpassen.
 
 ## Wie die Sprungart erkannt wird
 
@@ -103,7 +114,10 @@ src/app.js           Anbindung an die Auswertung, Vorlagen, Importe, Hinweise f�
 src/tab-sprung.js    Reiter „Sprungdaten“ (inkl. VALD-Import)
 src/tab-param.js     Reiter „Parameter“
 src/tab-templates.js Reiter „Auswertungstemplates“
-src/segeln-base.html Segeln-Auswertung (Original mit wenigen Einhängepunkten)
+src/letterhead.js    Briefpapier Leistungssport Austria als Vektordaten (erzeugt von tools/letterhead.py, nicht von Hand ändern)
+src/segeln-base.html Segeln-Auswertung (Original mit wenigen Einhängepunkten; PDF-Export im LSA-Design)
+assets/              Briefpapier-PDF (Vorlage für tools/letterhead.py)
+tools/letterhead.py  wandelt das Briefpapier-PDF in src/letterhead.js um
 tools/build.mjs      setzt alles zur fertigen Einzeldatei zusammen:  node tools/build.mjs
 tools/mock-bridge.mjs
 tests/               node --test tests/core.test.mjs tests/templates.test.mjs

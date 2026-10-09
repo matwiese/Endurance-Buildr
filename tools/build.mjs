@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = f => fs.readFileSync(path.join(root, f), "utf8");
-const MODULES = ["src/engine.js", "src/jump-core.js", "src/templates.js", "src/csv-import.js", "src/jump-store.js", "src/sync.js", "src/methods.js", "src/app.js", "src/tab-sprung.js", "src/tab-param.js", "src/tab-templates.js"];
+const MODULES = ["src/engine.js", "src/letterhead.js", "src/jump-core.js", "src/templates.js", "src/csv-import.js", "src/jump-store.js", "src/sync.js", "src/methods.js", "src/app.js", "src/tab-sprung.js", "src/tab-param.js", "src/tab-templates.js"];
 
 function script(name, code) {
   if (/<\/script/i.test(code)) throw new Error(name + " enthält </script");
