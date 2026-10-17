@@ -102,7 +102,8 @@ try {
   await jumps.locator(".kv-picker-top button:has-text('Keine')").click();
   for (const rx of [/^Jump Height \(Imp-Mom\) \[cm\]$/, /^Peak Power \/ BM \[W\/kg\]$/]) await jumps.locator("label").filter({ hasText: rx }).locator("input").check();
   for (const g of ["SJ", "SL-SJ links", "SL-SJ rechts"]) await page.locator(`#kvTpl .kv-groups label:text-is("${g}") input`).uncheck();
-  /* Bausteine: Vergleich zur Gruppe aus, Rang an */
+  /* Bausteine: Netzdiagramm aus (kommt in Schritt 5b), Vergleich zur Gruppe aus, Rang an */
+  await page.locator("#kvTpl .kv-block:has-text('Leistungsprofil') input").uncheck();
   await page.locator("#kvTpl .kv-block:has-text('Vergleich zur Gruppe') input").uncheck();
   await page.locator("#kvTpl .kv-block:has-text('Rangplatz') input").check();
   assert.match(await page.textContent("#kvTplBar .kv-status"), /nicht gespeichert/);
@@ -115,7 +116,8 @@ try {
   assert.deepEqual(saved.metrics.sort(), ["cmj", "fmsSum", "gew", "psa", "reakt", "sj"]);
   assert.deepEqual(saved.jump.params.sort(), ["Jump Height (Imp-Mom)", "Peak Power / BM"]);
   assert.ok(saved.jump.groups.includes("CMJ") && saved.jump.groups.includes("SL-CMJ|L") && !saved.jump.groups.includes("SJ"));
-  assert.equal(saved.blocks.deviation, false); assert.equal(saved.blocks.rank, true);
+  assert.equal(saved.blocks.deviation, false); assert.equal(saved.blocks.rank, true); assert.equal(saved.blocks.spider, false);
+  assert.deepEqual(saved.spider, ["fmsSum", "swSum", "cmj", "fmaxRel", "tap", "haeng", "bz1rmRel", "hbl"], "Achsen werden mit der Vorlage gespeichert (hier die Standardachsen)");
   ok("Vorlage „Testtag Kurz“ gespeichert: 6 Tests, 2 Sprungkennwerte, Bausteine angepasst");
   await shot("01_vorlage");
 
@@ -130,7 +132,7 @@ try {
   assert.ok(labels.some(l => /CMJ ohne Arme/.test(l)) && labels.some(l => /Jump Height \(Imp-Mom\)/.test(l)) && !labels.some(l => /Swiss|Fmax|Hängen/.test(l)), labels.join(" | "));
   assert.ok(await page.$(".mline.mlite") && !(await page.$("#single .regwrap")), "Zeilen ohne Regler (Vergleich zur Gruppe aus)");
   assert.ok(labels.some(l => /Platz \d+\/\d+/.test(l)), "Rang sichtbar");
-  assert.equal(await page.$("#single .spiderpanel"), null, "kein Netzdiagramm (Baustein aus bzw. zu wenige Achsen)");
+  assert.equal(await page.$("#single .spiderpanel"), null, "kein Netzdiagramm (Baustein aus)");
   assert.match(await page.textContent("#tplNote"), /Testtag Kurz/);
   await shot("02_einzel_vorlage");
   ok(`nur ${labels.length} Kennwerte in ${heads.length} Karten, Rang statt Regler, kein Netzdiagramm; Hinweis „Vorlage: Testtag Kurz“`);
@@ -141,6 +143,70 @@ try {
   for (const t of ["Swiss", "Fmax", "Bankziehen", "LEISTUNGSPROFIL", "Tapping", "Hopp", "Eccentric Peak Power"]) assert.ok(!pdf.all.includes(t), "PDF enthält „" + t + "“, obwohl nicht angekreuzt");
   assert.ok(pdf.pages < pdfAll.pages, `weniger Seiten (${pdf.pages} statt ${pdfAll.pages})`);
   ok(`PDF ${pdf.pages} Seiten statt ${pdfAll.pages}: nur Vorlage, kein Netzdiagramm, Rangplätze, Vorlagenname im Kopf`);
+  console.log("5b. Netzdiagramm: Anzahl der Achsen und je Achse ein Kennwert wählen");
+  await page.evaluate(() => setTab("templates"));
+  await page.waitForSelector("#kvSpider");
+  assert.equal(await page.locator("#kvSpider .kv-axis select").first().isDisabled(), true, "Achsenauswahl gesperrt, solange der Baustein aus ist");
+  assert.equal(await page.locator("#kvSpider .kv-spsvg").count(), 0, "keine Vorschau bei ausgeschaltetem Baustein");
+  await page.locator("#kvTpl .kv-block:has-text('Leistungsprofil') input").check();
+  const nSel = "#kvSpider select[aria-label='Anzahl der Achsen']", axSel = i => `#kvSpider select[aria-label='Achse ${i}']`;
+  assert.deepEqual(await page.$$eval(nSel + " option", o => o.map(x => x.value)), ["3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]);
+  assert.equal(await page.inputValue(nSel), "8");
+  await page.selectOption(nSel, "5");
+  assert.equal(await page.locator("#kvSpider .kv-axis select").count(), 5, "5 Achsen = 5 Auswahlfelder");
+  /* wählbar: nur Kennwerte mit klarer Wertung, Sprungkennwerte nur aus den für die Vorlage angekreuzten Sprungarten und Kennwerten */
+  const opts = await page.$$eval(axSel(1) + " option", o => o.map(x => x.value));
+  assert.ok(opts.includes("cmj") && opts.includes("fmsSum") && opts.includes("hbl") && opts.includes("CMJ||Jump Height (Imp-Mom)") && opts.includes("CMJ||Peak Power / BM") && opts.includes("SL-CMJ|L||Peak Power / BM"), "erwartete Auswahl fehlt");
+  assert.ok(!opts.includes("gr") && !opts.includes("gew") && !opts.includes("bmi") && !opts.includes("hblH"), "Kennwerte ohne Wertung dürfen nicht wählbar sein");
+  assert.ok(!opts.some(o => o.startsWith("SJ||")) && !opts.includes("CMJ||Concentric Impulse"), "nicht angekreuzte Sprungarten/Kennwerte fehlen");
+  assert.equal(await page.$eval(axSel(1) + " option[value='swSum']", o => o.disabled), true, "was schon auf einer anderen Achse liegt, ist gesperrt");
+  /* Achsen setzen (Reihenfolge so, dass nie ein gesperrter Eintrag gewählt wird) */
+  await page.selectOption(axSel(5), "CMJ||Peak Power / BM"); await page.selectOption(axSel(4), "CMJ||Jump Height (Imp-Mom)");
+  await page.selectOption(axSel(2), "sj"); await page.selectOption(axSel(3), "cmj");
+  assert.deepEqual(await page.evaluate(() => Array.from(document.querySelectorAll("#kvSpider .kv-axis select")).map(s => s.value)), ["fmsSum", "sj", "cmj", "CMJ||Jump Height (Imp-Mom)", "CMJ||Peak Power / BM"]);
+  assert.match(await page.textContent("#kvTplBar .kv-status"), /nicht gespeichert/);
+  const prev = await page.$$eval("#kvSpider .kv-spsvg svg > line", l => l.length);
+  assert.equal(prev, 5, "Vorschau zeigt 5 Achsen"); await shot("03_netz_editor");
+  await page.click("#kvTplBar button:has-text('Speichern')");
+  await page.waitForFunction(() => KVApp.S.templates[0].spider.length === 5);
+  assert.deepEqual(await page.evaluate(() => KVApp.S.templates[0].spider), ["fmsSum", "sj", "cmj", "CMJ||Jump Height (Imp-Mom)", "CMJ||Peak Power / BM"]);
+  /* die Auswertung folgt der Vorlage: Einzelauswertung und PDF */
+  const chartOf = async () => { await page.evaluate(() => { pickName = "Luv Paul"; setTab("einzel"); }); await page.waitForSelector("#single .spiderpanel svg"); return page.evaluate(() => ({ n: document.querySelectorAll("#single .spiderpanel svg > line").length, t: Array.from(document.querySelectorAll("#single .spiderpanel svg text")).map(x => x.textContent) })); };
+  let ch = await chartOf();
+  assert.equal(ch.n, 5, "Netz mit 5 Achsen"); for (const t of ["Screen", "SJ", "CMJ", "CMJ-Höhe", "CMJ · Peak Power / BM"]) assert.ok(ch.t.includes(t), `Achse „${t}“ fehlt: ` + ch.t.join(" | "));
+  assert.ok(!ch.t.includes("Rumpf") && !ch.t.includes("Tapping"), "Standardachsen nicht mehr dabei");
+  await shot("04_einzel_netz5");
+  const pdfN = await pdfOf("Luv Paul", "profil_netz5.pdf");
+  assert.ok(pdfN.all.includes("LEISTUNGSPROFIL"), "PDF zeigt das Leistungsprofil mit den gewählten Achsen");
+  ok("5 Achsen gewählt (2 Sprungkennwerte darunter), gespeichert; Einzelauswertung und PDF folgen der Auswahl");
+  /* andere Anzahlen: kleinste und größte */
+  for (const n of [3, 12, 7]) {
+    await page.evaluate(() => setTab("templates")); await page.waitForSelector("#kvSpider");
+    await page.selectOption(nSel, String(n));
+    assert.equal(await page.locator("#kvSpider .kv-axis select").count(), n);
+    const vals = await page.evaluate(() => Array.from(document.querySelectorAll("#kvSpider .kv-axis select")).map(s => s.value));
+    assert.equal(new Set(vals).size, n, "keine doppelten Achsen: " + vals.join(", "));
+    if (n === 3) assert.deepEqual(vals, ["fmsSum", "sj", "cmj"], "beim Verkleinern bleiben die ersten Achsen");
+    await page.click("#kvTplBar button:has-text('Speichern')"); await page.waitForFunction(k => KVApp.S.templates[0].spider.length === k, n);
+    ch = await chartOf(); assert.equal(ch.n, n, `Netz mit ${n} Achsen`);
+    if (n === 12) await shot("05_einzel_netz12");
+  }
+  /* Standard zurücksetzen */
+  await page.evaluate(() => setTab("templates")); await page.waitForSelector("#kvSpider");
+  await page.click("#kvSpider button:has-text('Standard')");
+  assert.equal(await page.inputValue(nSel), "8"); assert.equal(await page.inputValue(axSel(3)), "cmj");
+  await page.click("#kvTplBar button:has-text('Speichern')"); await page.waitForFunction(() => KVApp.S.templates[0].spider.length === 8);
+  assert.equal((await chartOf()).n, 8);
+  /* ältere Vorlage ohne Achsenangabe: Standardachsen, soweit angekreuzt – wie vor dieser Funktion */
+  const legacy = await page.evaluate(() => {
+    const before = KVApp.S.activeTpl;
+    KVApp.S.templates.push({ id: "tpl:legacy", name: "alt", kind: "list", metrics: ["cmj", "hbl", "fmsSum", "swSum", "gr"], jump: { groups: [], params: [] }, blocks: { spider: true } });
+    KVApp.saveTemplates(); KVApp.setActive("tpl:legacy"); const keys = KVApp.tplSpider();
+    KVApp.setActive(before); KVApp.S.templates = KVApp.S.templates.filter(t => t.id !== "tpl:legacy"); KVApp.saveTemplates(); return keys;
+  });
+  assert.deepEqual(legacy, ["fmsSum", "swSum", "cmj", "hbl"]);
+  ok("3 bis 12 Achsen möglich, keine Doppelten, „Standard“ setzt die acht Standardachsen, ältere Vorlagen verhalten sich wie bisher");
+
 
   console.log("6. Excel folgt der Vorlage");
   if (fs.existsSync(libXlsx)) {
@@ -210,14 +276,15 @@ try {
   assert.deepEqual(re.tpl, ["Testtag Kurz"]); assert.equal(re.active, "Testtag Kurz"); assert.equal(re.sel, "Testtag Kurz"); assert.equal(re.custom, 2); assert.equal(re.imports, 2); assert.equal(re.sprint, 2.05);
   const pdf5 = await pdfOf("Wende Sophie", "profil_nach_neustart.pdf");
   assert.ok(pdf5.all.includes("Vorlage: Testtag Kurz") && !pdf5.all.includes("Swiss"), "PDF nach Neustart weiter nach Vorlage");
-  ok(`nach Neu-Laden: Vorlage „${re.active}“ aktiv, ${re.custom} eigene Parameter, ${re.imports} Importe, ${re.players} Athlet:innen`);
+  assert.deepEqual(await page.evaluate(() => KVApp.S.templates[0].spider), ["fmsSum", "swSum", "cmj", "fmaxRel", "tap", "haeng", "bz1rmRel", "hbl"], "Achsen nach Neustart");
+  ok(`nach Neu-Laden: Vorlage „${re.active}“ aktiv, ${re.custom} eigene Parameter, ${re.imports} Importe, ${re.players} Athlet:innen, Netzdiagramm-Achsen erhalten`);
 
   console.log("10. Vorlagen austauschen (Export/Import)");
   await page.evaluate(() => setTab("templates"));
   const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#kvTplBar button:has-text('Exportieren')")]);
   const ep = path.join(shots, "vorlagen.json"); await dl.saveAs(ep);
   const exp = JSON.parse(fs.readFileSync(ep, "utf8"));
-  assert.equal(exp.format, "kader-auswertungsvorlagen"); assert.equal(exp.templates.length, 1); assert.equal(exp.templates[0].name, "Testtag Kurz");
+  assert.equal(exp.format, "kader-auswertungsvorlagen"); assert.equal(exp.templates.length, 1); assert.equal(exp.templates[0].name, "Testtag Kurz"); assert.equal(exp.templates[0].spider.length, 8, "Achsen im Export");
   await page.setInputFiles("#kvTplBar input[type=file]", ep);
   await page.waitForFunction(() => KVApp.S.templates.length === 2);
   assert.deepEqual(await page.evaluate(() => KVApp.S.templates.map(t => t.name).sort()), ["Testtag Kurz", "Testtag Kurz (2)"]);

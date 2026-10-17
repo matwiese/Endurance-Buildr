@@ -235,7 +235,7 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
 .lb .n,.lb .t{display:block}
 .reg{display:block}
 #ltbody td.nm{min-width:190px}
-.svgbox{max-width:600px}
+.svgbox{max-width:660px}
 @media (min-width:960px){.spiderpanel{grid-column:span 2}}
 .tst.mx tr.sum td{border-top:1px solid var(--ink);font-weight:700}
 .demo{background:var(--gold-soft);border:1px solid #EBD9A6;border-left:4px solid var(--gold);padding:12px 16px;margin-top:22px;font-size:13.5px;color:#5C4A12}
@@ -569,7 +569,8 @@ function runCols(kind,max){
   am.forEach(function(m){ if(out.length<max&&out.indexOf(m)<0&&m.g!==ANTHRO&&m.dir!==undefined) out.push(m); });
   return out;
 }
-function spiderAxes(){ return SPIDER.filter(inTpl); }
+/* Achsen des Netzdiagramms: die Auswahl der aktiven Vorlage (Reiter „Auswertungstemplates“), sonst die Standardachsen */
+function spiderAxes(){ return (window.KVApp&&KVApp.tplSpider)?KVApp.tplSpider():SPIDER.filter(inTpl); }
 /* Sprungkennwerte aus dem Sprungspeicher (VALD) kommen als zusätzliche Metriken dazu; Auswahl steht im Tab „Parameter“ */
 function setDynamicMetrics(defs){
   METRICS=STATIC_METRICS.concat(defs||[]);
@@ -1359,7 +1360,7 @@ function stepPick(d){
   fillPick(); renderSingle();
 }
 var SPIDER=["fmsSum","swSum","cmj","fmaxRel","tap","haeng","bz1rmRel","hbl"];
-var SPW=440, SPH=330, SP_REF="#6E7C8C";   /* Farbe des Durchschnitts-Layers */
+var SPW=540, SPH=330, SP_REF="#6E7C8C";   /* Farbe des Durchschnitts-Layers */
 /* Skala der Spiderchart:
    "range" = Spannweite des gesamten Kaders je Test (Mitte = schwächster, Rand = bester Wert).
              Person und Gruppendurchschnitt werden als echte Werte eingezeichnet, der Durchschnitt hat eine eigene Form.
@@ -1374,9 +1375,12 @@ function spFrac(k,v){
   var f=(v-st.min)/sp; if(MET[k].dir===-1) f=1-f;
   return Math.max(0,Math.min(1,f));
 }
-function spiderChart(p,g,color){
-  var W=SPW,H=SPH,cx=W/2,cy=H/2+2,R=92,ZMAX=2.5,RIN=0.1, isZ=(spScale==="z");
-  var axes=spiderAxes();
+/* Beschriftung einer Achse: Kurzname; Sprungkennwerte mit Sprungart davor, damit gleiche Kennwerte verschiedener Sprungarten unterscheidbar sind */
+function spLabel(m){ return m.s||(m.jump?m.g.replace(" (VALD)","")+" \u00b7 "+m.t:m.t); }
+function spCut(t,n){ t=String(t); return t.length>n?t.slice(0,Math.max(1,n-1))+"\u2026":t; }
+function spiderChart(p,g,color,axesOverride){
+  var W=SPW,H=SPH,cx=W/2,cy=H/2+2,R=100,ZMAX=2.5,RIN=0.1, isZ=(spScale==="z");
+  var axes=axesOverride||spiderAxes();
   if(axes.length<3) return "";   /* ein Netz braucht mindestens drei Achsen */
   var ax=axes.map(function(k){ return {k:k,m:MET[k],z:zOf(p,k,g),v:p.val[k],st:groupStat(g,k)}; });
   ax.forEach(function(a){
@@ -1426,17 +1430,19 @@ function spiderChart(p,g,color){
     'Ohne Messwert: '+esc(fehlt.join(", "))+'</text>';
   var area='<polygon points="'+pts.join(" ")+'" fill="'+col+'" fill-opacity="0.16" stroke="'+col+'" stroke-width="2.4"/>';
 
-  var labs="";
+  var labs="", f1=n>9?9.2:10.5, f2=n>9?8.4:9.5, f3=n>9?8:9;   /* bei vielen Achsen kleinere Schrift */
   ax.forEach(function(a,i){
     var lr=R+24, x=+px(i,lr), y=+py(i,lr);
     var anc = Math.abs(x-cx)<6 ? "middle" : (x>cx?"start":"end");
     var dy = Math.abs(x-cx)<6 ? (y<cy?-6:8) : 0;
     var zt = a.z==null? "—" : (a.z>0?"+":"")+de(a.z,2);
     var line2 = a.v==null ? "ohne Wert" : esc(de(a.v,a.m.d)+" "+a.m.u)+(isZ?"  ·  z "+zt:"");
-    labs+='<text x="'+x+'" y="'+(y-3+dy)+'" text-anchor="'+anc+'" font-size="10.5" font-weight="700" fill="#12161B">'+
-      esc(a.m.s||a.m.t)+'</text>'+
-      '<text x="'+x+'" y="'+(y+9+dy)+'" text-anchor="'+anc+'" font-size="9.5" fill="#4A555F">'+line2+'</text>'+
-      (a.st?'<text x="'+x+'" y="'+(y+20+dy)+'" text-anchor="'+anc+'" font-size="9" fill="'+SP_REF+'">\u00d8 '+esc(de(a.st.mean,meanD(a.m)))+'</text>':'');
+    /* lange Bezeichnungen so kürzen, dass sie nicht über den Rand der Grafik laufen */
+    var room = anc==="middle" ? 2*Math.min(x,W-x)-8 : (anc==="start" ? W-x-6 : x-6), cap = Math.max(8,Math.floor(room/(f1*0.58)));
+    labs+='<text x="'+x+'" y="'+(y-3+dy)+'" text-anchor="'+anc+'" font-size="'+f1+'" font-weight="700" fill="#12161B">'+
+      esc(spCut(spLabel(a.m),cap))+'</text>'+
+      '<text x="'+x+'" y="'+(y+9+dy)+'" text-anchor="'+anc+'" font-size="'+f2+'" fill="#4A555F">'+line2+'</text>'+
+      (a.st?'<text x="'+x+'" y="'+(y+20+dy)+'" text-anchor="'+anc+'" font-size="'+f3+'" fill="'+SP_REF+'">\u00d8 '+esc(de(a.st.mean,meanD(a.m)))+'</text>':'');
   });
   var scale="";
   if(isZ) [-2,0,2].forEach(function(z){

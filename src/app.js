@@ -77,6 +77,8 @@ var KVApp = (function () {
     memo = { list: list, ver: ver, out: list.filter(function (m) { return KVTpl.includes(t, m); }) };
     return memo.out;
   };
+  /* Achsen des Netzdiagramms der aktiven Vorlage als Metrik-Schlüssel (Sprungkennwerte ohne Daten und Kennwerte ohne Wertung entfallen) */
+  A.tplSpider = function () { return KVTpl.resolveAxes(KVTpl.spiderIds(A.activeTemplate()), METRICS); };
   A.tplBlock = function (name) { var t = A.activeTemplate(); return !t || t.blocks[name] !== false; };
   A.tplName = function () { var t = A.activeTemplate(); return t ? t.name : ""; };
   A.tplIsAll = function () { var t = A.activeTemplate(); return !t || t.kind === "all"; };
@@ -115,7 +117,7 @@ var KVApp = (function () {
     S.custom = S.custom.filter(function (d) { return d.k !== key; });
     S.imports.forEach(function (imp) { imp.rows.forEach(function (r) { delete r[key]; }); });
     S.imports = S.imports.filter(function (imp) { return imp.rows.some(function (r) { return Object.keys(r).some(function (k) { return k !== "name" && k !== "date" && k !== "q"; }); }); });
-    S.templates.forEach(function (t) { t.metrics = (t.metrics || []).filter(function (k) { return k !== key; }); });
+    S.templates.forEach(function (t) { t.metrics = (t.metrics || []).filter(function (k) { return k !== key; }); if (t.spider) t.spider = t.spider.filter(function (k) { return k !== key; }); });
     ST.kvSet("custom", S.custom); ST.kvSet("imports", S.imports); ST.kvSet("templates", S.templates); S.tplVer++;
   };
   A.saveCustom = function () { ST.kvSet("custom", S.custom); S.tplVer++; };
@@ -177,6 +179,7 @@ var KVApp = (function () {
     var names = selNames();
     var tpl = A.activeTemplate();   /* die Sprungkennwerte der aktiven Vorlage stehen immer zur Verfügung, auch wenn sie im Reiter „Parameter“ nicht angehakt sind */
     if (tpl && tpl.kind === "list") tpl.jump.params.forEach(function (n) { if (K.BYNAME[n] && names.indexOf(n) < 0) names.push(n); });
+    if (tpl) KVTpl.spiderJumpNames(tpl).forEach(function (n) { if (K.BYNAME[n] && names.indexOf(n) < 0) names.push(n); });   /* Achsen des Netzdiagramms brauchen ihre Kennwerte auch ohne Haken */
     var need = names.slice(); if (need.indexOf(K.BEST_KEY) < 0) need.push(K.BEST_KEY);
     var table = K.buildTable(S.results, { agg: S.settings.agg, names: need, resolve: resolver(excel) });
     var defs = K.metricDefs(table, names), keep = {}; defs.forEach(function (d) { keep[d.k] = 1; });

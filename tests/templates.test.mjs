@@ -53,6 +53,45 @@ test("Vorlagen: expand/same/normalize, Namen eindeutig, Export und Import", () =
   assert.deepEqual(KVTpl.fromImport({ foo: 1 }), []);
 });
 
+test("Netzdiagramm: Achsen je Vorlage (normalisieren, Standard, auflösen, Austausch)", () => {
+  /* Eintrag je Achse; Doppelte, Leeres und Nicht-Text fallen weg, höchstens 12 */
+  const many = Array.from({ length: 20 }, (_, i) => "k" + i);
+  assert.equal(KVTpl.spiderOf(undefined), null); assert.equal(KVTpl.spiderOf("x"), null);
+  assert.deepEqual(KVTpl.spiderOf(["a", "a", "", 5, null, "b"]), ["a", "b"]);
+  assert.equal(KVTpl.spiderOf(many).length, KVTpl.SPIDER_MAX); assert.equal(KVTpl.SPIDER_MIN, 3); assert.equal(KVTpl.SPIDER_MAX, 12);
+
+  /* ältere Vorlagen ohne Angabe: Standardachsen, soweit angekreuzt – wie bisher */
+  const old = KVTpl.normalize({ name: "alt", metrics: ["cmj", "hbl", "fmsSum", "gr"] });
+  assert.equal(old.spider, null);
+  assert.deepEqual(KVTpl.spiderIds(old), ["fmsSum", "cmj", "hbl"], "Reihenfolge der Standardachsen, nur angekreuzte");
+  const [alle, statik, kurz, sprung] = KVTpl.builtins();
+  assert.deepEqual(KVTpl.spiderIds(alle), KVTpl.SPIDER); assert.deepEqual(KVTpl.spiderIds(statik), KVTpl.SPIDER); assert.deepEqual(KVTpl.spiderIds(kurz), KVTpl.SPIDER);
+  assert.equal(KVTpl.spiderIds(sprung).length, 8); assert.ok(KVTpl.spiderIds(sprung).includes("CMJ||Peak Power / BM"));
+  /* ausdrückliche Auswahl gilt unabhängig von den Haken (auch ohne das Kennwert-Häkchen), Reihenfolge bleibt */
+  const own = KVTpl.normalize({ name: "e", metrics: ["cmj"], spider: ["sj", "cmj", "hopL", "CMJ||Flight Time"] });
+  assert.deepEqual(KVTpl.spiderIds(own), ["sj", "cmj", "hopL", "CMJ||Flight Time"]);
+  assert.deepEqual(KVTpl.spiderJumpNames(own), ["Flight Time"]);
+  assert.deepEqual(KVTpl.spiderJumpNames(old), []);
+
+  /* Editor-Arbeitskopie: immer eine ausdrückliche Liste (bei zu wenigen angekreuzten die acht Standardachsen) */
+  const u = { metrics: ["cmj", "sj"], groups: ["CMJ"], params: ["P"] };
+  assert.deepEqual(KVTpl.expand(KVTpl.normalize({ name: "x", metrics: ["cmj"] }), u).spider, KVTpl.SPIDER);
+  assert.deepEqual(KVTpl.expand(own, u).spider, ["sj", "cmj", "hopL", "CMJ||Flight Time"]);
+  assert.deepEqual(KVTpl.expand(alle, u).spider, KVTpl.SPIDER);
+
+  /* Auflösen: sportmotorisch über den Schlüssel, Sprungkennwerte über Sprungart||Kennwert; ohne Wertung (dir 0) und Unbekanntes entfällt */
+  const defs = [{ k: "cmj", dir: 1 }, { k: "bmi", dir: 0 }, { k: "j_cmj_ft", dir: 1, jump: 1, jg: "CMJ", jn: "Flight Time" }, { k: "j_sj_ft", dir: 1, jump: 1, jg: "SJ", jn: "Flight Time" }, { k: "c_x", dir: -1 }];
+  assert.deepEqual(KVTpl.resolveAxes(["SJ||Flight Time", "cmj", "bmi", "nix", "CMJ||Flight Time", "c_x", "cmj", "CMJ||gibt es nicht"], defs), ["j_sj_ft", "cmj", "j_cmj_ft", "c_x"]);
+  assert.equal(KVTpl.axisId("CMJ", "Flight Time"), "CMJ||Flight Time");
+
+  /* Vergleich (ungespeichert?) zählt die Reihenfolge der Achsen mit, Export und Import tragen die Achsen mit */
+  const a = KVTpl.normalize({ name: "a", metrics: ["cmj"], spider: ["cmj", "sj", "hopL"] }), b = KVTpl.normalize({ name: "a", metrics: ["cmj"], spider: ["sj", "cmj", "hopL"] });
+  assert.ok(!KVTpl.same(a, b), "andere Reihenfolge = geändert"); assert.ok(KVTpl.same(a, { ...a, name: "anders" }));
+  assert.ok(!KVTpl.same(a, { ...a, spider: ["cmj", "sj"] }));
+  const back = KVTpl.fromImport(JSON.parse(JSON.stringify(KVTpl.toExport([{ ...a, id: "tpl:9" }, { ...old, id: "tpl:8" }]))));
+  assert.deepEqual(back[0].spider, ["cmj", "sj", "hopL"]); assert.equal(back[1].spider, null, "Vorlage ohne Angabe bleibt ohne Angabe");
+});
+
 test("CSV-Import: Spalten erkennen (Name, Datum, bekannter Test, neuer Parameter, ignorieren)", () => {
   const grid = [
     ["Name", "Testdatum", "Kader", "CMJ o.A. [cm]", "Sprint 10 m [s]", "Medizinball (m)", "BMI", "Bemerkung", "", "Qualität"],

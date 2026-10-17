@@ -235,7 +235,7 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
 .lb .n,.lb .t{display:block}
 .reg{display:block}
 #ltbody td.nm{min-width:190px}
-.svgbox{max-width:600px}
+.svgbox{max-width:660px}
 @media (min-width:960px){.spiderpanel{grid-column:span 2}}
 .tst.mx tr.sum td{border-top:1px solid var(--ink);font-weight:700}
 .demo{background:var(--gold-soft);border:1px solid #EBD9A6;border-left:4px solid var(--gold);padding:12px 16px;margin-top:22px;font-size:13.5px;color:#5C4A12}
@@ -382,6 +382,13 @@ details.kv-d p,details.kv-d li{line-height:1.5}
 .kv-wiz td.det input,.kv-wiz td.det select{font-size:13px;padding:6px 8px}
 .kv-wiz table.kv-t td{vertical-align:top}
 .kv-panel .kv-tblbox input[type=text],.kv-panel .kv-tblbox input[type=number],.kv-panel .kv-tblbox select{font-size:13px;padding:5px 7px}
+/* Netzdiagramm-Achsen in den Auswertungstemplates */
+.kv-axes{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:9px 14px;margin:8px 0 4px}
+.kv-axis{display:flex;flex-direction:column;gap:3px;min-width:0}
+.kv-axis>span{font-family:var(--disp);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.kv-axis select{width:100%;min-width:0}
+.kv-spprev{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)}
+.kv-spsvg{max-width:540px}.kv-spsvg svg{display:block;width:100%;height:auto;border:1px solid var(--line-soft);background:#fff}
 </style>
 </head>
 <body>
@@ -684,7 +691,8 @@ function runCols(kind,max){
   am.forEach(function(m){ if(out.length<max&&out.indexOf(m)<0&&m.g!==ANTHRO&&m.dir!==undefined) out.push(m); });
   return out;
 }
-function spiderAxes(){ return SPIDER.filter(inTpl); }
+/* Achsen des Netzdiagramms: die Auswahl der aktiven Vorlage (Reiter „Auswertungstemplates“), sonst die Standardachsen */
+function spiderAxes(){ return (window.KVApp&&KVApp.tplSpider)?KVApp.tplSpider():SPIDER.filter(inTpl); }
 /* Sprungkennwerte aus dem Sprungspeicher (VALD) kommen als zusätzliche Metriken dazu; Auswahl steht im Tab „Parameter“ */
 function setDynamicMetrics(defs){
   METRICS=STATIC_METRICS.concat(defs||[]);
@@ -1474,7 +1482,7 @@ function stepPick(d){
   fillPick(); renderSingle();
 }
 var SPIDER=["fmsSum","swSum","cmj","fmaxRel","tap","haeng","bz1rmRel","hbl"];
-var SPW=440, SPH=330, SP_REF="#6E7C8C";   /* Farbe des Durchschnitts-Layers */
+var SPW=540, SPH=330, SP_REF="#6E7C8C";   /* Farbe des Durchschnitts-Layers */
 /* Skala der Spiderchart:
    "range" = Spannweite des gesamten Kaders je Test (Mitte = schwächster, Rand = bester Wert).
              Person und Gruppendurchschnitt werden als echte Werte eingezeichnet, der Durchschnitt hat eine eigene Form.
@@ -1489,9 +1497,12 @@ function spFrac(k,v){
   var f=(v-st.min)/sp; if(MET[k].dir===-1) f=1-f;
   return Math.max(0,Math.min(1,f));
 }
-function spiderChart(p,g,color){
-  var W=SPW,H=SPH,cx=W/2,cy=H/2+2,R=92,ZMAX=2.5,RIN=0.1, isZ=(spScale==="z");
-  var axes=spiderAxes();
+/* Beschriftung einer Achse: Kurzname; Sprungkennwerte mit Sprungart davor, damit gleiche Kennwerte verschiedener Sprungarten unterscheidbar sind */
+function spLabel(m){ return m.s||(m.jump?m.g.replace(" (VALD)","")+" \u00b7 "+m.t:m.t); }
+function spCut(t,n){ t=String(t); return t.length>n?t.slice(0,Math.max(1,n-1))+"\u2026":t; }
+function spiderChart(p,g,color,axesOverride){
+  var W=SPW,H=SPH,cx=W/2,cy=H/2+2,R=100,ZMAX=2.5,RIN=0.1, isZ=(spScale==="z");
+  var axes=axesOverride||spiderAxes();
   if(axes.length<3) return "";   /* ein Netz braucht mindestens drei Achsen */
   var ax=axes.map(function(k){ return {k:k,m:MET[k],z:zOf(p,k,g),v:p.val[k],st:groupStat(g,k)}; });
   ax.forEach(function(a){
@@ -1541,17 +1552,19 @@ function spiderChart(p,g,color){
     'Ohne Messwert: '+esc(fehlt.join(", "))+'</text>';
   var area='<polygon points="'+pts.join(" ")+'" fill="'+col+'" fill-opacity="0.16" stroke="'+col+'" stroke-width="2.4"/>';
 
-  var labs="";
+  var labs="", f1=n>9?9.2:10.5, f2=n>9?8.4:9.5, f3=n>9?8:9;   /* bei vielen Achsen kleinere Schrift */
   ax.forEach(function(a,i){
     var lr=R+24, x=+px(i,lr), y=+py(i,lr);
     var anc = Math.abs(x-cx)<6 ? "middle" : (x>cx?"start":"end");
     var dy = Math.abs(x-cx)<6 ? (y<cy?-6:8) : 0;
     var zt = a.z==null? "—" : (a.z>0?"+":"")+de(a.z,2);
     var line2 = a.v==null ? "ohne Wert" : esc(de(a.v,a.m.d)+" "+a.m.u)+(isZ?"  ·  z "+zt:"");
-    labs+='<text x="'+x+'" y="'+(y-3+dy)+'" text-anchor="'+anc+'" font-size="10.5" font-weight="700" fill="#12161B">'+
-      esc(a.m.s||a.m.t)+'</text>'+
-      '<text x="'+x+'" y="'+(y+9+dy)+'" text-anchor="'+anc+'" font-size="9.5" fill="#4A555F">'+line2+'</text>'+
-      (a.st?'<text x="'+x+'" y="'+(y+20+dy)+'" text-anchor="'+anc+'" font-size="9" fill="'+SP_REF+'">\u00d8 '+esc(de(a.st.mean,meanD(a.m)))+'</text>':'');
+    /* lange Bezeichnungen so kürzen, dass sie nicht über den Rand der Grafik laufen */
+    var room = anc==="middle" ? 2*Math.min(x,W-x)-8 : (anc==="start" ? W-x-6 : x-6), cap = Math.max(8,Math.floor(room/(f1*0.58)));
+    labs+='<text x="'+x+'" y="'+(y-3+dy)+'" text-anchor="'+anc+'" font-size="'+f1+'" font-weight="700" fill="#12161B">'+
+      esc(spCut(spLabel(a.m),cap))+'</text>'+
+      '<text x="'+x+'" y="'+(y+9+dy)+'" text-anchor="'+anc+'" font-size="'+f2+'" fill="#4A555F">'+line2+'</text>'+
+      (a.st?'<text x="'+x+'" y="'+(y+20+dy)+'" text-anchor="'+anc+'" font-size="'+f3+'" fill="'+SP_REF+'">\u00d8 '+esc(de(a.st.mean,meanD(a.m)))+'</text>':'');
   });
   var scale="";
   if(isZ) [-2,0,2].forEach(function(z){
@@ -3853,6 +3866,9 @@ var KVCore = (function () {
      metrics  – angekreuzte sportmotorische Kennwerte (Schlüssel wie in der Auswertung, inkl. eigener Parameter aus CSV-Importen)
      jump     – Sprungkennwerte aus VALD: Sprungarten (groups) × Kennwerte (params, Namen aus dem ForceDecks-Katalog)
      blocks   – Bausteine: spider (Netzdiagramm), deviation (Vergleich zur Gruppe mit Abweichung), rank (Rangplatz), runs (Durchgänge im Vergleich)
+     spider   – Achsen des Netzdiagramms in Reihenfolge (3 bis 12). Eintrag = Schlüssel eines sportmotorischen Kennwerts ("cmj", "c_sprint_10_m")
+                oder eines Sprungkennwerts als „Sprungart||Kennwert“ ("CMJ||Peak Power / BM"). Fehlt die Angabe (ältere Vorlagen), gelten die
+                Standardachsen SPIDER, soweit sie in der Vorlage angekreuzt sind.
    Eingebaute Vorlagen sind fest im Code und nicht änderbar („Speichern unter …“ legt eine eigene Kopie an).
    Reine Logik ohne Seitenzugriff (läuft auch in Node, siehe tests/). */
 var KVTpl = (function () {
@@ -3865,6 +3881,7 @@ var KVTpl = (function () {
   ];
   var BLOCK_DEFAULT = { spider: true, deviation: true, rank: false, runs: true };
   var SPIDER = ["fmsSum", "swSum", "cmj", "fmaxRel", "tap", "haeng", "bz1rmRel", "hbl"];
+  var SPIDER_MIN = 3, SPIDER_MAX = 12;
   var JUMP_GROUPS = ["CMJ", "SJ", "SL-CMJ|L", "SL-CMJ|R", "SL-SJ|L", "SL-SJ|R", "LSI"];
   /* kompakte Auswahl an Sprungkennwerten (entspricht der Voreinstellung im Reiter „Parameter“) */
   var JUMP_COMPACT = ["Jump Height (Imp-Mom)", "Jump Height (Flight Time)", "RSI-modified (Imp-Mom)", "Flight Time", "Contraction Time", "Countermovement Depth",
@@ -3882,16 +3899,42 @@ var KVTpl = (function () {
       { id: "tpl:sportmotorik", name: "Sportmotorik komplett (ohne Sprungkennwerte)", builtin: true, kind: "static", blocks: blocksOf() },
       { id: "tpl:kurz", name: "Kurzprofil (Netzdiagramm-Tests)", builtin: true, kind: "list", metrics: ["gr", "gew", "bmi"].concat(SPIDER), jump: { groups: [], params: [] }, blocks: blocksOf() },
       { id: "tpl:sprung", name: "Sprungkraft mit VALD", builtin: true, kind: "list", metrics: ["gr", "gew", "bmi", "cmj", "sj", "psa", "hopL", "hopR", "hopDiff"],
-        jump: { groups: ["CMJ", "SJ", "SL-CMJ|L", "SL-CMJ|R", "LSI"], params: JUMP_COMPACT.slice() }, blocks: blocksOf({ rank: true }) }
+        jump: { groups: ["CMJ", "SJ", "SL-CMJ|L", "SL-CMJ|R", "LSI"], params: JUMP_COMPACT.slice() }, blocks: blocksOf({ rank: true }),
+        spider: ["cmj", "sj", "psa", "hopL", "hopR", "CMJ||RSI-modified (Imp-Mom)", "CMJ||Peak Power / BM", "CMJ||Concentric Peak Force / BM"] }
     ];
+  }
+  /* Achsen des Netzdiagramms: nur nicht-leere Texte, ohne Doppelte, höchstens SPIDER_MAX; null = Standard */
+  function spiderOf(a) {
+    if (!Array.isArray(a)) return null;
+    return uniq(a.filter(function (x) { return typeof x === "string" && x; })).slice(0, SPIDER_MAX);
   }
   /* gespeicherte Daten prüfen und ergänzen */
   function normalize(t) {
     var o = { id: t.id || newId(), name: String(t.name || "Vorlage").slice(0, 80), builtin: !!t.builtin, kind: t.kind || "list",
-      metrics: uniq(t.metrics), jump: { groups: uniq(t.jump && t.jump.groups), params: uniq(t.jump && t.jump.params) }, blocks: blocksOf(t.blocks) };
+      metrics: uniq(t.metrics), jump: { groups: uniq(t.jump && t.jump.groups), params: uniq(t.jump && t.jump.params) }, blocks: blocksOf(t.blocks), spider: spiderOf(t.spider) };
     if (t.created) o.created = t.created; if (t.updated) o.updated = t.updated;
     return o;
   }
+  /* Achsen, die die Vorlage tatsächlich verwendet (Reihenfolge wie gespeichert); ohne eigene Angabe die Standardachsen, soweit angekreuzt */
+  function spiderIds(t) {
+    if (t && t.spider) return t.spider.slice();
+    if (t && t.kind === "list") { var have = {}; (t.metrics || []).forEach(function (k) { have[k] = 1; }); return SPIDER.filter(function (k) { return have[k]; }); }
+    return SPIDER.slice();
+  }
+  /* Achsen-Einträge in Metriken der Auswertung auflösen (metrics = Definitionen wie in METRICS); unbekannte und wertungslose (dir 0) entfallen */
+  function resolveAxes(ids, metrics) {
+    var byK = {}, byJ = {};
+    metrics.forEach(function (m) { byK[m.k] = m; if (m.jump) byJ[m.jg + "||" + m.jn] = m; });
+    var out = [];
+    (ids || []).forEach(function (id) { var m = id.indexOf("||") > 0 ? byJ[id] : byK[id]; if (m && m.dir && out.indexOf(m.k) < 0) out.push(m.k); });
+    return out;
+  }
+  /* Sprungkennwerte, die die Achsen brauchen (Namen aus dem ForceDecks-Katalog) */
+  function spiderJumpNames(t) {
+    var out = []; spiderIds(t).forEach(function (id) { var i = id.indexOf("||"); if (i > 0 && out.indexOf(id.slice(i + 2)) < 0) out.push(id.slice(i + 2)); });
+    return out;
+  }
+  function axisId(group, name) { return group + "||" + name; }
   /* gehört der Kennwert m (Definition aus der Auswertung) in die Vorlage? */
   function includes(t, m) {
     if (!t || t.kind === "all") return true;
@@ -3913,11 +3956,13 @@ var KVTpl = (function () {
     var o = normalize(t); o.kind = "list";
     if (t.kind === "all") { o.metrics = universe.metrics.slice(); o.jump = { groups: universe.groups.slice(), params: universe.params.slice() }; }
     else if (t.kind === "static") { o.metrics = universe.metrics.slice(); o.jump = { groups: [], params: [] }; }
+    /* im Editor immer eine ausdrückliche Liste: ohne eigene Angabe die Standardachsen (bei zu wenigen angekreuzten alle acht) */
+    if (!o.spider) { var d = spiderIds(o); o.spider = d.length >= SPIDER_MIN ? d : SPIDER.slice(); }
     return o;
   }
   function sig(t) {
     var n = normalize(t);
-    return JSON.stringify([n.kind, n.metrics.slice().sort(), n.jump.groups.slice().sort(), n.jump.params.slice().sort(), n.blocks]);
+    return JSON.stringify([n.kind, n.metrics.slice().sort(), n.jump.groups.slice().sort(), n.jump.params.slice().sort(), n.blocks, n.spider]);   /* die Reihenfolge der Achsen zählt */
   }
   function same(a, b) { return sig(a) === sig(b); }
   function uniqueName(list, base) {
@@ -3928,15 +3973,16 @@ var KVTpl = (function () {
   /* Austausch als Datei */
   function toExport(list) {
     return { format: "kader-auswertungsvorlagen", version: 1, exported: new Date().toISOString(),
-      templates: list.filter(function (t) { return !t.builtin; }).map(function (t) { var n = normalize(t); return { name: n.name, metrics: n.metrics, jump: n.jump, blocks: n.blocks, created: n.created, updated: n.updated }; }) };
+      templates: list.filter(function (t) { return !t.builtin; }).map(function (t) { var n = normalize(t); return { name: n.name, metrics: n.metrics, jump: n.jump, blocks: n.blocks, spider: n.spider, created: n.created, updated: n.updated }; }) };
   }
   function fromImport(obj) {
     var list = Array.isArray(obj) ? obj : obj && Array.isArray(obj.templates) ? obj.templates : obj && obj.name ? [obj] : [];
     return list.filter(function (t) { return t && t.name && (Array.isArray(t.metrics) || (t.jump && Array.isArray(t.jump.params))); })
-      .map(function (t) { var n = normalize({ name: t.name, metrics: t.metrics, jump: t.jump, blocks: t.blocks, created: t.created, updated: t.updated }); n.id = newId(); n.builtin = false; n.kind = "list"; return n; });
+      .map(function (t) { var n = normalize({ name: t.name, metrics: t.metrics, jump: t.jump, blocks: t.blocks, spider: t.spider, created: t.created, updated: t.updated }); n.id = newId(); n.builtin = false; n.kind = "list"; return n; });
   }
 
-  return { BLOCKS: BLOCKS, BLOCK_DEFAULT: BLOCK_DEFAULT, SPIDER: SPIDER, JUMP_GROUPS: JUMP_GROUPS, JUMP_COMPACT: JUMP_COMPACT, builtins: builtins, normalize: normalize,
+  return { BLOCKS: BLOCKS, BLOCK_DEFAULT: BLOCK_DEFAULT, SPIDER: SPIDER, SPIDER_MIN: SPIDER_MIN, SPIDER_MAX: SPIDER_MAX, spiderOf: spiderOf, spiderIds: spiderIds,
+    resolveAxes: resolveAxes, spiderJumpNames: spiderJumpNames, axisId: axisId, JUMP_GROUPS: JUMP_GROUPS, JUMP_COMPACT: JUMP_COMPACT, builtins: builtins, normalize: normalize,
     includes: includes, prepare: prepare, expand: expand, same: same, sig: sig, uniqueName: uniqueName, toExport: toExport, fromImport: fromImport, newId: newId, blocksOf: blocksOf };
 })();
 </script>
@@ -4421,6 +4467,8 @@ var KVApp = (function () {
     memo = { list: list, ver: ver, out: list.filter(function (m) { return KVTpl.includes(t, m); }) };
     return memo.out;
   };
+  /* Achsen des Netzdiagramms der aktiven Vorlage als Metrik-Schlüssel (Sprungkennwerte ohne Daten und Kennwerte ohne Wertung entfallen) */
+  A.tplSpider = function () { return KVTpl.resolveAxes(KVTpl.spiderIds(A.activeTemplate()), METRICS); };
   A.tplBlock = function (name) { var t = A.activeTemplate(); return !t || t.blocks[name] !== false; };
   A.tplName = function () { var t = A.activeTemplate(); return t ? t.name : ""; };
   A.tplIsAll = function () { var t = A.activeTemplate(); return !t || t.kind === "all"; };
@@ -4459,7 +4507,7 @@ var KVApp = (function () {
     S.custom = S.custom.filter(function (d) { return d.k !== key; });
     S.imports.forEach(function (imp) { imp.rows.forEach(function (r) { delete r[key]; }); });
     S.imports = S.imports.filter(function (imp) { return imp.rows.some(function (r) { return Object.keys(r).some(function (k) { return k !== "name" && k !== "date" && k !== "q"; }); }); });
-    S.templates.forEach(function (t) { t.metrics = (t.metrics || []).filter(function (k) { return k !== key; }); });
+    S.templates.forEach(function (t) { t.metrics = (t.metrics || []).filter(function (k) { return k !== key; }); if (t.spider) t.spider = t.spider.filter(function (k) { return k !== key; }); });
     ST.kvSet("custom", S.custom); ST.kvSet("imports", S.imports); ST.kvSet("templates", S.templates); S.tplVer++;
   };
   A.saveCustom = function () { ST.kvSet("custom", S.custom); S.tplVer++; };
@@ -4521,6 +4569,7 @@ var KVApp = (function () {
     var names = selNames();
     var tpl = A.activeTemplate();   /* die Sprungkennwerte der aktiven Vorlage stehen immer zur Verfügung, auch wenn sie im Reiter „Parameter“ nicht angehakt sind */
     if (tpl && tpl.kind === "list") tpl.jump.params.forEach(function (n) { if (K.BYNAME[n] && names.indexOf(n) < 0) names.push(n); });
+    if (tpl) KVTpl.spiderJumpNames(tpl).forEach(function (n) { if (K.BYNAME[n] && names.indexOf(n) < 0) names.push(n); });   /* Achsen des Netzdiagramms brauchen ihre Kennwerte auch ohne Haken */
     var need = names.slice(); if (need.indexOf(K.BEST_KEY) < 0) need.push(K.BEST_KEY);
     var table = K.buildTable(S.results, { agg: S.settings.agg, names: need, resolve: resolver(excel) });
     var defs = K.metricDefs(table, names), keep = {}; defs.forEach(function (d) { keep[d.k] = 1; });
@@ -5401,14 +5450,14 @@ var KVApp = (function () {
 /* ---- src/tab-templates.js ---- */
 /* ===== Reiter „Auswertungstemplates“ =====
    1. Vorlagen wählen, ändern, speichern (eigene Vorlagen), Austausch als Datei
-   2. Bausteine der Ausgabe (Netzdiagramm, Vergleich zur Gruppe, Rang, Durchgänge)
+   2. Bausteine der Ausgabe (Netzdiagramm, Vergleich zur Gruppe, Rang, Durchgänge) und Achsen des Netzdiagramms (Anzahl und je Achse ein Kennwert)
    3. Auswahl der sportmotorischen Tests und der Sprungkennwerte (VALD) – nur das Angekreuzte erscheint in Einzelauswertung, PDF und Excel
    4. Weitere Parameter per CSV nachträglich importieren (eigene Parameter)
    5. Speicher: Browser-Datenbank und automatische Sicherung in einen Ordner */
 (function (A) {
   "use strict";
   var S = A.S, K = KVCore, ST = KVStore, el = A.el, nf = A.nf;
-  var U = { id: "", d: null, mq: "", jq: "", mode: null, imp: null, delCustom: "", sync: null, importBusy: false };
+  var U = { id: "", d: null, mq: "", jq: "", mode: null, imp: null, delCustom: "", sync: null, importBusy: false, prev: "" };
   function put(parent) { Array.prototype.slice.call(arguments, 1).forEach(function (k) { if (k != null && k !== false) parent.append(k); }); return parent; }
   function btn(label, fn, cls, o) { o = o || {}; return el("button", { type: "button", class: "kv-b " + (cls || ""), disabled: !!o.disabled, title: o.title || false, onclick: fn }, label); }
 
@@ -5416,10 +5465,10 @@ var KVApp = (function () {
   function load(id) {
     var t = A.findTemplate(id) || A.findTemplate("tpl:alle"), x = KVTpl.expand(t, A.universe());
     U.id = t.id;
-    U.d = { name: t.name, builtin: !!t.builtin, metrics: new Set(x.metrics), groups: new Set(x.jump.groups), params: new Set(x.jump.params), blocks: Object.assign({}, x.blocks) };
+    U.d = { name: t.name, builtin: !!t.builtin, metrics: new Set(x.metrics), groups: new Set(x.jump.groups), params: new Set(x.jump.params), blocks: Object.assign({}, x.blocks), spider: x.spider.slice() };
   }
   function toTpl() {
-    return { name: U.d.name, kind: "list", metrics: Array.from(U.d.metrics), jump: { groups: Array.from(U.d.groups), params: Array.from(U.d.params) }, blocks: Object.assign({}, U.d.blocks) };
+    return { name: U.d.name, kind: "list", metrics: Array.from(U.d.metrics), jump: { groups: Array.from(U.d.groups), params: Array.from(U.d.params) }, blocks: Object.assign({}, U.d.blocks), spider: U.d.spider.slice() };
   }
   function savedExpanded() { return KVTpl.expand(A.findTemplate(U.id), A.universe()); }
   function dirty() { return !KVTpl.same(toTpl(), savedExpanded()); }
@@ -5525,12 +5574,12 @@ var KVApp = (function () {
   function findOwn(id) { for (var i = 0; i < S.templates.length; i++) if (S.templates[i].id === id) return S.templates[i]; return null; }
   function saveCurrent() {
     var x = findOwn(U.id); if (!x) return; var n = toTpl();
-    x.metrics = n.metrics; x.jump = n.jump; x.blocks = n.blocks; x.updated = new Date().toISOString();
+    x.metrics = n.metrics; x.jump = n.jump; x.blocks = n.blocks; x.spider = n.spider; x.updated = new Date().toISOString();
     A.saveTemplates(); if (S.activeTpl === U.id) A.refresh(true);
     toast("„" + x.name + "“ gespeichert."); A.renderTemplates();
   }
   function saveAs(nm) {
-    var n = toTpl(), t = KVTpl.normalize({ id: KVTpl.newId(), name: KVTpl.uniqueName(A.templates(), nm), metrics: n.metrics, jump: n.jump, blocks: n.blocks, created: new Date().toISOString(), updated: new Date().toISOString() });
+    var n = toTpl(), t = KVTpl.normalize({ id: KVTpl.newId(), name: KVTpl.uniqueName(A.templates(), nm), metrics: n.metrics, jump: n.jump, blocks: n.blocks, spider: n.spider, created: new Date().toISOString(), updated: new Date().toISOString() });
     S.templates.push(t); U.id = t.id; U.d.name = t.name; U.d.builtin = false; A.saveTemplates(); toast("„" + t.name + "“ gespeichert – dauerhaft im Sprungspeicher.");
   }
   function exportTpls() { saveBlob(new Blob([JSON.stringify(KVTpl.toExport(S.templates), null, 2)], { type: "application/json" }), "Auswertungsvorlagen_" + stamp() + ".json"); toast("Vorlagen exportiert."); }
@@ -5541,12 +5590,99 @@ var KVApp = (function () {
     var grid = el("div", { class: "kv-blocks" });
     KVTpl.BLOCKS.forEach(function (b) {
       var cb = el("input", { type: "checkbox", checked: !!U.d.blocks[b[0]] });
-      cb.onchange = function () { U.d.blocks[b[0]] = cb.checked; refreshBar(); };
+      cb.onchange = function () { U.d.blocks[b[0]] = cb.checked; refreshBar(); if (b[0] === "spider") refreshSpider(); };
       grid.append(el("label", { class: "kv-block" }, cb, el("span", {}, el("b", {}, b[1]), el("small", {}, b[2]))));
     });
     put(box, grid, el("p", { class: "kv-note" }, "Stammdaten (Name, Bootsklasse, Kader, Alter) stehen immer im Kopf des PDF."));
     return box;
   }
+  /* ================= 2b. Netzdiagramm: Anzahl der Achsen und je Achse ein Kennwert ================= */
+  /* wählbar: Kennwerte mit klarer Wertung (größer oder kleiner = besser); Sprungkennwerte nur aus den für die Vorlage angekreuzten Sprungarten × Kennwerten */
+  function axisCats() {
+    var cats = [], idx = {};
+    STATIC_METRICS.concat(S.custom).forEach(function (m) {
+      if (!m.dir) return;
+      var c = idx[m.g]; if (!c) { c = idx[m.g] = { name: m.g, items: [] }; cats.push(c); }
+      c.items.push({ id: m.k, label: m.t + (m.u ? " [" + m.u + "]" : "") + (m.custom ? " · eigener Parameter" : "") });
+    });
+    KVTpl.JUMP_GROUPS.forEach(function (g) {
+      if (!U.d.groups.has(g)) return;
+      var items = [];
+      K.ALL.forEach(function (pp) {
+        if (!U.d.params.has(pp.name)) return;
+        var ok = g === "LSI" ? K.LSI_NAMES.indexOf(pp.name) >= 0 : K.groupAllows(g, pp.cat) && K.dirOf(pp.name) !== 0;
+        if (ok) items.push({ id: KVTpl.axisId(g, pp.name), label: pp.name + (g === "LSI" || /Asymmetry/.test(pp.name) ? " [%]" : pp.unit ? " [" + pp.unit + "]" : "") });
+      });
+      if (items.length) cats.push({ name: K.GROUPS[g].label, items: items });
+    });
+    return cats;
+  }
+  function axisName(id) {   /* lesbarer Name für Einträge, die nicht mehr zur Auswahl stehen */
+    var i = id.indexOf("||"); if (i > 0) { var g = K.GROUPS[id.slice(0, i)]; return (g ? g.label.replace(" (VALD)", "") : id.slice(0, i)) + " · " + id.slice(i + 2); }
+    var m = MET[id]; return m ? m.t : id;
+  }
+  /* nächster Vorschlag, wenn die Anzahl steigt: erst die Standardachsen, dann angekreuzte Tests, dann alles übrige */
+  function nextAxis(cats) {
+    var have = {}; U.d.spider.forEach(function (k) { have[k] = 1; });
+    var ok = {}; cats.forEach(function (c) { c.items.forEach(function (it) { ok[it.id] = 1; }); });
+    var pool = KVTpl.SPIDER.concat(Array.from(U.d.metrics));
+    cats.forEach(function (c) { c.items.forEach(function (it) { pool.push(it.id); }); });
+    for (var i = 0; i < pool.length; i++) if (ok[pool[i]] && !have[pool[i]]) return pool[i];
+    return "";
+  }
+  function setAxisCount(n, cats) {
+    n = Math.max(KVTpl.SPIDER_MIN, Math.min(KVTpl.SPIDER_MAX, n));
+    while (U.d.spider.length > n) U.d.spider.pop();
+    while (U.d.spider.length < n) { var k = nextAxis(cats); if (!k) break; U.d.spider.push(k); }
+  }
+  function previewBox(on) {
+    var box = el("div", { class: "kv-spprev" });
+    if (!on) return put(box, el("p", { class: "kv-hint" }, "Der Baustein „Leistungsprofil (Netzdiagramm)“ ist oben ausgeschaltet – die Vorlage zeigt kein Netzdiagramm."));
+    var list = typeof players !== "undefined" ? players : [];
+    if (!list.length) return put(box, el("p", { class: "kv-hint" }, "Für die Vorschau werden Auswertungsdaten gebraucht (Rohdatenblatt oder Sprünge laden)."));
+    var keys = KVTpl.resolveAxes(U.d.spider, METRICS);
+    /* ohne eigene Wahl: die Person mit den meisten Messwerten auf diesen Achsen (so zeigt die Vorschau echte Flächen) */
+    var best = list[0], bn = -1; list.forEach(function (p) { var c = keys.filter(function (k) { return p.val[k] != null; }).length; if (c > bn) { bn = c; best = p; } });
+    var cur = findPlayer(U.prev) || best;
+    var who = el("select", { "aria-label": "Vorschau für" }, list.map(function (p) { return el("option", { value: p.name, selected: p.name === cur.name }, p.name); }));
+    who.onchange = function () { U.prev = who.value; refreshSpider(); };
+    var miss = U.d.spider.filter(function (id) { return KVTpl.resolveAxes([id], METRICS).length === 0; });
+    var svg = keys.length >= KVTpl.SPIDER_MIN ? spiderChart(cur, effRef(cur), null, keys) : "";
+    put(box, el("div", { class: "kv-row" }, el("span", { class: "kv-mini" }, "Vorschau mit:"), who));
+    if (svg) { var h = el("div", { class: "kv-spsvg" }); h.innerHTML = svg; box.append(h); }
+    else box.append(el("p", { class: "kv-hint" }, "Für ein Netz braucht es mindestens drei Achsen mit Messwerten."));
+    if (miss.length) box.append(el("p", { class: "kv-note" }, "Nicht in der Vorschau: " + miss.map(axisName).join(", ") + " – dafür liegen keine Auswertungsdaten vor. Sprungkennwerte erscheinen in der Vorschau, sobald die Vorlage gespeichert und als Auswertung aktiv ist und Sprünge importiert sind."));
+    return box;
+  }
+  function panelSpider() {
+    var on = !!U.d.blocks.spider, cats = axisCats(), have = {}, listed = {};
+    cats.forEach(function (c) { c.items.forEach(function (it) { listed[it.id] = 1; }); });
+    U.d.spider.forEach(function (k) { have[k] = 1; });
+    var box = el("div", { class: "kv-panel", id: "kvSpider" }, el("h3", {}, "Netzdiagramm (Leistungsprofil)"),
+      el("p", { class: "hint" }, "Wie viele Achsen hat das Netz, und welcher Kennwert steht auf welcher Achse? Zur Wahl stehen alle sportmotorischen Tests (auch eigene Parameter aus CSV-Importen) mit klarer Wertung – Größe, Masse und BMI gehören nicht dazu – sowie die Sprungkennwerte, die unten für diese Vorlage angekreuzt sind. Die Reihenfolge entspricht dem Uhrzeigersinn, beginnend oben."));
+    var nsel = el("select", { "aria-label": "Anzahl der Achsen", disabled: !on });
+    for (var i = KVTpl.SPIDER_MIN; i <= KVTpl.SPIDER_MAX; i++) nsel.append(el("option", { value: i, selected: i === U.d.spider.length }, i + " Achsen"));
+    nsel.onchange = function () { setAxisCount(+nsel.value, cats); refreshBar(); refreshSpider(); };
+    var reset = btn("Standard (8 Tests)", function () { U.d.spider = KVTpl.SPIDER.slice(); refreshBar(); refreshSpider(); }, "s", { disabled: !on, title: "Die acht Standardachsen: Screen, Rumpf, CMJ, Fmax relativ, Tapping, Hängen, 1-RM Bankziehen relativ, HBL" });
+    put(box, el("div", { class: "kv-row" }, el("label", {}, "Anzahl der Achsen:", nsel), reset,
+      el("span", { class: "kv-mini" }, U.d.spider.length + " Achsen" + (U.d.spider.length >= KVTpl.SPIDER_MAX ? " (Höchstzahl)" : ""))));
+    if (!U.d.groups.size || !U.d.params.size) box.append(el("p", { class: "kv-note" }, "Sprungkennwerte (VALD) stehen hier zur Wahl, sobald weiter unten Sprungarten und Kennwerte angekreuzt sind."));
+    var grid = el("div", { class: "kv-axes" });
+    U.d.spider.forEach(function (cur, i) {
+      var sel = el("select", { "aria-label": "Achse " + (i + 1), disabled: !on });
+      cats.forEach(function (c) {
+        sel.append(el("optgroup", { label: c.name }, c.items.map(function (it) {
+          return el("option", { value: it.id, selected: it.id === cur, disabled: it.id !== cur && !!have[it.id] }, it.label);
+        })));
+      });
+      if (!listed[cur]) sel.append(el("optgroup", { label: "Nicht mehr in der Auswahl" }, el("option", { value: cur, selected: true }, axisName(cur))));
+      sel.onchange = function () { U.d.spider[i] = sel.value; refreshBar(); refreshSpider(); };
+      grid.append(el("label", { class: "kv-axis" }, el("span", {}, "Achse " + (i + 1)), sel));
+    });
+    put(box, grid, previewBox(on));
+    return box;
+  }
+  function refreshSpider() { var o = document.getElementById("kvSpider"); if (o) o.replaceWith(panelSpider()); }
   function refreshBar() { var bar = document.getElementById("kvTplBar"); if (bar) bar.replaceWith(panelBar()); var n = document.getElementById("kvTplCount"); if (n) n.textContent = countText(); }
   function countText() { var c = counts(); return c.m + " sportmotorische Kennwerte · " + c.p + " Sprungkennwerte × " + c.g + " Sprungarten"; }
 
@@ -5563,7 +5699,7 @@ var KVApp = (function () {
       cats: cats, placeholder: "Test suchen, z. B. „Screen“, „Swiss“, „Hopp“", height: 380, getQ: function () { return U.mq; }, setQ: function (v) { U.mq = v; },
       has: function (k) { return U.d.metrics.has(k); }, set: function (keys, on) { keys.forEach(function (k) { on ? U.d.metrics.add(k) : U.d.metrics.delete(k); }); },
       onChange: refreshBar, actions: [["Alle", function () { cats.forEach(function (c) { c.items.forEach(function (i) { U.d.metrics.add(i.key); }); }); }], ["Keine", function () { U.d.metrics.clear(); }],
-        ["Netzdiagramm-Tests", function () { U.d.metrics.clear(); KVTpl.SPIDER.forEach(function (k) { U.d.metrics.add(k); }); }]]
+        ["Tests des Netzdiagramms", function () { U.d.metrics.clear(); U.d.spider.forEach(function (k) { if (k.indexOf("||") < 0) U.d.metrics.add(k); }); }]]
     });
     put(box, p);
     return box;
@@ -5577,13 +5713,13 @@ var KVApp = (function () {
     var gs = el("div", { class: "kv-groups" });
     KVTpl.JUMP_GROUPS.forEach(function (g) {
       var cb = el("input", { type: "checkbox", checked: U.d.groups.has(g) });
-      cb.onchange = function () { cb.checked ? U.d.groups.add(g) : U.d.groups.delete(g); refreshBar(); };
+      cb.onchange = function () { cb.checked ? U.d.groups.add(g) : U.d.groups.delete(g); refreshBar(); refreshSpider(); };
       gs.append(el("label", {}, cb, K.GROUPS[g].label.replace(" (VALD)", "")));
     });
     var p = picker({
       cats: cats, placeholder: "Kennwert suchen, z. B. „braking rfd“, „landing“, „asymmetry“", height: 380, getQ: function () { return U.jq; }, setQ: function (v) { U.jq = v; },
       has: function (k) { return U.d.params.has(k); }, set: function (keys, on) { keys.forEach(function (k) { on ? U.d.params.add(k) : U.d.params.delete(k); }); },
-      onChange: refreshBar, actions: [["Kompakt", function () { U.d.params = new Set(KVTpl.JUMP_COMPACT); }], ["VALD-Standard", function () { U.d.params = new Set(CMJ.VALD_DEFAULT); }],
+      onChange: function () { refreshBar(); refreshSpider(); }, actions: [["Kompakt", function () { U.d.params = new Set(KVTpl.JUMP_COMPACT); }], ["VALD-Standard", function () { U.d.params = new Set(CMJ.VALD_DEFAULT); }],
         ["aus Reiter „Parameter“", function () { U.d.params = new Set(A.selNames()); }], ["Alle", function () { U.d.params = new Set(K.ALL.map(function (x) { return x.name; })); }], ["Keine", function () { U.d.params.clear(); }]]
     });
     put(box, el("div", { class: "kv-row" }, el("span", { class: "kv-mini" }, "Sprungarten:"), gs), p);
@@ -5747,7 +5883,7 @@ var KVApp = (function () {
     if (!U.d || !A.findTemplate(U.id)) load(S.activeTpl);
     var note = document.getElementById("kvTplNote"); if (note) note.textContent = "aktiv: " + A.tplName();
     root.replaceChildren(el("div", { class: "kv-stack" }, panelBar(),
-      el("div", { class: "kv-panel kv-count" }, el("span", { id: "kvTplCount" }, countText())), panelBlocks(), panelTests(), panelJumps(), panelImport(), panelSync()));
+      el("div", { class: "kv-panel kv-count" }, el("span", { id: "kvTplCount" }, countText())), panelBlocks(), panelSpider(), panelTests(), panelJumps(), panelImport(), panelSync()));
   };
 })(KVApp);
 </script>
