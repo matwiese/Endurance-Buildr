@@ -183,6 +183,13 @@
     var pane = el("div", { class: "kv-stack" });
     root.replaceChildren(pane);
 
+    /* Anzeige: Bootsklasse in Einzelauswertung, Profilblatt und PDF (Voreinstellung aus) */
+    var clsCb = el("input", { type: "checkbox", checked: !!S.settings.showClass, id: "kvShowClass" });
+    clsCb.addEventListener("change", function () { S.settings.showClass = clsCb.checked; A.saveSettings(); A.refresh(true); });
+    pane.append(el("div", { class: "kv-panel" }, el("h3", {}, "Anzeige"),
+      el("div", { class: "kv-row" }, el("label", {}, clsCb, "Bootsklasse in Einzelauswertung, Profilblatt und PDF anzeigen")),
+      el("p", { class: "kv-note" }, "Ohne Häkchen erscheint die Bootsklasse dort nirgends (weder als große Klasse im Kopf noch in den Stammdaten oder im Dateinamen). Team-Ansichten und Excel gruppieren weiterhin nach Bootsklasse. Der Vergleich mit dem Durchschnitt läuft unverändert gegen die eigene Bootsklasse; ohne Häkchen heißt die Gruppe nur „Vergleichsgruppe“. Soll immer gegen den ganzen Kader verglichen werden, in der Einzelauswertung „Ø Gesamt“ wählen.")));
+
     var seg = el("div", { class: "kv-seg", role: "group", "aria-label": "Parametersatz" }, [["vald", "ForceDecks-Metriken"], ["lit", "Literatur-Parameter"]].map(function (x) {
       return el("button", { type: "button", "aria-pressed": String(P.mode === x[0]), onclick: function () { P.mode = x[0]; A.renderParams(); } }, x[1]); }));
     var opts = options(), cur = currentTrials(opts), tableBox = el("div");

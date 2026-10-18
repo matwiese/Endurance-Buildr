@@ -12,7 +12,7 @@ var KVApp = (function () {
   var S = A.S = {
     ready: false, persistent: false, dirty: false, busy: "",
     results: [], aliases: {}, excel: {}, table: [], defs: [], info: {},
-    settings: { agg: "best", thr: 20, keepRaw: true, fillCmjSj: true, skipKnown: true },
+    settings: { agg: "best", thr: 20, keepRaw: true, fillCmjSj: true, skipKnown: true, showClass: false },
     templates: [], activeTpl: "tpl:alle", custom: [], imports: [], tplVer: 0,
     sel: new Set()
   };
@@ -337,7 +337,7 @@ var KVApp = (function () {
   A.wipe = function () {
     return ST.clearAll().then(function () {
       S.results = []; S.aliases = {}; S.templates = []; S.activeTpl = "tpl:alle"; S.custom = []; S.imports = []; S.tplVer++;
-      S.settings = { agg: "best", thr: 20, keepRaw: true, fillCmjSj: true, skipKnown: true }; A.renderTplSelect();
+      S.settings = { agg: "best", thr: 20, keepRaw: true, fillCmjSj: true, skipKnown: true, showClass: false }; A.renderTplSelect();
     });
   };
 

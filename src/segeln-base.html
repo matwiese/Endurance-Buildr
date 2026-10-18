@@ -823,7 +823,10 @@ function groupList(g){
     return false;
   });
 }
-function glabel(g){ return g==="team"?"Gesamtdurchschnitt":"Durchschnitt "+g.slice(2); }
+/* Bootsklasse in Einzelauswertung, Profilblatt und PDF zeigen? Schalter im Reiter „Parameter“ (Anzeige), Voreinstellung: aus.
+   Team-Ansichten, Excel und die Rechnung (Vergleich mit der eigenen Bootsklasse) bleiben davon unberührt. */
+function showCls(){ return (window.KVApp&&KVApp.S&&KVApp.S.settings)?!!KVApp.S.settings.showClass:true; }
+function glabel(g){ return g==="team"?"Gesamtdurchschnitt":(g.indexOf("c:")===0&&!showCls())?"Durchschnitt Vergleichsgruppe":"Durchschnitt "+g.slice(2); }
 function groupStat(g,k){
   var v=groupList(g).map(function(p){return p.val[k];}).filter(function(x){return x!=null;});
   if(!v.length) return null;
@@ -1223,13 +1226,13 @@ function openSheet(name){
   cur=findPlayer(name); if(!cur) return;
   var p=cur;
   $("shPhoto").innerHTML=avatar(p);
-  $("shPos").textContent=[p.cls||"ohne Klasse",p.kader].filter(Boolean).join(" · ");
+  $("shPos").textContent=[showCls()?(p.cls||"ohne Klasse"):"",p.kader].filter(Boolean).join(" · ");
   $("shName").textContent=p.name;
-  $("shNum").textContent=p.cls||"—";
+  $("shNum").textContent=showCls()?(p.cls||"—"):"";
   $("shNum").style.color=colorOf(p)==="#1B3A5C"?"#5B84B1":colorOf(p);
-  $("shDl").innerHTML=[["Bootsklasse",p.cls||"—"],["Kader",p.kader||"—"],["Auslage",p.side||"—"],["Geburtsdatum",dobDe(p.dob)],
+  $("shDl").innerHTML=[showCls()?["Bootsklasse",p.cls||"—"]:null,["Kader",p.kader||"—"],["Auslage",p.side||"—"],["Geburtsdatum",dobDe(p.dob)],
     ["Alter",p.age!=null?de(p.age)+" Jahre":"—"],["Tests",p.tests.length+"×"],
-    ["Letzter Test",p.cur.date?dobDe(p.cur.date):"ohne Datum"]].map(function(a){return "<dt>"+a[0]+"</dt><dd>"+esc(a[1])+"</dd>";}).join("");
+    ["Letzter Test",p.cur.date?dobDe(p.cur.date):"ohne Datum"]].filter(Boolean).map(function(a){return "<dt>"+a[0]+"</dt><dd>"+esc(a[1])+"</dd>";}).join("");
 
   if(!p.hasVal){
     $("shPerf").innerHTML='<div class="sub-h">Leistungsdiagnostik</div>'+
@@ -1364,7 +1367,7 @@ function setRef(v){
 }
 function refSelect(p){
   var auto=autoRef(p);
-  var opts=[["auto","\u00d8 Eigene Bootsklasse \u2014 "+(p.cls||"Gesamt")+" ("+groupList(auto).length+")"],
+  var opts=[["auto",showCls()?"\u00d8 Eigene Bootsklasse \u2014 "+(p.cls||"Gesamt")+" ("+groupList(auto).length+")":"\u00d8 Eigene Vergleichsgruppe ("+groupList(auto).length+")"],
             ["team","\u00d8 Gesamt ("+groupList("team").length+")"]];
   classes().forEach(function(c){ opts.push(["c:"+c,"\u00d8 "+c+" ("+groupList("c:"+c).length+")"]); });
   kaders().forEach(function(k){ opts.push(["k:"+k,"\u00d8 Kader "+k+" ("+groupList("k:"+k).length+")"]); });
@@ -1378,7 +1381,7 @@ function fillPick(){
   if(!pickName||!findPlayer(pickName)) pickName=list.length?list[0].name:"";
   sel.innerHTML=list.map(function(p){
     return '<option value="'+esc(p.name)+'"'+(p.name===pickName?" selected":"")+'>'+
-      esc(p.name)+"  ·  "+esc(p.cls||"ohne Klasse")+(p.kader?"  ·  "+esc(p.kader):"")+
+      esc(p.name)+(showCls()?"  ·  "+esc(p.cls||"ohne Klasse"):"")+(p.kader?"  ·  "+esc(p.kader):"")+
       (p.hasVal?"":"  (ohne Messwerte)")+'</option>'; }).join("");
 }
 function stepPick(d){
@@ -1510,12 +1513,12 @@ function renderSingle(){
   var ph=photoOf(p), g=effRef(p), col=colorOf(p);
   var head='<div class="hero" style="border-top-color:'+col+'">'+
     (ph?'<img class="big" src="'+esc(ph)+'" alt="">':'<span class="bigph">'+esc(initials(p.name))+'</span>')+
-    '<div><h2>'+esc(p.name)+'</h2><div class="meta">'+esc([p.cls||"ohne Bootsklasse",p.kader,p.side?"Auslage "+p.side:""].filter(Boolean).join(" \u00b7 "))+
+    '<div><h2>'+esc(p.name)+'</h2><div class="meta">'+esc([showCls()?(p.cls||"ohne Bootsklasse"):"",p.kader,p.side?"Auslage "+p.side:""].filter(Boolean).join(" \u00b7 "))+
     '<br>'+dobDe(p.dob)+(p.age!=null?" \u00b7 "+de(p.age)+" Jahre":"")+' \u00b7 '+p.tests.length+
     (p.tests.length===1?' Testdurchgang':' Testdurchg\u00e4nge')+
     ' \u00b7 ausgewertet: '+(p.cur.date?dobDe(p.cur.date):'letzter Durchgang')+
     (ph?"":' \u00b7 <span style="color:#C98A04">kein Foto hinterlegt</span>')+'</div></div>'+
-    '<div class="jn" style="color:'+col+'">'+esc(p.cls||"\u2014")+'</div>'+
+    (showCls()?'<div class="jn" style="color:'+col+'">'+esc(p.cls||"\u2014")+'</div>':'<div class="jn"></div>')+
     '<img class="logo-hero" src="'+LOGO_LIGHT+'" alt="Leistungssport Austria"></div>';
 
   if(!p.hasVal){
@@ -1550,7 +1553,7 @@ function renderSingle(){
           '<td style="text-align:right">'+de(v,d)+'</td>'; };
         var akt=(t===p.cur);
         return '<tr'+(akt?' style="background:#F3F6F4"':'')+'><td>'+(akt?'<b>'+esc(testLabel(t,i))+'</b> <span class="tag t-ok">aktuell</span>':esc(testLabel(t,i)))+
-          (t.cls&&t.cls!==p.cls?'<div class="alt">'+esc(t.cls)+'</div>':'')+'</td>'+
+          (showCls()&&t.cls&&t.cls!==p.cls?'<div class="alt">'+esc(t.cls)+'</div>':'')+'</td>'+
           RC.map(function(c){ return f(t[c[0]],c[2]); }).join("")+'</tr>';
       }).join("")+'</table></div></div>';
   }
@@ -1819,7 +1822,7 @@ function ovFill(){
   var sel=$("ovWho");
   if(!ovWho||!findPlayer(ovWho)){ ovWho=players.length?players[0].name:""; ovSel=[]; }
   sel.innerHTML=players.map(function(p){
-    return '<option value="'+esc(p.name)+'"'+(p.name===ovWho?" selected":"")+'>'+esc(p.name)+"  ·  "+esc(p.cls||"ohne Klasse")+
+    return '<option value="'+esc(p.name)+'"'+(p.name===ovWho?" selected":"")+'>'+esc(p.name)+(showCls()?"  ·  "+esc(p.cls||"ohne Klasse"):"")+
       "  ·  "+p.tests.length+(p.tests.length===1?" Test":" Tests")+'</option>'; }).join("");
 }
 function ovStep(d){
@@ -2164,11 +2167,8 @@ function pdfH(doc,txt,x,y,x2){
   doc.setDrawColor(205,212,219); doc.setLineWidth(0.2); doc.line(x,y+2,x2,y+2);
 }
 function pdfFoot(doc,p,seite,total){
-  doc.setDrawColor(213,218,224); doc.setLineWidth(0.2); doc.line(PDF.left,263.6,PDF.right,263.6);
-  doc.setFont("helvetica","normal"); doc.setFontSize(6.8); doc.setTextColor(122,122,122);
-  var vt=(window.KVApp&&!KVApp.tplIsAll())?"Vorlage: "+pdfCut(KVApp.tplName(),32)+"  ·  ":"";
-  doc.text(p.name+"  ·  "+vt+"Erstellt am "+heute()+"  ·  Quelle: "+pdfCut(FILE,34),PDF.left,267,{maxWidth:140});
-  doc.setFont("helvetica","bold"); doc.setTextColor(83,83,82);
+  /* nur die Seitenzahl; Name, Erstelldatum und Quelle stehen nicht mehr in der Fußzeile */
+  doc.setFont("helvetica","bold"); doc.setFontSize(6.8); doc.setTextColor(83,83,82);
   doc.text("Seite "+seite+" von "+total,PDF.right,267,{align:"right"});
 }
 
@@ -2188,22 +2188,22 @@ function pdfPageOne(doc,p,photo,chart,refG,total){
   if(doc.setCharSpace) doc.setCharSpace(0.25);
   doc.text("SEGELN  \u00b7  KADERTEST"+(p.cur.date?"  \u00b7  "+dobDe(p.cur.date):""),tx,y0+4);
   if(doc.setCharSpace) doc.setCharSpace(0);
-  var ct=p.cls||"-";
+  var ct=showCls()?(p.cls||"-"):"";
   doc.setFont("helvetica","bold"); doc.setFontSize(ct.length>8?18:ct.length>5?24:30);
-  var ctw=doc.getTextWidth(ct), ctSize=ct.length>8?18:ct.length>5?24:30;
+  var ctw=ct?doc.getTextWidth(ct):-6, ctSize=ct.length>8?18:ct.length>5?24:30;
   doc.setTextColor(18,22,27);
   doc.text(pdfFit(doc,p.name.toUpperCase(),R-tx-ctw-6,21,11),tx,y0+13.5);
   doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(90,98,106);
   doc.text(pdfFit(doc,[p.kader,p.side?"Auslage "+p.side:""].filter(Boolean).join("  \u00b7  ")||" ",R-tx-ctw-6,9.5,7),tx,y0+20.5);
   doc.setTextColor(red[0],red[1],red[2]); doc.setFont("helvetica","bold"); doc.setFontSize(ctSize);
-  doc.text(ct,R,y0+14,{align:"right"});
+  if(ct) doc.text(ct,R,y0+14,{align:"right"});
   pdfRule(doc,y0+27);
   var y=y0+37;
 
   /* Stammdaten als Streifen */
   pdfH(doc,"STAMMDATEN",L,y,R); y+=8.5;
-  var st=[["Bootsklasse",p.cls||"-"],["Kader",p.kader||"-"],["Auslage",p.side||"-"],["Geburtsdatum",dobDe(p.dob)],
-          ["Alter",p.age!=null?de(p.age)+" Jahre":"-"],["Testdurchg\u00e4nge",String(p.tests.length)]], cw6=(R-L)/6;
+  var st=[showCls()?["Bootsklasse",p.cls||"-"]:null,["Kader",p.kader||"-"],["Auslage",p.side||"-"],["Geburtsdatum",dobDe(p.dob)],
+          ["Alter",p.age!=null?de(p.age)+" Jahre":"-"],["Testdurchg\u00e4nge",String(p.tests.length)]].filter(Boolean), cw6=(R-L)/st.length;
   st.forEach(function(a,i){
     var x=L+i*cw6;
     doc.setFont("helvetica","normal"); doc.setFontSize(6.6); doc.setTextColor(122,122,122); doc.text(a[0].toUpperCase(),x,y);
@@ -2274,8 +2274,9 @@ function pdfPageOne(doc,p,photo,chart,refG,total){
 function pdfHeadN(doc,p,sub){
   var L=PDF.left, R=PDF.right, red=LSA.colors.red;
   pdfLetterhead(doc);
+  var cls=showCls()?(p.cls||""):"";
   doc.setFont("helvetica","bold"); doc.setFontSize(15);
-  var cw=doc.getTextWidth(p.cls||"");
+  var cw=cls?doc.getTextWidth(cls):-6;
   doc.setTextColor(18,22,27); doc.setFontSize(14);
   doc.text(pdfFit(doc,p.name.toUpperCase(),R-L-cw-6,14,10),L,54);
   doc.setFont("helvetica","normal"); doc.setFontSize(8.3); doc.setTextColor(110,120,130);
@@ -2287,7 +2288,7 @@ function pdfHeadN(doc,p,sub){
     if(doc.getTextWidth(vt)<=room) doc.text(vt,R,60,{align:"right"});
   }
   doc.setTextColor(red[0],red[1],red[2]); doc.setFont("helvetica","bold"); doc.setFontSize(15);
-  doc.text(p.cls||"",R,54,{align:"right"});
+  if(cls) doc.text(cls,R,54,{align:"right"});
   pdfRule(doc,65);
 }
 function pdfPageN(doc,p,refG,cols,seite,total){
@@ -2402,7 +2403,7 @@ function ovPrint(p,wrap,foot){
     if(g.clr) rows+='<tr><td>Clearing-Test li / re</td>'+g.clr.map(function(c){ return '<td style="font-size:6.5pt'+(c.pos?';font-weight:700;color:#8A5E00':'')+'">'+esc(c.t)+'</td>'; }).join("")+'</tr>';
     return '<tr class="og"><td colspan="'+(cols+1)+'">'+esc(g.g.toUpperCase())+'</td></tr>'+rows;
   }).join("");
-  return wrap('<div class="hd"><div><div class="e">ERWEITERTE ÜBERSICHT</div><h1>'+esc(p.name)+'</h1><div class="s">'+cols+(cols===1?' Testtermin':' Testtermine')+(cols>1?' · Veränderung gegenüber dem Test links davon':'')+'</div></div><div class="n">'+esc(p.cls||"—")+'</div></div>'+
+  return wrap('<div class="hd"><div><div class="e">ERWEITERTE ÜBERSICHT</div><h1>'+esc(p.name)+'</h1><div class="s">'+cols+(cols===1?' Testtermin':' Testtermine')+(cols>1?' · Veränderung gegenüber dem Test links davon':'')+'</div></div>'+(showCls()?'<div class="n">'+esc(p.cls||"—")+'</div>':'')+'</div>'+
     '<table class="o"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>'+foot);
 }
 function printFallback(list,phs,chs){
@@ -2426,8 +2427,8 @@ function printFallback(list,phs,chs){
   var addr='<div class="addr">'+LSA.foot.lines.map(function(l){ return l.bold?'<b>'+esc(l.t)+'</b>':esc(l.t); }).join("<br>")+'</div>';
   var body=list.map(function(p,pi){
     var ph=phs[pi]||photoOf(p), ch=chs[pi]||null;
-    var st=[["Bootsklasse",p.cls||"—"],["Kader",p.kader||"—"],["Auslage",p.side||"—"],["Geburtsdatum",dobDe(p.dob)],
-            ["Alter",p.age!=null?de(p.age)+" Jahre":"—"],["Testdurchgänge",String(p.tests.length)]];
+    var st=[showCls()?["Bootsklasse",p.cls||"—"]:null,["Kader",p.kader||"—"],["Auslage",p.side||"—"],["Geburtsdatum",dobDe(p.dob)],
+            ["Alter",p.age!=null?de(p.age)+" Jahre":"—"],["Testdurchgänge",String(p.tests.length)]].filter(Boolean);
     var perf="";
     if(p.hasVal){
       var og=outGroups(p), groups=og.groups, go=og.go;
@@ -2437,13 +2438,13 @@ function printFallback(list,phs,chs){
           '</td><td class="r">'+(rk?"Platz "+rk.r+"/"+rk.n:"")+'</td></tr>'; }).join("")+'</table>'; }).join("");
     } else perf='<h2>LEISTUNGSDIAGNOSTIK</h2><table class="t"><tr><td class="k">Keine Messwerte vorhanden.</td></tr></table>';
     var wrap=function(inner){ return '<div class="pp"><table class="w"><thead><tr><td></td></tr></thead><tfoot><tr><td></td></tr></tfoot><tbody><tr><td>'+inner+'</td></tr></tbody></table></div>'; };
-    var foot='<div class="ft">'+esc(p.name)+' · Erstellt am '+heute()+' · Quelle: '+esc(FILE)+(window.KVApp&&!KVApp.tplIsAll()?' · Vorlage: '+esc(KVApp.tplName()):'')+'</div>';
+    var foot="";   /* keine Fußzeile mit Name, Datum und Quelle */
     return wrap(
       '<div class="hd"><div style="display:flex;gap:6mm;align-items:center">'+
       (ph?'<img src="'+esc(ph)+'" style="width:24mm;height:24mm;object-fit:cover;border:.6mm solid '+red+'">':'')+
       '<div><div class="e">SEGELN · KADERTEST'+(p.cur.date?' · '+dobDe(p.cur.date):'')+'</div>'+
       '<h1>'+esc(p.name)+'</h1><div class="s">'+esc([p.kader,p.side?"Auslage "+p.side:""].filter(Boolean).join(" · "))+'</div></div></div>'+
-      '<div class="n">'+esc(p.cls||"—")+'</div></div>'+
+      (showCls()?'<div class="n">'+esc(p.cls||"—")+'</div>':'')+'</div>'+
       '<h2>STAMMDATEN</h2><table class="t">'+st.map(function(a){return '<tr><td class="k">'+a[0]+'</td><td class="v">'+esc(a[1])+'</td><td class="r"></td></tr>';}).join("")+'</table>'+
       (ch?'<h2>LEISTUNGSPROFIL</h2><div style="text-align:center"><img src="'+ch+'" style="width:84mm"></div>':'')+
       perf+foot)+(TB("overview")?ovPrint(p,wrap,foot):"");
@@ -2510,7 +2511,7 @@ function buildDocs(list){
   });
 }
 function safeName(p){
-  return "Profil_"+(p.cls?p.cls.replace(/[^\w]+/g,"")+"_":"")+
+  return "Profil_"+(showCls()&&p.cls?p.cls.replace(/[^\w]+/g,"")+"_":"")+
     p.name.replace(/[^\wÄÖÜäöüß]+/g,"_").replace(/^_|_$/g,"")+".pdf";
 }
 /* Einzel-PDFs: je Person eine Datei, wenn möglich direkt in einen gewählten Ordner */
