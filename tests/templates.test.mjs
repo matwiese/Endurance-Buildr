@@ -92,6 +92,28 @@ test("Netzdiagramm: Achsen je Vorlage (normalisieren, Standard, auflösen, Austa
   assert.deepEqual(back[0].spider, ["cmj", "sj", "hopL"]); assert.equal(back[1].spider, null, "Vorlage ohne Angabe bleibt ohne Angabe");
 });
 
+test("Vorlage „Sprungauswertung gesamt“: CMJ, SJ, EUR, Peak Force, 5er Hopp, Seitendifferenz in einer Karte", () => {
+  const b = KVTpl.builtins(), raw = b.find(t => t.id === "tpl:sprungges"), t = KVTpl.prepare(raw);
+  assert.ok(raw && raw.builtin && b.length === 5, "eingebaut, die übrigen Vorlagen bleiben davor");
+  assert.deepEqual(raw.metrics, ["cmj", "sj", "eur", "hopL", "hopR", "hopDiff"]);
+  const m = k => ({ k, jump: 0 }), j = (g, n) => ({ k: "j_x", jump: 1, jg: g, jn: n });
+  for (const k of ["cmj", "sj", "eur", "hopL", "hopR", "hopDiff"]) assert.ok(KVTpl.includes(t, m(k)), k);
+  for (const k of ["psa", "gr", "gew", "fmsSum", "swV", "c_neu"]) assert.ok(!KVTpl.includes(t, m(k)), k + " gehört nicht dazu");
+  /* Peak Force absolut und relativ, nur von CMJ und SJ */
+  for (const g of ["CMJ", "SJ"]) for (const n of ["Concentric Peak Force", "Concentric Peak Force / BM"]) assert.ok(KVTpl.includes(t, j(g, n)), g + " " + n);
+  assert.ok(!KVTpl.includes(t, j("SL-CMJ|L", "Concentric Peak Force")) && !KVTpl.includes(t, j("LSI", "Concentric Peak Force / BM")) && !KVTpl.includes(t, j("CMJ", "Jump Height (Imp-Mom)")));
+  assert.equal(raw.blocks.jumpOne, true); assert.equal(raw.blocks.rank, true);
+  /* Baustein ist sonst aus; ältere gespeicherte Vorlagen ohne die Angabe bleiben unverändert */
+  for (const o of b.filter(x => x.id !== "tpl:sprungges")) assert.equal(o.blocks.jumpOne, false, o.id);
+  assert.equal(KVTpl.normalize({ name: "alt", metrics: ["cmj"], blocks: { rank: true } }).blocks.jumpOne, false);
+  assert.ok(KVTpl.BLOCKS.some(x => x[0] === "jumpOne"));
+  /* Netzdiagramm der Vorlage: acht Achsen, darunter EUR und Peak Force / BM */
+  const ids = KVTpl.spiderIds(raw); assert.equal(ids.length, 8); assert.ok(ids.includes("eur") && ids.includes("CMJ||Concentric Peak Force / BM") && ids.includes("SJ||Concentric Peak Force / BM"));
+  /* Austausch trägt den Baustein mit */
+  const back = KVTpl.fromImport(JSON.parse(JSON.stringify(KVTpl.toExport([{ ...KVTpl.normalize({ name: "e", metrics: ["cmj"], blocks: { jumpOne: true } }), id: "tpl:7" }]))));
+  assert.equal(back[0].blocks.jumpOne, true);
+});
+
 test("CSV-Import: Spalten erkennen (Name, Datum, bekannter Test, neuer Parameter, ignorieren)", () => {
   const grid = [
     ["Name", "Testdatum", "Kader", "CMJ o.A. [cm]", "Sprint 10 m [s]", "Medizinball (m)", "BMI", "Bemerkung", "", "Qualität"],

@@ -528,6 +528,7 @@ var METRICS=[
  {k:"cmj",     t:"CMJ ohne Arme",            s:"CMJ", u:"cm", dir:1, d:1, g:"Sprungkraft"},
  {k:"sj",      t:"Squat Jump",               s:"SJ",  u:"cm", dir:1, d:1, g:"Sprungkraft"},
  {k:"psa",     t:"PSA (Prestretch)",         s:"PSA", u:"%",  dir:1, d:1, g:"Sprungkraft", pp:1, calc:1},
+ {k:"eur",     t:"Eccentric Utilization Ratio (EUR)", s:"EUR", u:"", dir:1, d:2, g:"Sprungkraft", calc:1},
  {k:"hopL",    t:"5er Hopp links",           u:"m",    dir:1,  d:2, g:"Sprungkraft"},
  {k:"hopR",    t:"5er Hopp rechts",          u:"m",    dir:1,  d:2, g:"Sprungkraft"},
  {k:"hopDiff", t:"Seitendifferenz 5er Hopp", u:"%",    dir:-1, d:1, g:"Sprungkraft", pp:1, calc:1},
@@ -559,7 +560,7 @@ function TB(x){ return (window.KVApp&&KVApp.tplBlock)?KVApp.tplBlock(x):true; }
 function inTpl(k){ var m=MET[k]; return !!m && AM().indexOf(m)>=0; }
 /* Spalten der Durchgangs-Tabellen: bevorzugte Tests (wie bisher), aufgefüllt mit weiteren Kennwerten der Vorlage */
 var RUN_PREF={ screen:["gew","fmsSum","swSum","cmj","fmaxRel","bz1rm","haeng"], pdf:["gew","fmsSum","cmj","fmaxRel","bz1rm","haeng"], sheet:["fmsSum","cmj","fmaxRel","bz1rm"] };
-var RUN_MORE=["swSum","sj","hbl","reakt","tap","hopL","hopR","j_cmj_jump_height_imp_mom","j_sj_jump_height_imp_mom"];
+var RUN_MORE=["swSum","sj","eur","hbl","reakt","tap","hopL","hopR","j_cmj_jump_height_imp_mom","j_sj_jump_height_imp_mom"];
 var RUN_LAB={gew:"Masse",fmsSum:"Screen",swSum:"Rumpf",cmj:"CMJ",fmaxRel:"Fmax",bz1rm:"1-RM BZ",haeng:"Hängen"};
 function runLabel(m){ return (RUN_LAB[m.k]||m.s||m.t)+(m.u?" "+m.u:""); }
 function runCols(kind,max){
@@ -579,6 +580,29 @@ function setDynamicMetrics(defs){
   if(!MET[devMetric]) devMetric="fmsSum";
   var sel=document.getElementById("metric"); if(sel) sel.innerHTML="";   /* Kennzahl-Auswahl der Rangliste neu aufbauen */
 }
+/* Eine gesamte Sprungauswertung (Baustein „jumpOne“): Sprungkraft-Tests und Sprungkennwerte aus VALD stehen gemeinsam in einer Karte.
+   outGroups(p) liefert für Einzelauswertung, Profilblatt, PDF und Druckansicht {go: Reihenfolge der Gruppen, groups: Kennwerte je Gruppe}. */
+var JUMP_ONE="Sprungauswertung";
+var JO_RANK={cmj:1,sj:2,psa:3,eur:4,hopL:6,hopR:7,hopDiff:8};   /* Sprungkennwerte (VALD) dazwischen: 5 */
+function outGroups(p){
+  var groups={},go=[], one=TB("jumpOne");
+  AM().forEach(function(m){
+    if(p.val[m.k]==null) return;
+    var g=m.g;
+    if(one && (m.g==="Sprungkraft"||m.jump)){
+      g=JUMP_ONE;
+      /* gleiche Kennwerte verschiedener Sprungarten brauchen die Sprungart im Namen: „Concentric Peak Force (CMJ)“ */
+      if(m.jump){ var c={}; Object.keys(m).forEach(function(k){ c[k]=m[k]; }); c.t=m.t+" ("+m.g.replace(" (VALD)","")+")"; m=c; }
+    }
+    if(!groups[g]){groups[g]=[];go.push(g);}
+    groups[g].push(m);
+  });
+  if(one && groups[JUMP_ONE]){
+    var rk=function(m){ return m.jump?5:(JO_RANK[m.k]||9); };
+    groups[JUMP_ONE]=groups[JUMP_ONE].map(function(m,i){ return [m,i]; }).sort(function(a,b){ return rk(a[0])-rk(b[0])||a[1]-b[1]; }).map(function(x){ return x[0]; });
+  }
+  return {go:orderGroups(go), groups:groups};
+}
 function orderGroups(go){
   var a=go.filter(function(g){return g===ANTHRO;});
   return a.concat(go.filter(function(g){return g!==ANTHRO;}));
@@ -597,7 +621,7 @@ var COLDEF=[
  ["ASLR li","aslrL"],["ASLR re","aslrR"],["Shoulder li","smL"],["Shoulder re","smR"],
  ["Clearing li","clrL","clr"],["Clearing re","clrR","clr"],["In-Line li","ilL"],["In-Line re","ilR"],["Deep Squat","ds"],
  ["Swiss ventral [s]","swV"],["Swiss dorsal [s]","swD"],["Swiss lateral li [s]","swLL"],["Swiss lateral re [s]","swLR"],
- ["CMJ o.A. [cm]","cmj"],["SJ [cm]","sj"],["PSA [%]","psa"],
+ ["CMJ o.A. [cm]","cmj"],["SJ [cm]","sj"],["PSA [%]","psa"],["EUR","eur"],
  ["5er Hopp li [m]","hopL"],["5er Hopp re [m]","hopR"],["Seitendifferenz 5er [%]","hopDiff"],
  ["Fmax [N]","fmax"],["Fmax li [N]","fmaxL"],["Fmax re [N]","fmaxR"],["Diff Fmax % L/R","fmaxDiff"],
  ["Bilaterales Defizit [%]","bld"],["Reaktion [s]","reakt"],["Tapping [Kontakte/6 s]","tap"],["Hängen [s]","haeng"],
@@ -710,6 +734,9 @@ function derive(o){
   };
   if(o.gr>0&&o.gew>0) set("bmi",rnd(o.gew/Math.pow(o.gr/100,2),2),0.15);
   if(o.cmj>0&&o.sj>0) set("psa",rnd((o.cmj-o.sj)/o.sj*100,2),0.6);
+  /* EUR (Eccentric Utilization Ratio) = Sprunghöhe CMJ ÷ Sprunghöhe SJ; fehlt der Blattwert, gelten die Höhen aus VALD (Jump Height Imp-Mom, bester Versuch) */
+  var eC=o.cmj>0?o.cmj:o.vCmj, eS=o.sj>0?o.sj:o.vSj;
+  if(eC>0&&eS>0) set("eur",rnd(eC/eS,3),0.03);
   if(o.hopL>0&&o.hopR>0) set("hopDiff",rnd(Math.abs(o.hopL-o.hopR)/Math.max(o.hopL,o.hopR)*100,2),0.6);
   if(o.fmaxL>0&&o.fmaxR>0){
     set("fmaxDiff",rnd(Math.abs(o.fmaxL-o.fmaxR)/Math.max(o.fmaxL,o.fmaxR)*100,2),0.6);
@@ -1207,8 +1234,7 @@ function openSheet(name){
       '<p style="font-size:13.5px;color:#4A555F">Für '+esc(p.name)+' ist im letzten Durchgang kein Messwert eingetragen.</p>';
     $("ovl").classList.add("on"); return;
   }
-  var groups={},go=[];
-  AM().forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  var og=outGroups(p), groups=og.groups, go=og.go;
   var html=orderGroups(go).map(function(g){
     return '<div class="sub-h">'+esc(g)+'</div>'+groups[g].map(function(m){
       var v=p.val[m.k], rk=(m.dir!==0)?rankOf(p,m.k):null, qq=p.cur.q[m.k];
@@ -1501,8 +1527,7 @@ function renderSingle(){
     '<div class="hint">'+spHint(g)+(refGroup==="auto"&&g!==autoRef(p)?' In der eigenen Bootsklasse gibt es zu wenige Werte, daher Vergleich gegen alle ('+gl+').':
      refGroup==="auto"?' Vergleichsgruppe automatisch nach Bootsklasse ('+gl+').':' Vergleichsgruppe: '+gl+' Athlet:innen.')+'</div>'+spider+'</div>':"";
 
-  var groups={},go=[];
-  AM().forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  var og=outGroups(p), groups=og.groups, go=og.go;
   var mkCard=function(gr,extra){
     return '<div class="panel"'+(extra||"")+'><h3>'+esc(gr)+'</h3><div class="hint">Regler zeigt die Lage zum '+esc(glabel(g))+
       ' \u2014 Mitte ist der Durchschnitt.</div>'+
@@ -1995,8 +2020,7 @@ function pdfCut(t,n){ t=String(t); return t.length>n?t.slice(0,n-1)+"\u2026":t; 
 function tplTag(){ return (window.KVApp&&!KVApp.tplIsAll())?"  \u00b7  Vorlage: "+KVApp.tplName():""; }
 function pdfTxt(s){ return String(s==null?"":s).replace(/\u2212/g,"-").replace(/\u2009/g," "); }
 function pdfMetricItems(p){
-  var groups={},go=[],items=[];
-  AM().forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+  var og=outGroups(p), groups=og.groups, go=og.go, items=[];
   orderGroups(go).forEach(function(g){
     if(g===ANTHRO) return;
     items.push({h:true,t:g,hh:PDF.gh});
@@ -2031,10 +2055,13 @@ function pdfFill(items,cap){
 }
 function pdfMetricRow(doc,p,m,g,x,y){
   var v=p.val[m.k], st=groupStat(g,m.k), dv=devOf(p,m.k,g), qq=p.cur.q[m.k];
-  doc.setFont("helvetica","normal"); doc.setFontSize(PDF.fLabel); doc.setTextColor(55,65,75);
-  doc.text(m.t+(m.u?" ("+m.u+")":"")+(qq?"  Q "+qq:""),x[0],y);
+  var vtxt=de(v,m.d);
+  doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fValue); var vw=doc.getTextWidth(vtxt);
+  doc.setFont("helvetica","normal"); doc.setTextColor(55,65,75);
+  /* lange Bezeichnungen (z. B. „Concentric Peak Force / BM (CMJ) (N/kg)“) verkleinern, damit sie den Wert nicht berühren */
+  doc.text(pdfFit(doc,m.t+(m.u?" ("+m.u+")":"")+(qq?"  Q "+qq:""),x[1]-x[0]-vw-3,PDF.fLabel,6.6),x[0],y);
   doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fValue); doc.setTextColor(18,22,27);
-  doc.text(de(v,m.d),x[1],y,{align:"right"});
+  doc.text(vtxt,x[1],y,{align:"right"});
   var rk=(TB("rank")&&m.dir!==0)?rankOf(p,m.k):null;
   if(!TB("deviation")){
     if(rk){ doc.setFont("helvetica","normal"); doc.setFontSize(PDF.fDev); doc.setTextColor(120,131,142); doc.text("Platz "+rk.r+"/"+rk.n,x[2],y,{align:"right"}); }
@@ -2288,8 +2315,7 @@ function printFallback(list,phs,chs){
             ["Alter",p.age!=null?de(p.age)+" Jahre":"—"],["Testdurchgänge",String(p.tests.length)]];
     var perf="";
     if(p.hasVal){
-      var groups={},go=[];
-      AM().forEach(function(m){ if(p.val[m.k]==null) return; if(!groups[m.g]){groups[m.g]=[];go.push(m.g);} groups[m.g].push(m); });
+      var og=outGroups(p), groups=og.groups, go=og.go;
       perf=orderGroups(go).map(function(g){ return '<h2>'+esc(g).toUpperCase()+'</h2><table class="t">'+groups[g].map(function(m){
         var rk=(TB("rank")&&m.dir!==0)?rankOf(p,m.k):null, qq=p.cur.q[m.k];
         return '<tr><td class="k">'+esc(mName(m))+(qq?" · Q "+esc(qq):"")+'</td><td class="v">'+de(p.val[m.k],m.d)+

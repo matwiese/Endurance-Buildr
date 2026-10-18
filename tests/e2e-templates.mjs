@@ -208,6 +208,34 @@ try {
   ok("3 bis 12 Achsen möglich, keine Doppelten, „Standard“ setzt die acht Standardachsen, ältere Vorlagen verhalten sich wie bisher");
 
 
+  console.log("5c. Eine gesamte Sprungauswertung: CMJ, SJ, EUR, Peak Force, 5er Hopp, Seitendifferenz");
+  const prevActive = await page.evaluate(() => KVApp.S.activeTpl);
+  await page.evaluate(() => KVApp.setActive("tpl:sprungges"));
+  await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
+  await page.waitForSelector("#single .panel h3");
+  const jh = await page.$$eval("#single .panel h3", e => e.map(x => x.textContent));
+  assert.ok(jh.includes("Sprungauswertung") && !jh.some(h => /VALD|Sprungkraft|Rumpf|Maximal|Movement/.test(h)), "nur eine Karte für die Sprünge: " + jh.join(" | "));
+  const jl = await page.$$eval("#single .mline .lbl", e => e.map(x => x.textContent.replace(/\s+/g, " ").trim()));
+  const want = [/^CMJ ohne Arme/, /^Squat Jump/, /^Eccentric Utilization Ratio \(EUR\)/, /^Concentric Peak Force \(CMJ\) N/, /^Concentric Peak Force \/ BM \(CMJ\) N\/kg/, /^Concentric Peak Force \(SJ\) N/, /^Concentric Peak Force \/ BM \(SJ\) N\/kg/, /^5er Hopp links/, /^5er Hopp rechts/, /^Seitendifferenz 5er Hopp/];
+  assert.equal(jl.length, want.length, jl.join(" | ")); want.forEach((rx, i) => assert.match(jl[i], rx, `Zeile ${i + 1}: ${jl[i]}`));
+  /* EUR = CMJ ÷ SJ, hier aus den Blattwerten (CMJ 27,5 cm, SJ 25,8 cm) */
+  const eu = await page.evaluate(() => { const c = findPlayer("Wende Sophie").cur; return { eur: c.eur, cmj: c.cmj, sj: c.sj }; });
+  assert.ok(Math.abs(eu.eur - eu.cmj / eu.sj) < 0.0006 && Math.abs(eu.eur - 1.066) < 0.001, JSON.stringify(eu));
+  assert.equal(await page.$$eval("#single .spiderpanel svg > line", l => l.length), 8, "Netz mit den acht Achsen der Vorlage");
+  await shot("06_sprungauswertung_gesamt");
+  const pdfJ = await pdfOf("Wende Sophie", "profil_sprungauswertung.pdf");
+  for (const t of ["SPRUNGAUSWERTUNG", "Eccentric Utilization Ratio (EUR)", "Concentric Peak Force (CMJ)", "Concentric Peak Force (SJ)", "5er Hopp links", "Seitendifferenz 5er Hopp", "Vorlage: Sprungauswertung gesamt"]) assert.ok(pdfJ.all.includes(t), "PDF ohne „" + t + "“");
+  for (const t of ["SL-CMJ", "Swiss", "Maximalkraft", "PSA"]) assert.ok(!pdfJ.all.includes(t), "PDF enthält „" + t + "“");
+  assert.ok(pdfJ.all.indexOf("Eccentric Utilization Ratio") < pdfJ.all.indexOf("Concentric Peak Force (CMJ)") && pdfJ.all.indexOf("Concentric Peak Force (SJ)") < pdfJ.all.indexOf("5er Hopp links"), "Reihenfolge im PDF");
+  /* ohne den Baustein stehen die Sprungkennwerte wieder in ihren eigenen Karten */
+  await page.evaluate(() => { KVApp.S.templates.push(Object.assign(JSON.parse(JSON.stringify(KVTpl.expand(KVApp.findTemplate("tpl:sprungges"), KVApp.universe()))), { id: "tpl:tmp", name: "tmp", builtin: false })); KVApp.S.templates[KVApp.S.templates.length - 1].blocks.jumpOne = false; KVApp.saveTemplates(); KVApp.setActive("tpl:tmp"); });
+  await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
+  await page.waitForSelector("#single .panel h3");
+  const jh2 = await page.$$eval("#single .panel h3", e => e.map(x => x.textContent));
+  assert.ok(jh2.includes("Sprungkraft") && jh2.includes("CMJ (VALD)") && jh2.includes("SJ (VALD)") && !jh2.includes("Sprungauswertung"), jh2.join(" | "));
+  await page.evaluate(prev => { KVApp.setActive(prev); KVApp.S.templates = KVApp.S.templates.filter(t => t.id !== "tpl:tmp"); KVApp.saveTemplates(); }, prevActive);
+  ok(`eine Karte „Sprungauswertung“ mit ${want.length} Zeilen in der Reihenfolge CMJ, SJ, EUR (${eu.eur.toFixed(3)}), Peak Force, 5er links/rechts, Seitendifferenz; PDF und Netz folgen; ohne Baustein getrennte Karten`);
+
   console.log("6. Excel folgt der Vorlage");
   if (fs.existsSync(libXlsx)) {
     const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 30000 }), page.click("button:has-text('Gesamtübersicht als Excel')")]);

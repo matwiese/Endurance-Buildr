@@ -87,13 +87,17 @@ try {
   await page.evaluate(() => { KVApp.S.settings.agg = "best"; KVApp.refresh(); });
 
   console.log("D. Blatt-Wert hat Vorrang; leere CMJ/SJ-Felder werden gefüllt; Abschalten wirkt");
-  const filled = await page.evaluate(() => { const t = findPlayer("Wende Sophie").tests.filter(x => x.date === "2026-05-19")[0]; return { cmj: t.cmj, sj: t.sj, psa: t.psa }; });
+  const filled = await page.evaluate(() => { const t = findPlayer("Wende Sophie").tests.filter(x => x.date === "2026-05-19")[0]; return { cmj: t.cmj, sj: t.sj, psa: t.psa, eur: t.eur }; });
   assert.ok(filled.cmj > 20 && filled.sj > 15 && filled.psa > 0, JSON.stringify(filled));
+  /* EUR (Eccentric Utilization Ratio) = Sprunghöhe CMJ ÷ Sprunghöhe SJ, unabhängig nachgerechnet */
+  assert.ok(Math.abs(filled.eur - filled.cmj / filled.sj) < 0.0006 && filled.eur > 1, `EUR ${filled.eur} statt ${filled.cmj / filled.sj}`);
+  assert.ok(Math.abs(filled.psa - (filled.eur - 1) * 100) < 0.7, "PSA und EUR hängen zusammen: PSA = (EUR − 1) · 100");
   await page.evaluate(() => { KVApp.S.settings.fillCmjSj = false; KVApp.refresh(); });
-  const off = await page.evaluate(() => { const t = findPlayer("Wende Sophie").tests.filter(x => x.date === "2026-05-19")[0]; return { cmj: t.cmj, key: t.j_cmj_jump_height_imp_mom }; });
+  const off = await page.evaluate(() => { const t = findPlayer("Wende Sophie").tests.filter(x => x.date === "2026-05-19")[0]; return { cmj: t.cmj, key: t.j_cmj_jump_height_imp_mom, eur: t.eur }; });
   assert.equal(off.cmj, undefined); assert.ok(off.key > 20);
+  assert.ok(Math.abs(off.eur - filled.eur) < 0.01, `EUR bleibt auch ohne Füllen der Blattfelder aus den VALD-Höhen berechnet (${off.eur} / ${filled.eur})`);
   await page.evaluate(() => { KVApp.S.settings.fillCmjSj = true; KVApp.refresh(); });
-  ok("CMJ/SJ/PSA aus VALD gefüllt (" + filled.cmj.toFixed(1) + " / " + filled.sj.toFixed(1) + " cm, PSA " + filled.psa.toFixed(1) + " %), abschaltbar");
+  ok("CMJ/SJ/PSA aus VALD gefüllt (" + filled.cmj.toFixed(1) + " / " + filled.sj.toFixed(1) + " cm, PSA " + filled.psa.toFixed(1) + " %), EUR " + filled.eur.toFixed(2) + " = CMJ ÷ SJ (auch ohne Füllen), abschaltbar");
 
   console.log("E. Korrekturen: Versuch ausschließen, Art ändern, Seite ändern");
   const base = await page.evaluate(() => KVApp.S.results.filter(r => KVCore.usable(r)).length);

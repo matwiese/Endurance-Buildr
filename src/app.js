@@ -195,6 +195,7 @@ var KVApp = (function () {
       [["cmj", "CMJ"], ["sj", "SJ"]].forEach(function (x) {
         var g = e.groups[x[1]], h = g && g.vals[K.BEST_KEY];
         if (h == null) return;
+        row[x[0] === "cmj" ? "vCmj" : "vSj"] = h;   /* Höhe aus VALD merken (für den EUR, auch wenn das Füllen der Blattfelder abgeschaltet ist) */
         if (row[x[0]] == null) { if (S.settings.fillCmjSj) { row[x[0]] = Math.round(h * 100) / 100; info.filled.push(row.name + " " + x[1]); } }
         else if (Math.abs(row[x[0]] - h) > 2) info.diffs.push(row.name + " " + A.fmtDate(e.date) + ": " + x[1] + " Blatt " + A.nf(row[x[0]], 1) + " cm, VALD " + A.nf(h, 1) + " cm");
       });
