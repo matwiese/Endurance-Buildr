@@ -106,7 +106,11 @@ test("Vorlage „Sprungauswertung gesamt“: CMJ, SJ, EUR, Peak Force, 5er Hopp,
   /* Baustein ist sonst aus; ältere gespeicherte Vorlagen ohne die Angabe bleiben unverändert */
   for (const o of b.filter(x => x.id !== "tpl:sprungges")) assert.equal(o.blocks.jumpOne, false, o.id);
   assert.equal(KVTpl.normalize({ name: "alt", metrics: ["cmj"], blocks: { rank: true } }).blocks.jumpOne, false);
-  assert.ok(KVTpl.BLOCKS.some(x => x[0] === "jumpOne"));
+  assert.ok(KVTpl.BLOCKS.some(x => x[0] === "jumpOne") && KVTpl.BLOCKS.some(x => x[0] === "overview"));
+  /* Erweiterte Übersicht im PDF: überall an, auch bei älteren gespeicherten Vorlagen ohne die Angabe; abschaltbar */
+  for (const o of b) assert.equal(o.blocks.overview, true, o.id);
+  assert.equal(KVTpl.normalize({ name: "alt", metrics: ["cmj"] }).blocks.overview, true);
+  assert.equal(KVTpl.normalize({ name: "alt", metrics: ["cmj"], blocks: { overview: false } }).blocks.overview, false);
   /* Netzdiagramm der Vorlage: acht Achsen, darunter EUR und Peak Force / BM */
   const ids = KVTpl.spiderIds(raw); assert.equal(ids.length, 8); assert.ok(ids.includes("eur") && ids.includes("CMJ||Concentric Peak Force / BM") && ids.includes("SJ||Concentric Peak Force / BM"));
   /* Austausch trägt den Baustein mit */

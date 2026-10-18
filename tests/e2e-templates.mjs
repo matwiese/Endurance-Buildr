@@ -25,17 +25,18 @@ if (!fs.existsSync(libPdf)) { console.error("jsPDF fehlt (JSPDF_JS) – dieser T
 /* Briefpapier (Leistungssport Austria): dieselben Zeichenbefehle, die der Export auf jede Seite schreibt */
 const LSA = new Function(fs.readFileSync(new URL("../src/letterhead.js", import.meta.url), "utf8") + "; return LSA;")();
 function pdfText(file) {
-  const buf = fs.readFileSync(file), raw = buf.toString("latin1"), out = []; let letterheads = 0;
+  const buf = fs.readFileSync(file), raw = buf.toString("latin1"), out = [], pageTexts = []; let letterheads = 0;
   const re = /stream\r?\n([\s\S]*?)\r?\nendstream/g; let m;
   while ((m = re.exec(raw))) {
     let s = m[1];
     try { s = zlib.inflateSync(Buffer.from(s, "latin1")).toString("latin1"); } catch (e) { /* ungepackt */ }
     if (s.includes(LSA.ops.slice(0, 400))) letterheads++;
     if (!/\bTj\b|\bTJ\b/.test(s)) continue;
-    const t = /\(((?:\\.|[^\\)])*)\)\s*Tj/g; let x;
-    while ((x = t.exec(s))) out.push(x[1].replace(/\\([()\\])/g, "$1"));
+    const t = /\(((?:\\.|[^\\)])*)\)\s*Tj/g; let x; const cur = [];
+    while ((x = t.exec(s))) { const v = x[1].replace(/\\([()\\])/g, "$1"); out.push(v); cur.push(v); }
+    pageTexts.push(cur.join("\n"));
   }
-  return { all: out.join("\n"), pages: (raw.match(/\/Type\s*\/Page[^s]/g) || []).length, letterheads };
+  return { all: out.join("\n"), pageTexts, pages: (raw.match(/\/Type\s*\/Page[^s]/g) || []).length, letterheads };
 }
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "kader-tpl-"));
@@ -235,6 +236,45 @@ try {
   assert.ok(jh2.includes("Sprungkraft") && jh2.includes("CMJ (VALD)") && jh2.includes("SJ (VALD)") && !jh2.includes("Sprungauswertung"), jh2.join(" | "));
   await page.evaluate(prev => { KVApp.setActive(prev); KVApp.S.templates = KVApp.S.templates.filter(t => t.id !== "tpl:tmp"); KVApp.saveTemplates(); }, prevActive);
   ok(`eine Karte „Sprungauswertung“ mit ${want.length} Zeilen in der Reihenfolge CMJ, SJ, EUR (${eu.eur.toFixed(3)}), Peak Force, 5er links/rechts, Seitendifferenz; PDF und Netz folgen; ohne Baustein getrennte Karten`);
+
+  console.log("5d. PDF: Erweiterte Übersicht hinten angehängt, mit den im Reiter gewählten Testterminen");
+  await page.evaluate(() => KVApp.setActive("tpl:sprungges"));
+  await page.evaluate(() => setTab("uebersicht"));
+  await page.selectOption("#ovWho", "Wende Sophie");
+  await page.waitForSelector("#uebersicht .ovt");
+  const colsBefore = await page.$$eval("#uebersicht th.ovc select", s => s.map(x => x.selectedOptions[0].textContent));
+  assert.deepEqual(colsBefore, ["10.06.2025", "14.10.2025", "20.01.2026", "21.04.2026"], "Voreinstellung: die letzten vier (bis fünf) Termine");
+  await page.locator("#uebersicht .ovx").nth(1).click();   /* Spalte 14.10.2025 entfernen */
+  const colsSel = await page.$$eval("#uebersicht th.ovc select", s => s.map(x => x.selectedOptions[0].textContent));
+  assert.deepEqual(colsSel, ["10.06.2025", "20.01.2026", "21.04.2026"]);
+  const ovPages = t => t.pageTexts.map((x, i) => [x, i + 1]).filter(([x]) => x.includes("Erweiterte \u00dcbersicht"));
+  const pdfOv = await pdfOf("Wende Sophie", "profil_uebersicht.pdf");
+  const op = ovPages(pdfOv);
+  assert.ok(op.length >= 1, "keine Seite mit der Erweiterten Übersicht");
+  assert.equal(op[op.length - 1][1], pdfOv.pages, "die Übersicht steht ganz hinten");
+  assert.ok(op[0][1] > 1, "nach dem Profil");
+  for (const [x, i] of op) {
+    for (const d of ["10.06.2025", "20.01.2026", "21.04.2026"]) assert.ok(x.includes(d), `Seite ${i} ohne Testtermin ${d}`);
+    assert.ok(!x.includes("14.10.2025"), `Seite ${i}: abgewählter Termin 14.10.2025 darf nicht erscheinen`);
+  }
+  const ov1 = op[0][0];
+  for (const t of ["Eccentric Utilization Ratio (EUR)", "Concentric Peak Force (CMJ)", "5er Hopp links", "aktuell"]) assert.ok(ov1.includes(t), "Übersicht ohne „" + t + "“");
+  assert.ok(/[+-]\d+,\d\s%/.test(ov1) || /[+-]\d+,\d\s?%/.test(ov1.replace(/\u2009/g, " ")), "Veränderung in % fehlt");
+  assert.ok(!/Swiss|Movement|Maximalkraft|Screen-Summe/.test(ov1), "nur Kennwerte der Vorlage");
+  assert.match(pdfOv.pageTexts[pdfOv.pages - 1], new RegExp(`Seite ${pdfOv.pages} von ${pdfOv.pages}`), "Seitenzählung bis zur letzten Übersichtsseite");
+  /* andere Person im selben PDF-Stil: dieselben Testtage */
+  const pdfP = await pdfOf("Luv Paul", "profil_uebersicht_paul.pdf"), opP = ovPages(pdfP);
+  assert.ok(opP.length >= 1 && opP.every(([x]) => x.includes("10.06.2025") && x.includes("21.04.2026") && !x.includes("14.10.2025")), "dieselben Testtage bei anderer Person");
+  /* Baustein aus: keine Übersicht */
+  await page.evaluate(() => {
+    const c = JSON.parse(JSON.stringify(KVTpl.expand(KVApp.findTemplate("tpl:sprungges"), KVApp.universe()))); c.id = "tpl:tmp2"; c.name = "tmp2"; c.builtin = false; c.blocks.overview = false;
+    KVApp.S.templates.push(c); KVApp.saveTemplates(); KVApp.setActive("tpl:tmp2");
+  });
+  const pdfNo = await pdfOf("Wende Sophie", "profil_ohne_uebersicht.pdf");
+  assert.equal(ovPages(pdfNo).length, 0, "ohne Baustein keine Übersicht"); assert.equal(pdfNo.pages, pdfOv.pages - op.length, "Seitenzahl ohne Anhang");
+  await page.evaluate(prev => { KVApp.setActive(prev); KVApp.S.templates = KVApp.S.templates.filter(t => t.id !== "tpl:tmp2"); KVApp.saveTemplates(); }, prevActive);
+  await page.evaluate(() => { ovSel = []; });
+  ok(`Übersicht auf ${op.length} Seite(n) ganz hinten (Seite ${op[0][1]}${op.length > 1 ? "–" + op[op.length - 1][1] : ""} von ${pdfOv.pages}), nur die 3 gewählten Testtermine, Kennwerte der Vorlage, Veränderung in %; bei anderer Person dieselben Testtage; abschaltbar`);
 
   console.log("6. Excel folgt der Vorlage");
   if (fs.existsSync(libXlsx)) {

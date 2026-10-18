@@ -584,10 +584,12 @@ function setDynamicMetrics(defs){
    outGroups(p) liefert für Einzelauswertung, Profilblatt, PDF und Druckansicht {go: Reihenfolge der Gruppen, groups: Kennwerte je Gruppe}. */
 var JUMP_ONE="Sprungauswertung";
 var JO_RANK={cmj:1,sj:2,psa:3,eur:4,hopL:6,hopR:7,hopDiff:8};   /* Sprungkennwerte (VALD) dazwischen: 5 */
-function outGroups(p){
+function outGroups(p){ return groupMetrics(AM(),function(m){ return p.val[m.k]!=null; }); }
+/* Kennwerte (Liste der Vorlage) zu Gruppen ordnen; has(m) entscheidet, ob der Kennwert überhaupt Werte hat */
+function groupMetrics(list,has){
   var groups={},go=[], one=TB("jumpOne");
-  AM().forEach(function(m){
-    if(p.val[m.k]==null) return;
+  list.forEach(function(m){
+    if(!has(m)) return;
     var g=m.g;
     if(one && (m.g==="Sprungkraft"||m.jump)){
       g=JUMP_ONE;
@@ -1833,19 +1835,54 @@ function ovAddCol(){
   var free=p.tests.map(function(t,i){return i;}).filter(function(i){return ovSel.indexOf(i)<0;});
   ovSel.push(free.length?free[free.length-1]:p.tests.length-1); renderOverview();
 }
-function ovChange(m,prev,v){
-  if(prev==null||v==null) return '<span class="ovd n">—</span>';
+/* Veränderung gegenüber dem Vortest als Text: {t: Text, c: g (besser) | b (schlechter) | n (ohne Wertung), title: Hinweis} */
+function ovDelta(m,prev,v){
+  if(prev==null||v==null) return {t:"\u2014",c:"n"};
   if(m.pp){   /* Punkte- und Prozentwerte: absolute Differenz statt relativer Veränderung */
     var dd=m.u==="Pkt"?0:1, diff=v-prev, u=devUnit(m);
-    if(Math.abs(diff)<Math.pow(10,-dd)/2) return '<span class="ovd n">±0\u2009'+esc(u)+'</span>';
-    var c2=m.dir===0?"n":((m.dir===1?diff>0:diff<0)?"g":"b");
-    return '<span class="ovd '+c2+'" title="Differenz gegenüber '+de(prev,m.d)+' '+esc(m.u)+'">'+signed(diff,dd)+'\u2009'+esc(u)+'</span>';
+    if(Math.abs(diff)<Math.pow(10,-dd)/2) return {t:"\u00b10\u2009"+u,c:"n"};
+    return {t:signed(diff,dd)+"\u2009"+u, c:m.dir===0?"n":((m.dir===1?diff>0:diff<0)?"g":"b"), title:"Differenz gegenüber "+de(prev,m.d)+" "+m.u};
   }
-  if(!prev) return '<span class="ovd n" title="Vorwert 0 – keine prozentuale Veränderung möglich">—</span>';
+  if(!prev) return {t:"\u2014",c:"n",title:"Vorwert 0 \u2013 keine prozentuale Veränderung möglich"};
   var pct=(v-prev)/Math.abs(prev)*100;
-  if(Math.abs(pct)<0.05) return '<span class="ovd n">±0,0\u2009%</span>';
-  var cls=m.dir===0?"n":((m.dir===1?pct>0:pct<0)?"g":"b");
-  return '<span class="ovd '+cls+'" title="gegenüber '+de(prev,m.d)+' '+esc(m.u)+'">'+signed(pct,1)+'\u2009%</span>';
+  if(Math.abs(pct)<0.05) return {t:"\u00b10,0\u2009%",c:"n"};
+  return {t:signed(pct,1)+"\u2009%", c:m.dir===0?"n":((m.dir===1?pct>0:pct<0)?"g":"b"), title:"gegenüber "+de(prev,m.d)+" "+m.u};
+}
+function ovChange(m,prev,v){
+  var d=ovDelta(m,prev,v);
+  return '<span class="ovd '+d.c+'"'+(d.title?' title="'+esc(d.title)+'"':'')+'>'+esc(d.t)+'</span>';
+}
+/* Welche Testtermine zeigt die Übersicht für die Person p? Die im Reiter gewählten (bei einer anderen Person: die Termine mit demselben Datum,
+   sonst ihre letzten fünf). Ergebnis: Indizes in p.tests */
+function ovIndexFor(p){
+  var who=findPlayer(ovWho), idx=[];
+  if(who&&ovSel.length){
+    if(who===p||who.name===p.name) idx=ovSel.filter(function(i){return i>=0&&i<p.tests.length;});
+    else ovSel.forEach(function(i){
+      var k=who.tests[i]&&testKey(who.tests[i]); if(k==null) return;
+      for(var j=0;j<p.tests.length;j++) if(testKey(p.tests[j])===k){ if(idx.indexOf(j)<0) idx.push(j); break; }
+    });
+  }
+  return idx.length?idx:ovDefault(p);
+}
+/* Daten der Übersicht für das PDF: nur Kennwerte der aktiven Vorlage, je Gruppe Zeilen mit Wert, Güte und Veränderung je Testtermin */
+function ovModel(p){
+  var idx=ovIndexFor(p), labs=ovLabels(p), T=idx.map(function(i){return p.tests[i];}), n=T.length;
+  var list=AM().filter(function(m){ return T.some(function(t){return num(t[m.k])!=null;}); });
+  var gg=groupMetrics(list,function(){return true;}), clr=T.some(function(t){return t.clrL!=null||t.clrR!=null;});
+  var groups=gg.go.map(function(g){
+    var rows=gg.groups[g].map(function(m){
+      return {m:m, cells:T.map(function(t,ci){
+        var v=num(t[m.k]), prev=ci?num(T[ci-1][m.k]):null;
+        return {v:v, q:(t.q&&t.q[m.k])||"", d:ci&&v!=null&&prev!=null?ovDelta(m,prev,v):null};
+      })};
+    });
+    var cl=null;
+    if(g===FMS&&clr) cl=T.map(function(t){ return {t:clrTxt(t.clrL)+" / "+clrTxt(t.clrR), pos:t.clrL===1||t.clrR===1}; });
+    return {g:g, rows:rows, clr:cl};
+  });
+  return {labels:idx.map(function(i){return labs[i];}), T:T, cur:T.map(function(t){return t===p.cur;}), groups:groups, n:n,
+    rows:groups.reduce(function(a,g){return a+g.rows.length;},0)};
 }
 function renderOverview(){
   var box=$("uebersicht");
@@ -1896,7 +1933,7 @@ function renderOverview(){
     '<p class="hint" style="font-size:12px;color:#8B97A3;margin:12px 0 0">Veränderung in % gegenüber dem Test in der Spalte links davon. '+
     'Grün = Verbesserung, Gelb = Verschlechterung, Grau = ohne Wertung (z. B. Körpermasse). '+
     'Ausnahme: Bei Werten in Punkten oder Prozent (Movement Screen, PSA, Seitendifferenzen, bilaterales Defizit) steht die absolute Differenz – Pkt = Punkte, PP = Prozentpunkte. '+
-    'Spalten lassen sich über das Datum frei wählen, auch in anderer Reihenfolge.</p>';
+    'Spalten lassen sich über das Datum frei wählen, auch in anderer Reihenfolge. Die gewählten Testtermine erscheinen auch als Anhang am Ende des PDF-Exports.</p>';
 }
 $("ovWho").addEventListener("change",function(){ ovWho=this.value; ovSel=[]; renderOverview(); });
 
@@ -2038,7 +2075,7 @@ function pdfColumns(p){
   for(var c=Math.ceil(tot/even); c<cap; c+=4){ var r=pdfFill(items,c); if(r.length<=even) return r; }
   return pdfFill(items,cap);
 }
-function pdfFill(items,cap){
+function pdfFill(items,cap,gh){
   var cols=[], col=[], h=0, lastHead="";
   items.forEach(function(it,i){
     if(it.h){
@@ -2047,7 +2084,7 @@ function pdfFill(items,cap){
       if(h+need>cap && col.length){ cols.push(col); col=[]; h=0; }
       col.push(it); h+=it.hh; return;
     }
-    if(h+it.hh>cap){ cols.push(col); col=[{h:true,t:lastHead+" (Fortsetzung)",hh:PDF.gh}]; h=PDF.gh; }
+    if(h+it.hh>cap){ cols.push(col); col=[{h:true,t:lastHead+" (Fortsetzung)",hh:gh||PDF.gh}]; h=gh||PDF.gh; }
     col.push(it); h+=it.hh;
   });
   if(col.length) cols.push(col);
@@ -2233,7 +2270,8 @@ function pdfPageOne(doc,p,photo,chart,refG,total){
 }
 
 /* ---------- Folgeseiten: Leistungsdiagnostik ---------- */
-function pdfPageN(doc,p,refG,cols,seite,total){
+/* Kopf der Folgeseiten: Name, Untertitel (+ Vorlagenname rechts, soweit Platz ist), Klasse, Linie */
+function pdfHeadN(doc,p,sub){
   var L=PDF.left, R=PDF.right, red=LSA.colors.red;
   pdfLetterhead(doc);
   doc.setFont("helvetica","bold"); doc.setFontSize(15);
@@ -2241,7 +2279,6 @@ function pdfPageN(doc,p,refG,cols,seite,total){
   doc.setTextColor(18,22,27); doc.setFontSize(14);
   doc.text(pdfFit(doc,p.name.toUpperCase(),R-L-cw-6,14,10),L,54);
   doc.setFont("helvetica","normal"); doc.setFontSize(8.3); doc.setTextColor(110,120,130);
-  var sub="Leistungsdiagnostik  \u00b7  letzter Testdurchgang"+(TB("deviation")?"  \u00b7  Vergleich gegen "+glabel(refG):"");
   sub=pdfFit(doc,sub,R-L-32,8.3,6.8); doc.text(sub,L,60);
   var vt=tplTag().replace(/^\s*\u00b7\s*/,"");   /* Vorlagenname rechts in derselben Zeile, so lang wie Platz ist */
   if(vt){
@@ -2252,6 +2289,10 @@ function pdfPageN(doc,p,refG,cols,seite,total){
   doc.setTextColor(red[0],red[1],red[2]); doc.setFont("helvetica","bold"); doc.setFontSize(15);
   doc.text(p.cls||"",R,54,{align:"right"});
   pdfRule(doc,65);
+}
+function pdfPageN(doc,p,refG,cols,seite,total){
+  var L=PDF.left, R=PDF.right, red=LSA.colors.red;
+  pdfHeadN(doc,p,"Leistungsdiagnostik  \u00b7  letzter Testdurchgang"+(TB("deviation")?"  \u00b7  Vergleich gegen "+glabel(refG):""));
 
   if(!cols.length){
     doc.setFont("helvetica","normal"); doc.setFontSize(10.5); doc.setTextColor(110,120,130);
@@ -2279,18 +2320,91 @@ function pdfPageN(doc,p,refG,cols,seite,total){
   });
   pdfFoot(doc,p,seite,total);
 }
+/* ---------- Anhang: Erweiterte Übersicht (die im Reiter gewählten Testtermine nebeneinander, Veränderung zum Test links davon) ---------- */
+var PDFOV={ gh:8.5, rh:5.7, rhq:8.4, head:11, labelW:54 };
+function pdfOvItems(m){
+  var items=[];
+  m.groups.forEach(function(g){
+    items.push({h:true,t:g.g.toUpperCase(),hh:PDFOV.gh});
+    g.rows.forEach(function(r){ items.push({h:false,r:r,hh:r.cells.some(function(c){return c.q;})?PDFOV.rhq:PDFOV.rh}); });
+    if(g.clr) items.push({h:false,clr:g.clr,hh:PDFOV.rh});
+  });
+  return items;
+}
+function pdfOvPages(m){ return m.rows?pdfFill(pdfOvItems(m),PDF.foot-2-PDF.top-PDFOV.head,PDFOV.gh):[]; }
+function pdfPageOv(doc,p,m,list,seite,total){
+  var L=PDF.left, R=PDF.right, n=m.n, lw=PDFOV.labelW, cw=(R-L-lw)/n, ch=n>1?12:0;
+  var C={g:[46,125,79],b:[201,138,4],n:[139,151,163]};
+  pdfHeadN(doc,p,"Erweiterte \u00dcbersicht  \u00b7  "+n+(n===1?" Testtermin":" Testtermine")+(n>1?"  \u00b7  Ver\u00e4nderung gegen\u00fcber dem Test links davon":""));
+  var y=PDF.top;
+  /* Kopfzeile: Testdaten */
+  doc.setFont("helvetica","bold"); doc.setFontSize(6.6); doc.setTextColor(122,122,122); doc.text("TEST",L,y+3);
+  m.labels.forEach(function(lb,ci){
+    var xr=L+lw+(ci+1)*cw-0.3;
+    doc.setFont("helvetica","bold"); doc.setFontSize(7.8); doc.setTextColor(18,22,27); doc.text(pdfTxt(lb),xr,y+3,{align:"right"});
+    if(m.cur[ci]){ doc.setFont("helvetica","normal"); doc.setFontSize(5.8); doc.setTextColor(46,125,79); doc.text("aktuell",xr,y+6.3,{align:"right"}); }
+  });
+  doc.setDrawColor(18,22,27); doc.setLineWidth(0.35); doc.line(L,y+PDFOV.head-3.5,R,y+PDFOV.head-3.5);
+  y+=PDFOV.head;
+  list.forEach(function(it){
+    if(it.h){
+      pdfH(doc,it.t,L,y+3.6,R); y+=it.hh; return;
+    }
+    if(it.clr){
+      doc.setFont("helvetica","normal"); doc.setFontSize(7.4); doc.setTextColor(55,65,75); doc.text("Clearing-Test li / re",L,y+0.8);
+      it.clr.forEach(function(c,ci){
+        var xr=L+lw+(ci+1)*cw-0.3;
+        doc.setFont("helvetica",c.pos?"bold":"normal"); doc.setFontSize(6.2); if(c.pos) doc.setTextColor(138,94,0); else doc.setTextColor(90,100,110);
+        doc.text(pdfTxt(c.t),xr,y+0.8,{align:"right"});
+      });
+      doc.setDrawColor(236,239,242); doc.setLineWidth(0.2); doc.line(L,y+it.hh-2.6,R,y+it.hh-2.6);
+      y+=it.hh; return;
+    }
+    var r=it.r, m1=r.m;
+    doc.setFont("helvetica","normal"); doc.setFontSize(7.6); doc.setTextColor(55,65,75);
+    doc.text(pdfFit(doc,pdfTxt(m1.t+(m1.u?" ("+m1.u+")":"")),lw-2,7.6,6),L,y+0.8);
+    r.cells.forEach(function(c,ci){
+      var xr=L+lw+(ci+1)*cw-0.3;
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(18,22,27);
+      if(c.v==null){ doc.setTextColor(174,182,190); doc.text("-",xr-ch,y+0.8,{align:"right"}); }
+      else doc.text(de(c.v,m1.d),xr-ch,y+0.8,{align:"right"});
+      if(c.d&&c.d.t!=="\u2014"){ var col=C[c.d.c]||C.n; doc.setFont("helvetica","bold"); doc.setFontSize(6.1); doc.setTextColor(col[0],col[1],col[2]); doc.text(pdfTxt(c.d.t),xr,y+0.8,{align:"right"}); }
+      if(c.q){ doc.setFont("helvetica","normal"); doc.setFontSize(5.4); doc.setTextColor(120,131,142); doc.text("Q "+c.q,xr-ch,y+3.7,{align:"right"}); }
+    });
+    doc.setDrawColor(236,239,242); doc.setLineWidth(0.2); doc.line(L,y+it.hh-2.6,R,y+it.hh-2.6);
+    y+=it.hh;
+  });
+  pdfFoot(doc,p,seite,total);
+}
 function pdfPage(doc,p,photo,chart,refG){
   var cols=p.hasVal?pdfColumns(p):[];
-  var nExtra=Math.max(1,Math.ceil(cols.length/2)), total=1+nExtra;
+  var nExtra=Math.max(1,Math.ceil(cols.length/2));
+  var ov=TB("overview")?ovModel(p):null, ovPages=ov?pdfOvPages(ov):[], total=1+nExtra+ovPages.length;
   pdfPageOne(doc,p,photo,chart,refG,total);
   for(var i=0;i<nExtra;i++){
     doc.addPage();
     pdfPageN(doc,p,refG,cols.slice(i*2,i*2+2),i+2,total);
   }
+  ovPages.forEach(function(list,k){ doc.addPage(); pdfPageOv(doc,p,ov,list,1+nExtra+k+1,total); });
 }
 
 /* Druckdialog statt Direkt-PDF (wenn jsPDF nicht erreichbar ist): gleiches Briefpapier, als Bild auf jeder gedruckten Seite;
    Kopf- und Fußabstand über wiederholte Tabellenzeilen, damit auch Folgeseiten unter den Kopfformen beginnen */
+/* Erweiterte Übersicht für die Druckansicht (eigene Seite(n) nach dem Profil) */
+function ovPrint(p,wrap,foot){
+  var m=ovModel(p); if(!m.rows) return "";
+  var cols=m.n, head='<tr><th>TEST</th>'+m.labels.map(function(l,ci){ return '<th>'+esc(l)+(m.cur[ci]?'<span class="q" style="color:#2E7D4F">aktuell</span>':'')+'</th>'; }).join("")+'</tr>';
+  var body=m.groups.map(function(g){
+    var rows=g.rows.map(function(r){
+      return '<tr><td>'+esc(r.m.t+(r.m.u?" ("+r.m.u+")":""))+'</td>'+r.cells.map(function(c){
+        return '<td><b>'+(c.v==null?'–':de(c.v,r.m.d))+'</b>'+(c.d&&c.d.t!=="\u2014"?' <i class="'+c.d.c+'">'+esc(c.d.t)+'</i>':(cols>1?' <i></i>':''))+(c.q?'<span class="q">Q '+esc(c.q)+'</span>':'')+'</td>'; }).join("")+'</tr>';
+    }).join("");
+    if(g.clr) rows+='<tr><td>Clearing-Test li / re</td>'+g.clr.map(function(c){ return '<td style="font-size:6.5pt'+(c.pos?';font-weight:700;color:#8A5E00':'')+'">'+esc(c.t)+'</td>'; }).join("")+'</tr>';
+    return '<tr class="og"><td colspan="'+(cols+1)+'">'+esc(g.g.toUpperCase())+'</td></tr>'+rows;
+  }).join("");
+  return wrap('<div class="hd"><div><div class="e">ERWEITERTE ÜBERSICHT</div><h1>'+esc(p.name)+'</h1><div class="s">'+cols+(cols===1?' Testtermin':' Testtermine')+(cols>1?' · Veränderung gegenüber dem Test links davon':'')+'</div></div><div class="n">'+esc(p.cls||"—")+'</div></div>'+
+    '<table class="o"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>'+foot);
+}
 function printFallback(list,phs,chs){
   phs=phs||[]; chs=chs||[];
   var bg="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(LSA.svg), red="#E3000A";
@@ -2303,10 +2417,11 @@ function printFallback(list,phs,chs){
     '.hd{display:flex;justify-content:space-between;align-items:flex-start;gap:6mm;padding-bottom:4mm;border-bottom:.25mm solid #D5DAE0;position:relative;margin-bottom:6mm}'+
     '.hd:after{content:"";position:absolute;left:0;bottom:-.45mm;width:24mm;height:.9mm;background:'+red+'}'+
     '.hd .e{font-size:8pt;letter-spacing:.2em;color:#7A7A7A;font-weight:700}.hd h1{font-size:20pt;margin:1.5mm 0 1mm;text-transform:uppercase}'+
-    '.hd .s{font-size:9.5pt;color:#5A626A}.hd .n{font-size:28pt;font-weight:700;line-height:.9;color:'+red+'}'+
+    '.hd .s{font-size:9.5pt;color:#5A626A}.hd .n{font-size:28pt;font-weight:700;line-height:.9;color:'+red+';white-space:nowrap}'+
     'h2{font-size:8.5pt;letter-spacing:.12em;color:'+red+';margin:6mm 0 1.5mm;border-bottom:.2mm solid #CDD4DB;padding-bottom:1mm;break-after:avoid}'+
     'table.t{width:100%;border-collapse:collapse}table.t td{padding:1.5mm 0;border-bottom:.3mm solid #EEF0F3;font-size:9pt}tr{break-inside:avoid}'+
     'td.k{color:#6E7882;font-size:8pt;width:62mm}td.v{font-weight:700;text-align:right}td.r{color:#8C96A0;font-size:8pt;text-align:right;width:28mm}'+
+    'table.o{width:100%;border-collapse:collapse}table.o th{font-size:7.5pt;text-align:right;padding:1mm 0 1.2mm;border-bottom:.35mm solid #12161B}table.o th:first-child{text-align:left;color:#7A7A7A;width:54mm}table.o td{padding:1.2mm 0;border-bottom:.3mm solid #EEF0F3;font-size:8pt;text-align:right;white-space:nowrap}table.o td:first-child{text-align:left;font-size:7.8pt;color:#37414B;white-space:normal}table.o td b{color:#12161B}table.o td i{display:inline-block;min-width:11mm;font-style:normal;font-weight:700;font-size:6.3pt}table.o tr.og td{font-size:8pt;letter-spacing:.1em;color:'+red+';font-weight:700;padding:3mm 0 1mm;border-bottom:.2mm solid #CDD4DB}table.o .q{display:block;font-size:5.6pt;color:#78838E}table.o .g{color:#2E7D4F}table.o .b{color:#C98A04}table.o .n{color:#8B97A3}'+
     '.ft{margin-top:6mm;font-size:7pt;color:#7A7A7A;border-top:.2mm solid #D5DAE0;padding-top:1.5mm}</style>';
   var addr='<div class="addr">'+LSA.foot.lines.map(function(l){ return l.bold?'<b>'+esc(l.t)+'</b>':esc(l.t); }).join("<br>")+'</div>';
   var body=list.map(function(p,pi){
@@ -2321,7 +2436,9 @@ function printFallback(list,phs,chs){
         return '<tr><td class="k">'+esc(mName(m))+(qq?" · Q "+esc(qq):"")+'</td><td class="v">'+de(p.val[m.k],m.d)+
           '</td><td class="r">'+(rk?"Platz "+rk.r+"/"+rk.n:"")+'</td></tr>'; }).join("")+'</table>'; }).join("");
     } else perf='<h2>LEISTUNGSDIAGNOSTIK</h2><table class="t"><tr><td class="k">Keine Messwerte vorhanden.</td></tr></table>';
-    return '<div class="pp"><table class="w"><thead><tr><td></td></tr></thead><tfoot><tr><td></td></tr></tfoot><tbody><tr><td>'+
+    var wrap=function(inner){ return '<div class="pp"><table class="w"><thead><tr><td></td></tr></thead><tfoot><tr><td></td></tr></tfoot><tbody><tr><td>'+inner+'</td></tr></tbody></table></div>'; };
+    var foot='<div class="ft">'+esc(p.name)+' · Erstellt am '+heute()+' · Quelle: '+esc(FILE)+(window.KVApp&&!KVApp.tplIsAll()?' · Vorlage: '+esc(KVApp.tplName()):'')+'</div>';
+    return wrap(
       '<div class="hd"><div style="display:flex;gap:6mm;align-items:center">'+
       (ph?'<img src="'+esc(ph)+'" style="width:24mm;height:24mm;object-fit:cover;border:.6mm solid '+red+'">':'')+
       '<div><div class="e">SEGELN · KADERTEST'+(p.cur.date?' · '+dobDe(p.cur.date):'')+'</div>'+
@@ -2329,7 +2446,7 @@ function printFallback(list,phs,chs){
       '<div class="n">'+esc(p.cls||"—")+'</div></div>'+
       '<h2>STAMMDATEN</h2><table class="t">'+st.map(function(a){return '<tr><td class="k">'+a[0]+'</td><td class="v">'+esc(a[1])+'</td><td class="r"></td></tr>';}).join("")+'</table>'+
       (ch?'<h2>LEISTUNGSPROFIL</h2><div style="text-align:center"><img src="'+ch+'" style="width:84mm"></div>':'')+
-      perf+'<div class="ft">'+esc(p.name)+' · Erstellt am '+heute()+' · Quelle: '+esc(FILE)+(window.KVApp&&!KVApp.tplIsAll()?' · Vorlage: '+esc(KVApp.tplName()):'')+'</div></td></tr></tbody></table></div>';
+      perf+foot)+(TB("overview")?ovPrint(p,wrap,foot):"");
   }).join("");
   var f=document.createElement("iframe");
   f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
