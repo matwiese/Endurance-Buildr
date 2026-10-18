@@ -945,10 +945,10 @@ function groupList(g){
     return false;
   });
 }
-/* Bootsklasse in Einzelauswertung, Profilblatt und PDF zeigen? Schalter im Reiter „Parameter“ (Anzeige), Voreinstellung: aus.
-   Team-Ansichten, Excel und die Rechnung (Vergleich mit der eigenen Bootsklasse) bleiben davon unberührt. */
+/* Bootsklasse im Kopf des PDFs zeigen (große Klasse rechts oben auf jeder Seite)? Schalter im Reiter „Parameter“ (Anzeige), Voreinstellung: aus.
+   Gilt nur dort: Stammdaten, Einzelauswertung, Profilblatt, Team-Ansichten und Excel zeigen die Bootsklasse wie immer. */
 function showCls(){ return (window.KVApp&&KVApp.S&&KVApp.S.settings)?!!KVApp.S.settings.showClass:true; }
-function glabel(g){ return g==="team"?"Gesamtdurchschnitt":(g.indexOf("c:")===0&&!showCls())?"Durchschnitt Vergleichsgruppe":"Durchschnitt "+g.slice(2); }
+function glabel(g){ return g==="team"?"Gesamtdurchschnitt":"Durchschnitt "+g.slice(2); }
 function groupStat(g,k){
   var v=groupList(g).map(function(p){return p.val[k];}).filter(function(x){return x!=null;});
   if(!v.length) return null;
@@ -1348,13 +1348,13 @@ function openSheet(name){
   cur=findPlayer(name); if(!cur) return;
   var p=cur;
   $("shPhoto").innerHTML=avatar(p);
-  $("shPos").textContent=[showCls()?(p.cls||"ohne Klasse"):"",p.kader].filter(Boolean).join(" · ");
+  $("shPos").textContent=[p.cls||"ohne Klasse",p.kader].filter(Boolean).join(" · ");
   $("shName").textContent=p.name;
-  $("shNum").textContent=showCls()?(p.cls||"—"):"";
+  $("shNum").textContent=p.cls||"—";
   $("shNum").style.color=colorOf(p)==="#1B3A5C"?"#5B84B1":colorOf(p);
-  $("shDl").innerHTML=[showCls()?["Bootsklasse",p.cls||"—"]:null,["Kader",p.kader||"—"],["Auslage",p.side||"—"],["Geburtsdatum",dobDe(p.dob)],
+  $("shDl").innerHTML=[["Bootsklasse",p.cls||"—"],["Kader",p.kader||"—"],["Auslage",p.side||"—"],["Geburtsdatum",dobDe(p.dob)],
     ["Alter",p.age!=null?de(p.age)+" Jahre":"—"],["Tests",p.tests.length+"×"],
-    ["Letzter Test",p.cur.date?dobDe(p.cur.date):"ohne Datum"]].filter(Boolean).map(function(a){return "<dt>"+a[0]+"</dt><dd>"+esc(a[1])+"</dd>";}).join("");
+    ["Letzter Test",p.cur.date?dobDe(p.cur.date):"ohne Datum"]].map(function(a){return "<dt>"+a[0]+"</dt><dd>"+esc(a[1])+"</dd>";}).join("");
 
   if(!p.hasVal){
     $("shPerf").innerHTML='<div class="sub-h">Leistungsdiagnostik</div>'+
@@ -1489,7 +1489,7 @@ function setRef(v){
 }
 function refSelect(p){
   var auto=autoRef(p);
-  var opts=[["auto",showCls()?"\u00d8 Eigene Bootsklasse \u2014 "+(p.cls||"Gesamt")+" ("+groupList(auto).length+")":"\u00d8 Eigene Vergleichsgruppe ("+groupList(auto).length+")"],
+  var opts=[["auto","\u00d8 Eigene Bootsklasse \u2014 "+(p.cls||"Gesamt")+" ("+groupList(auto).length+")"],
             ["team","\u00d8 Gesamt ("+groupList("team").length+")"]];
   classes().forEach(function(c){ opts.push(["c:"+c,"\u00d8 "+c+" ("+groupList("c:"+c).length+")"]); });
   kaders().forEach(function(k){ opts.push(["k:"+k,"\u00d8 Kader "+k+" ("+groupList("k:"+k).length+")"]); });
@@ -1503,7 +1503,7 @@ function fillPick(){
   if(!pickName||!findPlayer(pickName)) pickName=list.length?list[0].name:"";
   sel.innerHTML=list.map(function(p){
     return '<option value="'+esc(p.name)+'"'+(p.name===pickName?" selected":"")+'>'+
-      esc(p.name)+(showCls()?"  ·  "+esc(p.cls||"ohne Klasse"):"")+(p.kader?"  ·  "+esc(p.kader):"")+
+      esc(p.name)+"  ·  "+esc(p.cls||"ohne Klasse")+(p.kader?"  ·  "+esc(p.kader):"")+
       (p.hasVal?"":"  (ohne Messwerte)")+'</option>'; }).join("");
 }
 function stepPick(d){
@@ -1635,12 +1635,12 @@ function renderSingle(){
   var ph=photoOf(p), g=effRef(p), col=colorOf(p);
   var head='<div class="hero" style="border-top-color:'+col+'">'+
     (ph?'<img class="big" src="'+esc(ph)+'" alt="">':'<span class="bigph">'+esc(initials(p.name))+'</span>')+
-    '<div><h2>'+esc(p.name)+'</h2><div class="meta">'+esc([showCls()?(p.cls||"ohne Bootsklasse"):"",p.kader,p.side?"Auslage "+p.side:""].filter(Boolean).join(" \u00b7 "))+
+    '<div><h2>'+esc(p.name)+'</h2><div class="meta">'+esc([p.cls||"ohne Bootsklasse",p.kader,p.side?"Auslage "+p.side:""].filter(Boolean).join(" \u00b7 "))+
     '<br>'+dobDe(p.dob)+(p.age!=null?" \u00b7 "+de(p.age)+" Jahre":"")+' \u00b7 '+p.tests.length+
     (p.tests.length===1?' Testdurchgang':' Testdurchg\u00e4nge')+
     ' \u00b7 ausgewertet: '+(p.cur.date?dobDe(p.cur.date):'letzter Durchgang')+
     (ph?"":' \u00b7 <span style="color:#C98A04">kein Foto hinterlegt</span>')+'</div></div>'+
-    (showCls()?'<div class="jn" style="color:'+col+'">'+esc(p.cls||"\u2014")+'</div>':'<div class="jn"></div>')+
+    '<div class="jn" style="color:'+col+'">'+esc(p.cls||"\u2014")+'</div>'+
     '<img class="logo-hero" src="'+LOGO_LIGHT+'" alt="Leistungssport Austria"></div>';
 
   if(!p.hasVal){
@@ -1675,7 +1675,7 @@ function renderSingle(){
           '<td style="text-align:right">'+de(v,d)+'</td>'; };
         var akt=(t===p.cur);
         return '<tr'+(akt?' style="background:#F3F6F4"':'')+'><td>'+(akt?'<b>'+esc(testLabel(t,i))+'</b> <span class="tag t-ok">aktuell</span>':esc(testLabel(t,i)))+
-          (showCls()&&t.cls&&t.cls!==p.cls?'<div class="alt">'+esc(t.cls)+'</div>':'')+'</td>'+
+          (t.cls&&t.cls!==p.cls?'<div class="alt">'+esc(t.cls)+'</div>':'')+'</td>'+
           RC.map(function(c){ return f(t[c[0]],c[2]); }).join("")+'</tr>';
       }).join("")+'</table></div></div>';
   }
@@ -1944,7 +1944,7 @@ function ovFill(){
   var sel=$("ovWho");
   if(!ovWho||!findPlayer(ovWho)){ ovWho=players.length?players[0].name:""; ovSel=[]; }
   sel.innerHTML=players.map(function(p){
-    return '<option value="'+esc(p.name)+'"'+(p.name===ovWho?" selected":"")+'>'+esc(p.name)+(showCls()?"  ·  "+esc(p.cls||"ohne Klasse"):"")+
+    return '<option value="'+esc(p.name)+'"'+(p.name===ovWho?" selected":"")+'>'+esc(p.name)+"  ·  "+esc(p.cls||"ohne Klasse")+
       "  ·  "+p.tests.length+(p.tests.length===1?" Test":" Tests")+'</option>'; }).join("");
 }
 function ovStep(d){
@@ -2324,8 +2324,8 @@ function pdfPageOne(doc,p,photo,chart,refG,total){
 
   /* Stammdaten als Streifen */
   pdfH(doc,"STAMMDATEN",L,y,R); y+=8.5;
-  var st=[showCls()?["Bootsklasse",p.cls||"-"]:null,["Kader",p.kader||"-"],["Auslage",p.side||"-"],["Geburtsdatum",dobDe(p.dob)],
-          ["Alter",p.age!=null?de(p.age)+" Jahre":"-"],["Testdurchg\u00e4nge",String(p.tests.length)]].filter(Boolean), cw6=(R-L)/st.length;
+  var st=[["Bootsklasse",p.cls||"-"],["Kader",p.kader||"-"],["Auslage",p.side||"-"],["Geburtsdatum",dobDe(p.dob)],
+          ["Alter",p.age!=null?de(p.age)+" Jahre":"-"],["Testdurchg\u00e4nge",String(p.tests.length)]], cw6=(R-L)/st.length;
   st.forEach(function(a,i){
     var x=L+i*cw6;
     doc.setFont("helvetica","normal"); doc.setFontSize(6.6); doc.setTextColor(122,122,122); doc.text(a[0].toUpperCase(),x,y);
@@ -2549,8 +2549,8 @@ function printFallback(list,phs,chs){
   var addr='<div class="addr">'+LSA.foot.lines.map(function(l){ return l.bold?'<b>'+esc(l.t)+'</b>':esc(l.t); }).join("<br>")+'</div>';
   var body=list.map(function(p,pi){
     var ph=phs[pi]||photoOf(p), ch=chs[pi]||null;
-    var st=[showCls()?["Bootsklasse",p.cls||"—"]:null,["Kader",p.kader||"—"],["Auslage",p.side||"—"],["Geburtsdatum",dobDe(p.dob)],
-            ["Alter",p.age!=null?de(p.age)+" Jahre":"—"],["Testdurchgänge",String(p.tests.length)]].filter(Boolean);
+    var st=[["Bootsklasse",p.cls||"—"],["Kader",p.kader||"—"],["Auslage",p.side||"—"],["Geburtsdatum",dobDe(p.dob)],
+            ["Alter",p.age!=null?de(p.age)+" Jahre":"—"],["Testdurchgänge",String(p.tests.length)]];
     var perf="";
     if(p.hasVal){
       var og=outGroups(p), groups=og.groups, go=og.go;
@@ -2633,7 +2633,7 @@ function buildDocs(list){
   });
 }
 function safeName(p){
-  return "Profil_"+(showCls()&&p.cls?p.cls.replace(/[^\w]+/g,"")+"_":"")+
+  return "Profil_"+(p.cls?p.cls.replace(/[^\w]+/g,"")+"_":"")+
     p.name.replace(/[^\wÄÖÜäöüß]+/g,"_").replace(/^_|_$/g,"")+".pdf";
 }
 /* Einzel-PDFs: je Person eine Datei, wenn möglich direkt in einen gewählten Ordner */
@@ -5501,12 +5501,12 @@ var KVApp = (function () {
     var pane = el("div", { class: "kv-stack" });
     root.replaceChildren(pane);
 
-    /* Anzeige: Bootsklasse in Einzelauswertung, Profilblatt und PDF (Voreinstellung aus) */
+    /* Anzeige: Bootsklasse im Kopf des PDFs (Voreinstellung aus) */
     var clsCb = el("input", { type: "checkbox", checked: !!S.settings.showClass, id: "kvShowClass" });
-    clsCb.addEventListener("change", function () { S.settings.showClass = clsCb.checked; A.saveSettings(); A.refresh(true); });
+    clsCb.addEventListener("change", function () { S.settings.showClass = clsCb.checked; A.saveSettings(); });
     pane.append(el("div", { class: "kv-panel" }, el("h3", {}, "Anzeige"),
-      el("div", { class: "kv-row" }, el("label", {}, clsCb, "Bootsklasse in Einzelauswertung, Profilblatt und PDF anzeigen")),
-      el("p", { class: "kv-note" }, "Ohne Häkchen erscheint die Bootsklasse dort nirgends (weder als große Klasse im Kopf noch in den Stammdaten oder im Dateinamen). Team-Ansichten und Excel gruppieren weiterhin nach Bootsklasse. Der Vergleich mit dem Durchschnitt läuft unverändert gegen die eigene Bootsklasse; ohne Häkchen heißt die Gruppe nur „Vergleichsgruppe“. Soll immer gegen den ganzen Kader verglichen werden, in der Einzelauswertung „Ø Gesamt“ wählen.")));
+      el("div", { class: "kv-row" }, el("label", {}, clsCb, "Bootsklasse im Kopf des PDFs anzeigen")),
+      el("p", { class: "kv-note" }, "Betrifft nur die große Klasse oben rechts auf jeder PDF-Seite (auch in der Druckansicht). Stammdaten, Einzelauswertung, Profilblatt, Team-Ansichten und Excel zeigen die Bootsklasse unabhängig davon.")));
 
     var seg = el("div", { class: "kv-seg", role: "group", "aria-label": "Parametersatz" }, [["vald", "ForceDecks-Metriken"], ["lit", "Literatur-Parameter"]].map(function (x) {
       return el("button", { type: "button", "aria-pressed": String(P.mode === x[0]), onclick: function () { P.mode = x[0]; A.renderParams(); } }, x[1]); }));

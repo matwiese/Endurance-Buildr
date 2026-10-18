@@ -89,9 +89,10 @@ try {
   assert.ok(!pdfAll.all.includes("Erstellt am") && !pdfAll.all.includes("Quelle:") && !pdfAll.all.includes("roh.csv"), "Fußzeile mit Name, Datum und Quelle darf nicht mehr im PDF stehen");
   assert.equal((pdfAll.all.match(/Seite \d+ von \d+/g) || []).length, pdfAll.pages, "auf jeder Seite genau eine Seitenzahl");
   ok(`LSA-Briefpapier auf allen ${pdfAll.pages} Seiten (Formen, Logo, Adresszeilen), Fußzeile nur mit Seitenzahl`);
-  /* Bootsklasse: ohne Häkchen im Reiter „Parameter“ nirgends im PDF; Klassen der Demo-Daten: ILCA 6 / 7, 49er, 470, iQFOiL */
-  assert.ok(!/ILCA|BOOTSKLASSE|Bootsklasse|49er FX|iQFOiL/i.test(pdfAll.all.replace(/49er Hopp|5er Hopp/g, "")), "Bootsklasse steht im PDF, obwohl sie ausgeblendet ist: " + (pdfAll.all.match(/.{0,20}(ILCA|Bootsklasse).{0,20}/i) || [""])[0]);
-  assert.ok(pdfAll.all.includes("Vergleichsgruppe"), "Vergleichsgruppe statt Klassenname");
+  /* Bootsklasse im Kopf: ohne Häkchen im Reiter „Parameter“ steht die große Klasse nicht im Kopf (Stammdaten und Vergleichsgruppe nennen sie weiterhin) */
+  const clsLines = t => t.split("\n").filter(l => l === "ILCA 6").length;
+  assert.equal(pdfAll.pageTexts.slice(0, 1).map(clsLines)[0], 1, "Seite 1: nur die Stammdaten nennen die Klasse, nicht der Kopf");
+  assert.ok(pdfAll.pageTexts.slice(1, 6).every(t => clsLines(t) === 0), "Folgeseiten: keine Klasse im Kopf");
 
   console.log("3. Neue Vorlage anlegen: Auswahl, Bausteine, Speichern unter …");
   await page.evaluate(() => setTab("templates"));
@@ -282,33 +283,28 @@ try {
   await page.evaluate(() => { ovSel = []; });
   ok(`Übersicht auf ${op.length} Seite(n) ganz hinten (Seite ${op[0][1]}${op.length > 1 ? "–" + op[op.length - 1][1] : ""} von ${pdfOv.pages}), nur die 3 gewählten Testtermine, Kennwerte der Vorlage, Veränderung in %; bei anderer Person dieselben Testtage; abschaltbar`);
 
-  console.log("5e. Bootsklasse: Häkchen im Reiter „Parameter“ (Voreinstellung aus)");
+  console.log("5e. Bootsklasse im Kopf des PDFs: Häkchen im Reiter „Parameter“ (Voreinstellung aus)");
+  /* Einzelauswertung, Personenauswahl und Dateiname sind davon nicht betroffen */
   await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
   await page.waitForSelector("#single .hero");
-  const hero0 = await page.evaluate(() => ({ meta: document.querySelector("#single .hero .meta").textContent, jn: document.querySelector("#single .hero .jn").textContent, opts: Array.from(document.querySelectorAll("#pick option")).map(o => o.textContent).join("|"), ref: document.querySelector("#single select[onchange^='setRef']") ? document.querySelector("#single select[onchange^='setRef']").textContent : "", name: safeName(findPlayer("Wende Sophie")) }));
-  assert.ok(!/ILCA|Bootsklasse/.test(hero0.meta + hero0.jn + hero0.opts) && hero0.jn === "", "Klasse in Kopf/Auswahl sichtbar: " + JSON.stringify(hero0));
-  assert.equal(hero0.name, "Profil_Wende_Sophie.pdf", "Dateiname ohne Klasse");
-  assert.ok(!/Bootsklasse/.test(hero0.ref) && /Vergleichsgruppe/.test(hero0.ref), "Vergleichsgruppe statt Bootsklasse: " + hero0.ref);
+  const hero0 = await page.evaluate(() => ({ meta: document.querySelector("#single .hero .meta").textContent, jn: document.querySelector("#single .hero .jn").textContent, opts: Array.from(document.querySelectorAll("#pick option")).map(o => o.textContent).join("|"), name: safeName(findPlayer("Wende Sophie")) }));
+  assert.ok(/ILCA 6/.test(hero0.meta) && hero0.jn === "ILCA 6" && /Wende Sophie\s+·\s+ILCA 6/.test(hero0.opts) && hero0.name === "Profil_ILCA6_Wende_Sophie.pdf", "Einzelauswertung zeigt die Klasse weiter: " + JSON.stringify(hero0));
   await page.evaluate(() => setTab("parameter"));
   await page.waitForSelector("#kvShowClass");
-  assert.equal(await page.isChecked("#kvShowClass"), false, "Voreinstellung: Bootsklasse aus");
+  assert.equal(await page.isChecked("#kvShowClass"), false, "Voreinstellung: Bootsklasse im Kopf aus");
+  const pdfNC = await pdfOf("Wende Sophie", "profil_ohne_klasse_im_kopf.pdf");
+  assert.equal(clsLines(pdfNC.pageTexts[0]), 1, "Seite 1 ohne Klasse im Kopf"); assert.ok(pdfNC.pageTexts.slice(1).every(t => clsLines(t) === 0), "Folgeseiten ohne Klasse im Kopf");
+  assert.ok(/BOOTSKLASSE/i.test(pdfNC.pageTexts[0]), "Stammdaten nennen die Bootsklasse weiterhin");
   await page.check("#kvShowClass");
   await page.waitForFunction(() => KVApp.S.settings.showClass === true);
-  await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
-  await page.waitForSelector("#single .hero");
-  const hero1 = await page.evaluate(() => ({ meta: document.querySelector("#single .hero .meta").textContent, jn: document.querySelector("#single .hero .jn").textContent, opts: Array.from(document.querySelectorAll("#pick option")).map(o => o.textContent).join("|"), name: safeName(findPlayer("Wende Sophie")) }));
-  assert.match(hero1.meta, /ILCA 6/); assert.equal(hero1.jn, "ILCA 6"); assert.match(hero1.opts, /Wende Sophie\s+·\s+ILCA 6/); assert.equal(hero1.name, "Profil_ILCA6_Wende_Sophie.pdf");
-  const pdfC = await pdfOf("Wende Sophie", "profil_mit_klasse.pdf");
-  assert.ok(pdfC.pageTexts[0].includes("ILCA 6") && pdfC.pageTexts[0].includes("BOOTSKLASSE") && /Bootsklasse/i.test(pdfC.pageTexts[0]), "mit Häkchen: Klasse im Kopf und in den Stammdaten");
-  assert.ok(pdfC.pageTexts.slice(1).every(t => t.includes("ILCA 6")), "Klasse im Kopf jeder Folgeseite");
+  const pdfC = await pdfOf("Wende Sophie", "profil_mit_klasse_im_kopf.pdf");
+  assert.equal(clsLines(pdfC.pageTexts[0]), 2, "Seite 1: Klasse im Kopf und in den Stammdaten"); assert.ok(pdfC.pageTexts.slice(1).every(t => clsLines(t) === 1), "Klasse im Kopf jeder Folgeseite (auch der Übersicht)");
   /* bleibt nach Neu-Laden erhalten (Einstellung wird gespeichert) */
   await page.waitForTimeout(600); await page.reload(); await ready(); await page.waitForFunction(() => players.length > 0);
   assert.equal(await page.evaluate(() => KVApp.S.settings.showClass), true, "Einstellung nach Neustart");
   await page.evaluate(() => setTab("parameter")); await page.waitForSelector("#kvShowClass");
   await page.uncheck("#kvShowClass"); await page.waitForFunction(() => KVApp.S.settings.showClass === false);
-  const pdfNC = await pdfOf("Wende Sophie", "profil_ohne_klasse.pdf");
-  assert.ok(!/ILCA|BOOTSKLASSE/i.test(pdfNC.all), "ohne Häkchen keine Klasse im PDF");
-  ok("Voreinstellung aus: weder im Kopf, in der Personenauswahl, im PDF noch im Dateinamen; mit Häkchen überall sichtbar, bleibt nach Neustart erhalten");
+  ok("Voreinstellung aus: große Klasse fehlt im Kopf jeder PDF-Seite, Stammdaten und Einzelauswertung zeigen sie weiter; mit Häkchen im Kopf aller Seiten, bleibt nach Neustart erhalten");
 
   console.log("6. Excel folgt der Vorlage");
   if (fs.existsSync(libXlsx)) {

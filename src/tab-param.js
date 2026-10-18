@@ -183,12 +183,12 @@
     var pane = el("div", { class: "kv-stack" });
     root.replaceChildren(pane);
 
-    /* Anzeige: Bootsklasse in Einzelauswertung, Profilblatt und PDF (Voreinstellung aus) */
+    /* Anzeige: Bootsklasse im Kopf des PDFs (Voreinstellung aus) */
     var clsCb = el("input", { type: "checkbox", checked: !!S.settings.showClass, id: "kvShowClass" });
-    clsCb.addEventListener("change", function () { S.settings.showClass = clsCb.checked; A.saveSettings(); A.refresh(true); });
+    clsCb.addEventListener("change", function () { S.settings.showClass = clsCb.checked; A.saveSettings(); });
     pane.append(el("div", { class: "kv-panel" }, el("h3", {}, "Anzeige"),
-      el("div", { class: "kv-row" }, el("label", {}, clsCb, "Bootsklasse in Einzelauswertung, Profilblatt und PDF anzeigen")),
-      el("p", { class: "kv-note" }, "Ohne Häkchen erscheint die Bootsklasse dort nirgends (weder als große Klasse im Kopf noch in den Stammdaten oder im Dateinamen). Team-Ansichten und Excel gruppieren weiterhin nach Bootsklasse. Der Vergleich mit dem Durchschnitt läuft unverändert gegen die eigene Bootsklasse; ohne Häkchen heißt die Gruppe nur „Vergleichsgruppe“. Soll immer gegen den ganzen Kader verglichen werden, in der Einzelauswertung „Ø Gesamt“ wählen.")));
+      el("div", { class: "kv-row" }, el("label", {}, clsCb, "Bootsklasse im Kopf des PDFs anzeigen")),
+      el("p", { class: "kv-note" }, "Betrifft nur die große Klasse oben rechts auf jeder PDF-Seite (auch in der Druckansicht). Stammdaten, Einzelauswertung, Profilblatt, Team-Ansichten und Excel zeigen die Bootsklasse unabhängig davon.")));
 
     var seg = el("div", { class: "kv-seg", role: "group", "aria-label": "Parametersatz" }, [["vald", "ForceDecks-Metriken"], ["lit", "Literatur-Parameter"]].map(function (x) {
       return el("button", { type: "button", "aria-pressed": String(P.mode === x[0]), onclick: function () { P.mode = x[0]; A.renderParams(); } }, x[1]); }));
