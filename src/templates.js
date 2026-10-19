@@ -3,7 +3,7 @@
      metrics  – angekreuzte sportmotorische Kennwerte (Schlüssel wie in der Auswertung, inkl. eigener Parameter aus CSV-Importen)
      jump     – Sprungkennwerte aus VALD: Sprungarten (groups) × Kennwerte (params, Namen aus dem ForceDecks-Katalog)
      blocks   – Bausteine: spider (Netzdiagramm), deviation (Vergleich zur Gruppe mit Abweichung), rank (Rangplatz), runs (Durchgänge im Vergleich),
-                overview (PDF: Erweiterte Übersicht am Ende), jumpOne (Sprungkraft-Tests und Sprungkennwerte aus VALD gemeinsam in einer Karte „Sprungauswertung“)
+                overview (PDF: Erweiterte Übersicht am Ende), jumpOne (Sprungtests und Sprungkennwerte aus VALD gemeinsam in einer Karte „Sprungleistung / Schnellkraft“)
      spider   – Achsen des Netzdiagramms in Reihenfolge (3 bis 12). Eintrag = Schlüssel eines sportmotorischen Kennwerts ("cmj", "c_sprint_10_m")
                 oder eines Sprungkennwerts als „Sprungart||Kennwert“ ("CMJ||Peak Power / BM"). Fehlt die Angabe (ältere Vorlagen), gelten die
                 Standardachsen SPIDER, soweit sie in der Vorlage angekreuzt sind.
@@ -17,9 +17,9 @@ var KVTpl = (function () {
     ["rank", "Rangplatz im Kader", "„Platz 3/12“ je Kennwert."],
     ["runs", "Entwicklung (Durchgänge im Vergleich)", "Tabelle der bisherigen Testdurchgänge mit den wichtigsten angekreuzten Tests."],
     ["overview", "Erweiterte Übersicht im PDF", "Hängt am Ende des PDF die Tabelle der im Reiter „Erweiterte Übersicht“ gewählten Testtermine an (bis zu fünf, mit Veränderung gegenüber dem Test links davon). Zeigt die Kennwerte der Vorlage."],
-    ["jumpOne", "Eine gesamte Sprungauswertung", "Sprungkraft-Tests (CMJ, SJ, EUR, Hopp) und angekreuzte Sprungkennwerte aus VALD stehen gemeinsam in einer Karte „Sprungauswertung“ statt in mehreren."]
+    ["jumpOne", "Alle Sprünge in einer Kategorie", "CMJ, SJ, EUR, 5er Hopp und alle angekreuzten Sprungkennwerte aus VALD stehen gemeinsam in der Kategorie „Sprungleistung / Schnellkraft“ statt in mehreren Karten."]
   ];
-  var BLOCK_DEFAULT = { spider: true, deviation: true, rank: false, runs: true, overview: true, jumpOne: false };
+  var BLOCK_DEFAULT = { spider: true, deviation: true, rank: false, runs: true, overview: true, jumpOne: true };
   var SPIDER = ["fmsSum", "swSum", "cmj", "fmaxRel", "tap", "haeng", "bz1rmRel", "hbl"];
   var SPIDER_MIN = 3, SPIDER_MAX = 12;
   var JUMP_GROUPS = ["CMJ", "SJ", "SL-CMJ|L", "SL-CMJ|R", "SL-SJ|L", "SL-SJ|R", "LSI"];
@@ -38,12 +38,12 @@ var KVTpl = (function () {
       { id: "tpl:alle", name: "Alle Kennwerte", builtin: true, kind: "all", blocks: blocksOf() },
       { id: "tpl:sportmotorik", name: "Sportmotorik komplett (ohne Sprungkennwerte)", builtin: true, kind: "static", blocks: blocksOf() },
       { id: "tpl:kurz", name: "Kurzprofil (Netzdiagramm-Tests)", builtin: true, kind: "list", metrics: ["gr", "gew", "bmi"].concat(SPIDER), jump: { groups: [], params: [] }, blocks: blocksOf() },
-      { id: "tpl:sprung", name: "Sprungkraft mit VALD", builtin: true, kind: "list", metrics: ["gr", "gew", "bmi", "cmj", "sj", "psa", "hopL", "hopR", "hopDiff"],
+      { id: "tpl:sprung", name: "Sprungleistung mit VALD", builtin: true, kind: "list", metrics: ["gr", "gew", "bmi", "cmj", "sj", "psa", "hopL", "hopR", "hopDiff"],
         jump: { groups: ["CMJ", "SJ", "SL-CMJ|L", "SL-CMJ|R", "LSI"], params: JUMP_COMPACT.slice() }, blocks: blocksOf({ rank: true }),
         spider: ["cmj", "sj", "psa", "hopL", "hopR", "CMJ||RSI-modified (Imp-Mom)", "CMJ||Peak Power / BM", "CMJ||Concentric Peak Force / BM"] },
       /* eine gesamte Sprungauswertung: CMJ, SJ, EUR (= CMJ ÷ SJ), Peak Force (absolut und relativ) von CMJ und SJ, 5er Hopp links/rechts und deren Seitendifferenz */
       { id: "tpl:sprungges", name: "Sprungauswertung gesamt (CMJ, SJ, EUR, Peak Force, 5er Hopp)", builtin: true, kind: "list", metrics: ["cmj", "sj", "eur", "hopL", "hopR", "hopDiff"],
-        jump: { groups: ["CMJ", "SJ"], params: ["Concentric Peak Force", "Concentric Peak Force / BM"] }, blocks: blocksOf({ jumpOne: true, rank: true }),
+        jump: { groups: ["CMJ", "SJ"], params: ["Concentric Peak Force", "Concentric Peak Force / BM"] }, blocks: blocksOf({ rank: true }),
         spider: ["cmj", "sj", "eur", "CMJ||Concentric Peak Force / BM", "SJ||Concentric Peak Force / BM", "hopL", "hopR", "hopDiff"] }
     ];
   }

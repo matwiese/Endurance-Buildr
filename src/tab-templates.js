@@ -1,4 +1,5 @@
 /* ===== Reiter „Auswertungstemplates“ =====
+   0. Einzelauswertung: Kategorien und Tests per Häkchen – jede Änderung wirkt sofort (als Entwurf) auf den Reiter „Einzelauswertung“
    1. Vorlagen wählen, ändern, speichern (eigene Vorlagen), Austausch als Datei
    2. Bausteine der Ausgabe (Netzdiagramm, Vergleich zur Gruppe, Rang, Durchgänge) und Achsen des Netzdiagramms (Anzahl und je Achse ein Kennwert)
    3. Auswahl der sportmotorischen Tests und der Sprungkennwerte (VALD) – nur das Angekreuzte erscheint in Einzelauswertung, PDF und Excel
@@ -14,6 +15,7 @@
   /* ---------- Arbeitskopie der Vorlage ---------- */
   function load(id) {
     var t = A.findTemplate(id) || A.findTemplate("tpl:alle"), x = KVTpl.expand(t, A.universe());
+    A.clearDraft();   /* ein anderer Stand wird geöffnet: der Entwurf der bisherigen Vorlage endet */
     U.id = t.id;
     U.d = { name: t.name, builtin: !!t.builtin, metrics: new Set(x.metrics), groups: new Set(x.jump.groups), params: new Set(x.jump.params), blocks: Object.assign({}, x.blocks), spider: x.spider.slice() };
   }
@@ -83,6 +85,7 @@
       b("Als Auswertung verwenden", function () { A.setActive(U.id); toast("„" + U.d.name + "“ wird jetzt für Einzelauswertung, PDF und Excel verwendet.", 4500); }, "p", isDirty || S.activeTpl === U.id,
         isDirty ? "Erst speichern" : "Einzelauswertung, Profilblatt, PDF und Excel zeigen dann nur die Kennwerte dieser Vorlage"),
       b("Speichern", saveCurrent, isDirty && own ? "p" : "", !own || !isDirty), b("Speichern unter …", function () { U.mode = "saveas"; render(); }, isDirty && !own ? "p" : ""),
+      b("Änderungen verwerfen", function () { load(U.id); A.renderTemplates(); }, "", !isDirty, "Setzt die Auswahl auf den gespeicherten Stand zurück"),
       b("Umbenennen", function () { U.mode = "rename"; render(); }, "", !own), b("Löschen", function () { U.mode = "delete"; render(); }, "d", !own),
       el("span", { class: "kv-sep" }), b("Exportieren", exportTpls, "", !S.templates.length), b("Importieren", function () { fileIn.click(); }), status);
     var fileIn = el("input", { type: "file", accept: ".json,application/json", style: "display:none" });
@@ -123,16 +126,49 @@
   }
   function findOwn(id) { for (var i = 0; i < S.templates.length; i++) if (S.templates[i].id === id) return S.templates[i]; return null; }
   function saveCurrent() {
-    var x = findOwn(U.id); if (!x) return; var n = toTpl();
+    var x = findOwn(U.id); if (!x) return; var n = toTpl(), had = A.hasDraft();
     x.metrics = n.metrics; x.jump = n.jump; x.blocks = n.blocks; x.spider = n.spider; x.updated = new Date().toISOString();
-    A.saveTemplates(); if (S.activeTpl === U.id) A.refresh(true);
-    toast("„" + x.name + "“ gespeichert."); A.renderTemplates();
+    A.clearDraft(false); A.saveTemplates();
+    if (had || S.activeTpl === U.id) A.setActive(U.id);   /* was als Entwurf in der Einzelauswertung zu sehen war, gilt jetzt */
+    toast("„" + x.name + "“ gespeichert" + (had ? " und als Auswertung aktiv." : "."), 4500); A.renderTemplates();
   }
   function saveAs(nm) {
     var n = toTpl(), t = KVTpl.normalize({ id: KVTpl.newId(), name: KVTpl.uniqueName(A.templates(), nm), metrics: n.metrics, jump: n.jump, blocks: n.blocks, spider: n.spider, created: new Date().toISOString(), updated: new Date().toISOString() });
-    S.templates.push(t); U.id = t.id; U.d.name = t.name; U.d.builtin = false; A.saveTemplates(); toast("„" + t.name + "“ gespeichert – dauerhaft im Sprungspeicher.");
+    var had = A.hasDraft();
+    S.templates.push(t); U.id = t.id; U.d.name = t.name; U.d.builtin = false; A.clearDraft(false); A.saveTemplates();
+    if (had) A.setActive(t.id);
+    toast("„" + t.name + "“ gespeichert" + (had ? " und als Auswertung aktiv" : "") + " – dauerhaft im Sprungspeicher.", 4500);
   }
   function exportTpls() { saveBlob(new Blob([JSON.stringify(KVTpl.toExport(S.templates), null, 2)], { type: "application/json" }), "Auswertungsvorlagen_" + stamp() + ".json"); toast("Vorlagen exportiert."); }
+
+  /* ================= 0. Einzelauswertung: Kategorien und Echtzeit ================= */
+  /* Kategorien wie in der Einzelauswertung; Sprungleistung / Schnellkraft enthält die Sprungtests, dazu kommen die VALD-Kennwerte (unten) */
+  function singleCats() {
+    var cats = [], idx = {};
+    STATIC_METRICS.concat(S.custom).forEach(function (m) {
+      var c = idx[m.g]; if (!c) { c = idx[m.g] = { name: m.g, keys: [] }; cats.push(c); }
+      c.keys.push(m.k);
+    });
+    return cats;
+  }
+  function panelSingle() {
+    var box = el("div", { class: "kv-panel", id: "kvSingle" }, el("h3", {}, "Einzelauswertung"),
+      el("p", { class: "hint" }, "Hake an, welche Tests in der Einzelauswertung erscheinen – ganze Kategorien hier, einzelne Tests und die Sprungkennwerte weiter unten. Jede Änderung wirkt sofort im Reiter „Einzelauswertung“ (als Entwurf, bis Du speicherst). Alle Sprünge – CMJ, SJ, 5er Hopp, EUR und die angekreuzten VALD-Kennwerte – stehen dort in der Kategorie „" + JUMPCAT + "“."));
+    var status = A.hasDraft() ? el("span", { class: "kv-status dirty" }, "Entwurf aktiv – in der Einzelauswertung schon sichtbar, noch nicht gespeichert") : el("span", { class: "kv-status ok" }, "Einzelauswertung zeigt den gespeicherten Stand von „" + U.d.name + "“" + (S.activeTpl === U.id ? "" : " (Vorlage ist noch nicht aktiv)"));
+    put(box, el("div", { class: "kv-row" }, btn("Einzelauswertung ansehen", function () { setTab("einzel"); }, "p s"), status));
+    var chips = el("div", { class: "kv-cats" });
+    singleCats().forEach(function (c) {
+      var on = c.keys.filter(function (k) { return U.d.metrics.has(k); }).length, cb = el("input", { type: "checkbox", checked: on === c.keys.length });
+      cb.indeterminate = on > 0 && on < c.keys.length;
+      cb.onchange = function () { c.keys.forEach(function (k) { cb.checked ? U.d.metrics.add(k) : U.d.metrics.delete(k); }); refreshTests(); refreshBar(); };
+      var extra = c.name === JUMPCAT ? " + " + (U.d.groups.size && U.d.params.size ? U.d.params.size + " VALD-Kennwerte × " + U.d.groups.size + " Sprungarten" : "VALD-Kennwerte (unten)") : "";
+      chips.append(el("label", { class: "kv-cat" }, cb, el("span", {}, el("b", {}, c.name), el("small", {}, on + " von " + c.keys.length + extra))));
+    });
+    put(box, chips);
+    return box;
+  }
+  function refreshSingle() { var o = document.getElementById("kvSingle"); if (o) o.replaceWith(panelSingle()); }
+  function refreshTests() { var o = document.getElementById("kvTests"); if (o) o.replaceWith(panelTests()); }
 
   /* ================= 2. Bausteine ================= */
   function panelBlocks() {
@@ -233,7 +269,11 @@
     return box;
   }
   function refreshSpider() { var o = document.getElementById("kvSpider"); if (o) o.replaceWith(panelSpider()); }
-  function refreshBar() { var bar = document.getElementById("kvTplBar"); if (bar) bar.replaceWith(panelBar()); var n = document.getElementById("kvTplCount"); if (n) n.textContent = countText(); }
+  function refreshBar() {
+    var bar = document.getElementById("kvTplBar"); if (bar) bar.replaceWith(panelBar()); var n = document.getElementById("kvTplCount"); if (n) n.textContent = countText();
+    refreshSingle();
+    if (dirty()) A.setDraft(U.id, U.d.name, toTpl()); else A.clearDraft();   /* Echtzeit: die Änderung gilt sofort in Einzelauswertung, PDF und Excel */
+  }
   function countText() { var c = counts(); return c.m + " sportmotorische Kennwerte · " + c.p + " Sprungkennwerte × " + c.g + " Sprungarten"; }
 
   /* ================= 3. Sportmotorische Tests ================= */
@@ -243,7 +283,7 @@
       var c = idx[m.g]; if (!c) { c = idx[m.g] = { name: m.g, items: [] }; cats.push(c); }
       c.items.push({ key: m.k, label: m.t, unit: m.u, note: m.calc ? "berechnet" : m.custom ? "eigener Parameter" : "" });
     });
-    var box = el("div", { class: "kv-panel" }, el("h3", {}, "Sportmotorische Tests"),
+    var box = el("div", { class: "kv-panel", id: "kvTests" }, el("h3", {}, "Tests der Einzelauswertung (sportmotorisch und Sprungtests)"),
       el("p", { class: "hint" }, "Hake an, welche Tests erscheinen sollen. „Berechnet“ heißt: die App rechnet den Wert aus anderen Messwerten (z. B. BMI, PSA). Eigene Parameter stammen aus CSV-Importen (unten)."));
     var p = picker({
       cats: cats, placeholder: "Test suchen, z. B. „Screen“, „Swiss“, „Hopp“", height: 380, getQ: function () { return U.mq; }, setQ: function (v) { U.mq = v; },
@@ -258,7 +298,7 @@
   /* ================= 4. Sprungkennwerte ================= */
   function panelJumps() {
     var cats = CMJ.VALD_CATALOG.map(function (c) { return { name: c[0], items: c[1].map(function (x) { return { key: x[0], label: x[0], unit: x[1] }; }) }; });
-    var box = el("div", { class: "kv-panel" }, el("h3", {}, "Sprungkennwerte (VALD)"),
+    var box = el("div", { class: "kv-panel" }, el("h3", {}, JUMPCAT + ": Sprungkennwerte (VALD)"),
       el("p", { class: "hint" }, "Erst die Sprungarten wählen, dann die Kennwerte – die Auswahl gilt für alle gewählten Sprungarten. Kennwerte, die es für eine Art nicht gibt (z. B. Asymmetrie beim Single Leg), fehlen dort automatisch."));
     var gs = el("div", { class: "kv-groups" });
     KVTpl.JUMP_GROUPS.forEach(function (g) {
@@ -433,6 +473,6 @@
     if (!U.d || !A.findTemplate(U.id)) load(S.activeTpl);
     var note = document.getElementById("kvTplNote"); if (note) note.textContent = "aktiv: " + A.tplName();
     root.replaceChildren(el("div", { class: "kv-stack" }, panelBar(),
-      el("div", { class: "kv-panel kv-count" }, el("span", { id: "kvTplCount" }, countText())), panelBlocks(), panelSpider(), panelTests(), panelJumps(), panelImport(), panelSync()));
+      el("div", { class: "kv-panel kv-count" }, el("span", { id: "kvTplCount" }, countText())), panelSingle(), panelBlocks(), panelSpider(), panelTests(), panelJumps(), panelImport(), panelSync()));
   };
 })(KVApp);

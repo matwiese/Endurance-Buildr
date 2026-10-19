@@ -90,6 +90,32 @@ try {
     await page.context().close();
   }
 
+  console.log("Rohdaten leeren (falsche Datei geladen)");
+  {
+    const page = await newPage();
+    await load(page, "fotos_schwebend");
+    assert.equal(await page.evaluate(() => DEMO), false);
+    /* Abbrechen lässt alles, wie es ist */
+    page.once("dialog", d => d.dismiss());
+    await page.click("button:has-text('Rohdaten leeren')");
+    assert.equal(await page.evaluate(() => Object.keys(FOTOS).length), 3, "Abbrechen: Fotos bleiben");
+    /* Bestätigen: Blatt, Fotos und gespeicherter Stand sind weg, die Beispieldaten erscheinen wieder */
+    page.once("dialog", d => d.accept());
+    await page.click("button:has-text('Rohdaten leeren')");
+    await page.waitForFunction(() => DEMO === true);
+    const st = await page.evaluate(() => ({ fotos: Object.keys(FOTOS).length, file: FILE, kv: KVStore.kvGet("base", null), toast: document.getElementById("toast").textContent }));
+    assert.equal(st.fotos, 0); assert.equal(st.file, "Beispieldaten (fiktiv)"); assert.equal(st.kv, null, "auch aus dem Speicher entfernt"); assert.match(st.toast, /entfernt/);
+    await page.waitForTimeout(800); await page.reload(); await page.waitForFunction(() => window.KVApp && KVApp.S.ready);
+    assert.equal(await page.evaluate(() => DEMO), true, "nach Neustart kommt das gelöschte Blatt nicht zurück");
+    /* ohne geladenes Blatt: nur ein Hinweis */
+    await page.click("button:has-text('Rohdaten leeren')");
+    assert.match(await page.textContent("#toast"), /kein Rohdatenblatt geladen/);
+    /* danach lässt sich ein richtiges Blatt laden */
+    await page.setInputFiles("#fin", fx("fotos_blatt")); await page.waitForFunction(() => DEMO === false && Object.keys(FOTOS).length === 3);
+    ok("Rohdatenblatt samt Fotos lässt sich entfernen (mit Rückfrage), bleibt auch nach Neustart weg; neues Blatt danach ladbar");
+    await page.context().close();
+  }
+
   assert.deepEqual(errors, [], "Fehler im Browser:\n" + errors.join("\n"));
   console.log("\nALLES OK (Fotos aus Excel)");
 } catch (e) {

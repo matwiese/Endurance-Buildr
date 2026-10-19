@@ -63,7 +63,18 @@ var KVApp = (function () {
   A.templates = allTemplates;
   A.findTemplate = function (id) { var l = allTemplates(); for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; };
   var prepCache = { key: "", t: null };
+  /* Entwurf: ungespeicherte Änderungen im Editor der Auswertungstemplates wirken sofort (Echtzeit) auf Einzelauswertung, PDF und Excel,
+     bis sie gespeichert oder verworfen werden. Der Entwurf ersetzt dabei die aktive Vorlage. */
+  var draft = null, rtmr = null;
+  function scheduleRefresh() { clearTimeout(rtmr); rtmr = setTimeout(function () { A.refresh(true); }, 200); }
+  A.setDraft = function (id, name, tpl) {
+    draft = { id: id, name: name, t: KVTpl.prepare(KVTpl.normalize(Object.assign({}, tpl, { id: id, name: name }))) };
+    S.tplVer++; A.renderTplSelect(); scheduleRefresh();
+  };
+  A.clearDraft = function (refresh) { if (!draft) return; draft = null; S.tplVer++; A.renderTplSelect(); if (refresh !== false) scheduleRefresh(); };
+  A.hasDraft = function () { return !!draft; };
   A.activeTemplate = function () {
+    if (draft) return draft.t;
     var key = S.activeTpl + "|" + S.tplVer;
     if (prepCache.key !== key) { var t = A.findTemplate(S.activeTpl) || A.findTemplate("tpl:alle"); prepCache = { key: key, t: KVTpl.prepare(t) }; }
     return prepCache.t;
@@ -80,17 +91,17 @@ var KVApp = (function () {
   /* Achsen des Netzdiagramms der aktiven Vorlage als Metrik-Schlüssel (Sprungkennwerte ohne Daten und Kennwerte ohne Wertung entfallen) */
   A.tplSpider = function () { return KVTpl.resolveAxes(KVTpl.spiderIds(A.activeTemplate()), METRICS); };
   A.tplBlock = function (name) { var t = A.activeTemplate(); return !t || t.blocks[name] !== false; };
-  A.tplName = function () { var t = A.activeTemplate(); return t ? t.name : ""; };
-  A.tplIsAll = function () { var t = A.activeTemplate(); return !t || t.kind === "all"; };
+  A.tplName = function () { var t = A.activeTemplate(); return t ? t.name + (draft ? " (Entwurf)" : "") : ""; };
+  A.tplIsAll = function () { var t = A.activeTemplate(); return !draft && (!t || t.kind === "all"); };
   /* alle wählbaren Kennwerte: sportmotorisch (inkl. eigene Parameter) und Sprungkennwerte */
   A.universe = function () {
     return { metrics: STATIC_METRICS.map(function (m) { return m.k; }).concat(S.custom.map(function (m) { return m.k; })),
-      groups: KVTpl.JUMP_GROUPS.slice(), params: K.ALL.map(function (p) { return p.name; }) };
+      groups: KVTpl.JUMP_GROUPS.slice(), params: selNames() };   /* „Alle Kennwerte“ = alle Tests + die im Reiter „Parameter“ gewählten Sprungkennwerte */
   };
   A.saveTemplates = function () { S.tplVer++; ST.kvSet("templates", S.templates); A.renderTplSelect(); };
   A.setActive = function (id) {
     if (!A.findTemplate(id)) id = "tpl:alle";
-    S.activeTpl = id; S.tplVer++; ST.kvSet("activeTemplate", id);
+    draft = null; S.activeTpl = id; S.tplVer++; ST.kvSet("activeTemplate", id);
     A.refresh(true); A.renderTplSelect();
     if (tab === "templates" && A.renderTemplates) A.renderTemplates();
   };
@@ -102,7 +113,7 @@ var KVApp = (function () {
     sel.append(og("Vorlagen", b)); if (own.length) sel.append(og("Meine Vorlagen", own));
     sel.value = A.findTemplate(S.activeTpl) ? S.activeTpl : "tpl:alle";
     var note = document.getElementById("tplNote");
-    if (note) { note.textContent = A.tplIsAll() ? "" : "Vorlage: " + A.tplName(); note.hidden = A.tplIsAll(); }
+    if (note) { note.textContent = A.tplIsAll() ? "" : draft ? "Entwurf: " + draft.name + " (nicht gespeichert)" : "Vorlage: " + A.tplName(); note.hidden = A.tplIsAll(); }
   };
 
   /* ---------- Zusatzdaten aus CSV (eigene Parameter und weitere Messwerte) ---------- */
@@ -226,6 +237,7 @@ var KVApp = (function () {
     if (t === "parameter" && A.renderParams) A.renderParams();
     if (t === "templates" && A.renderTemplates) A.renderTemplates();
   };
+  A.clearBase = function () { ST.kvDelete("base"); };
   A.rememberBase = function (rows, fname, fotos) { ST.kvSet("base", { rows: rows, file: fname, fotos: fotos || {}, saved: Date.now() }); };
 
   /* ---------- Hinweise für das Blatt „Datenqualität“ ---------- */
@@ -336,7 +348,7 @@ var KVApp = (function () {
   };
   A.wipe = function () {
     return ST.clearAll().then(function () {
-      S.results = []; S.aliases = {}; S.templates = []; S.activeTpl = "tpl:alle"; S.custom = []; S.imports = []; S.tplVer++;
+      draft = null; S.results = []; S.aliases = {}; S.templates = []; S.activeTpl = "tpl:alle"; S.custom = []; S.imports = []; S.tplVer++;
       S.settings = { agg: "best", thr: 20, keepRaw: true, fillCmjSj: true, skipKnown: true, showClass: false }; A.renderTplSelect();
     });
   };

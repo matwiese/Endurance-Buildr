@@ -121,3 +121,8 @@ details.kv-d p,details.kv-d li{line-height:1.5}
 .kv-axis select{width:100%;min-width:0}
 .kv-spprev{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)}
 .kv-spsvg{max-width:540px}.kv-spsvg svg{display:block;width:100%;height:auto;border:1px solid var(--line-soft);background:#fff}
+/* Auswertungstemplates: Kategorien der Einzelauswertung */
+.kv-cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin-top:6px}
+.kv-cat{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line-soft);padding:8px 11px;cursor:pointer;background:#FAFBFC;font-size:13.5px}
+.kv-cat:hover{border-color:var(--ink);background:#fff}
+.kv-cat small{display:block;color:var(--ink-2);font-size:12px;margin-top:2px}

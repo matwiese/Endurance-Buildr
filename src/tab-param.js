@@ -57,7 +57,7 @@
         b("Löschen", function () { mode = "delete"; render(); }, "d", !act || act.builtin),
         el("span", { class: "kv-sep" }), b("Exportieren", exportSets, "", !own.length), b("Importieren", function () { fileIn.click(); }), status);
       if (mode === "saveas" || mode === "rename") {
-        var inp = el("input", { type: "text", maxlength: 60, placeholder: "Name der Kombination, z. B. „Sprungkraft Segeln“", value: mode === "rename" ? act.name : "" });
+        var inp = el("input", { type: "text", maxlength: 60, placeholder: "Name der Kombination, z. B. „Sprungleistung Segeln“", value: mode === "rename" ? act.name : "" });
         var ok = function () { var nm = inp.value.trim(); if (!nm) { inp.focus(); return; } if (mode === "rename") renameActive(nm); else saveAs(nm); mode = null; render(); };
         inp.addEventListener("keydown", function (e) { if (e.key === "Enter") ok(); if (e.key === "Escape") { mode = null; render(); } });
         box.append(el("div", { class: "kv-dialog" }, el("span", {}, mode === "rename" ? "Neuer Name:" : "Aktuelle Auswahl (" + S.sel.size + " Kennwerte) speichern als:"), inp,

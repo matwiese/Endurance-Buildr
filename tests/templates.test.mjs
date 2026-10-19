@@ -92,7 +92,7 @@ test("Netzdiagramm: Achsen je Vorlage (normalisieren, Standard, auflösen, Austa
   assert.deepEqual(back[0].spider, ["cmj", "sj", "hopL"]); assert.equal(back[1].spider, null, "Vorlage ohne Angabe bleibt ohne Angabe");
 });
 
-test("Vorlage „Sprungauswertung gesamt“: CMJ, SJ, EUR, Peak Force, 5er Hopp, Seitendifferenz in einer Karte", () => {
+test("Vorlage „Sprungauswertung gesamt“: CMJ, SJ, EUR, Peak Force, 5er Hopp, Seitendifferenz in einer Kategorie", () => {
   const b = KVTpl.builtins(), raw = b.find(t => t.id === "tpl:sprungges"), t = KVTpl.prepare(raw);
   assert.ok(raw && raw.builtin && b.length === 5, "eingebaut, die übrigen Vorlagen bleiben davor");
   assert.deepEqual(raw.metrics, ["cmj", "sj", "eur", "hopL", "hopR", "hopDiff"]);
@@ -103,9 +103,10 @@ test("Vorlage „Sprungauswertung gesamt“: CMJ, SJ, EUR, Peak Force, 5er Hopp,
   for (const g of ["CMJ", "SJ"]) for (const n of ["Concentric Peak Force", "Concentric Peak Force / BM"]) assert.ok(KVTpl.includes(t, j(g, n)), g + " " + n);
   assert.ok(!KVTpl.includes(t, j("SL-CMJ|L", "Concentric Peak Force")) && !KVTpl.includes(t, j("LSI", "Concentric Peak Force / BM")) && !KVTpl.includes(t, j("CMJ", "Jump Height (Imp-Mom)")));
   assert.equal(raw.blocks.jumpOne, true); assert.equal(raw.blocks.rank, true);
-  /* Baustein ist sonst aus; ältere gespeicherte Vorlagen ohne die Angabe bleiben unverändert */
-  for (const o of b.filter(x => x.id !== "tpl:sprungges")) assert.equal(o.blocks.jumpOne, false, o.id);
-  assert.equal(KVTpl.normalize({ name: "alt", metrics: ["cmj"], blocks: { rank: true } }).blocks.jumpOne, false);
+  /* Alle Sprünge in einer Kategorie „Sprungleistung / Schnellkraft“: Standard bei allen Vorlagen, auch bei älteren gespeicherten ohne die Angabe; abschaltbar */
+  for (const o of b) assert.equal(o.blocks.jumpOne, true, o.id);
+  assert.equal(KVTpl.normalize({ name: "alt", metrics: ["cmj"], blocks: { rank: true } }).blocks.jumpOne, true);
+  assert.equal(KVTpl.normalize({ name: "alt", metrics: ["cmj"], blocks: { jumpOne: false } }).blocks.jumpOne, false);
   assert.ok(KVTpl.BLOCKS.some(x => x[0] === "jumpOne") && KVTpl.BLOCKS.some(x => x[0] === "overview"));
   /* Erweiterte Übersicht im PDF: überall an, auch bei älteren gespeicherten Vorlagen ohne die Angabe; abschaltbar */
   for (const o of b) assert.equal(o.blocks.overview, true, o.id);

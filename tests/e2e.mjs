@@ -88,7 +88,10 @@ try {
   await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
   await page.waitForSelector("#single .panel h3");
   const heads = await page.$$eval("#single .panel h3", e => e.map(x => x.textContent));
-  assert.ok(heads.includes("CMJ (VALD)") && heads.includes("SL-CMJ links (VALD)") && heads.includes("SL-CMJ Seitenvergleich (VALD)"), "Gruppen in Einzelauswertung: " + heads.join(" | "));
+  /* alle Sprünge stehen in einer Kategorie „Sprungleistung / Schnellkraft“ (nicht mehr „Sprungkraft“), die Sprungart in Klammern */
+  assert.ok(heads.includes("Sprungleistung / Schnellkraft") && !heads.includes("Sprungkraft") && !heads.some(h => /\(VALD\)/.test(h)), "Gruppen in Einzelauswertung: " + heads.join(" | "));
+  const jl = await page.$$eval("#single .panel:has(h3:text-is('Sprungleistung / Schnellkraft')) .lbl", e => e.map(x => x.textContent.replace(/\s+/g, " ").trim()));
+  for (const rx of [/^CMJ ohne Arme/, /^Squat Jump/, /^5er Hopp links/, /^Jump Height \(Imp-Mom\) \(CMJ\)/, /^Jump Height \(Imp-Mom\) \(SJ\)/, /\(SL-CMJ links\)/, /\(SL-CMJ rechts\)/]) assert.ok(jl.some(l => rx.test(l)), `Zeile ${rx} fehlt in „Sprungleistung / Schnellkraft“: ` + jl.slice(0, 8).join(" | "));
   await shot("02_einzel");
   await page.evaluate(() => { curMetric = "j_cmj_jump_height_imp_mom"; setTab("leistung"); });
   await page.waitForSelector("#board .lb");

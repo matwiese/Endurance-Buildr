@@ -115,6 +115,15 @@ try {
   await page.locator("#kvTpl .kv-block:has-text('Vergleich zur Gruppe') input").uncheck();
   await page.locator("#kvTpl .kv-block:has-text('Rangplatz') input").check();
   assert.match(await page.textContent("#kvTplBar .kv-status"), /nicht gespeichert/);
+  /* Echtzeit: Der Entwurf gilt schon, bevor gespeichert wird – der Reiter Einzelauswertung zeigt nur noch das Angekreuzte */
+  await page.waitForFunction(() => KVApp.hasDraft() && KVApp.S.templates.length === 0, null, { timeout: 5000 });
+  await page.waitForTimeout(500);
+  await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
+  await page.waitForSelector("#single .panel h3");
+  const liveHeads = await page.$$eval("#single .panel h3", e => e.map(x => x.textContent));
+  assert.ok(!liveHeads.includes("Rumpfkraftausdauer") && !liveHeads.includes("Maximalkraft") && liveHeads.includes("Sprungleistung / Schnellkraft"), "Entwurf wirkt sofort auf die Einzelauswertung: " + liveHeads.join(" | "));
+  assert.match(await page.textContent("#tplNote"), /Entwurf/, "Hinweis auf den Entwurf");
+  await page.evaluate(() => setTab("templates")); await page.waitForSelector("#kvTplBar");
   await page.click("#kvTplBar button:has-text('Speichern unter')");
   await page.fill("#kvTplBar .kv-dialog input[type=text]", "Testtag Kurz");
   await page.click("#kvTplBar .kv-dialog button:has-text('Speichern')");
@@ -129,15 +138,15 @@ try {
   ok("Vorlage „Testtag Kurz“ gespeichert: 6 Tests, 2 Sprungkennwerte, Bausteine angepasst");
   await shot("01_vorlage");
 
-  console.log("4. Als Auswertung verwenden → Einzelauswertung zeigt nur das Angekreuzte");
-  await page.click("#kvTplBar button:has-text('Als Auswertung verwenden')");
-  await page.waitForFunction(() => KVApp.S.activeTpl !== "tpl:alle");
+  console.log("4. Gespeichert → die Vorlage gilt (war als Entwurf schon sichtbar), Einzelauswertung zeigt nur das Angekreuzte");
+  await page.waitForFunction(() => KVApp.S.activeTpl !== "tpl:alle" && !KVApp.hasDraft());
   await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
   await page.waitForSelector("#single .panel h3");
   const heads = await page.$$eval("#single .panel h3", e => e.map(x => x.textContent));
   const labels = await page.$$eval("#single .mline .lbl", e => e.map(x => x.textContent));
-  assert.ok(heads.includes("CMJ (VALD)") && heads.includes("SL-CMJ links (VALD)") && !heads.includes("SJ (VALD)") && !heads.includes("Rumpfkraftausdauer") && !heads.includes("Maximalkraft"), heads.join(" | "));
-  assert.ok(labels.some(l => /CMJ ohne Arme/.test(l)) && labels.some(l => /Jump Height \(Imp-Mom\)/.test(l)) && !labels.some(l => /Swiss|Fmax|Hängen/.test(l)), labels.join(" | "));
+  assert.ok(heads.includes("Sprungleistung / Schnellkraft") && !heads.some(h => /\(VALD\)/.test(h)) && !heads.includes("Rumpfkraftausdauer") && !heads.includes("Maximalkraft"), heads.join(" | "));
+  /* alle Sprünge in einer Kategorie: CMJ-Test aus dem Blatt und die angekreuzten VALD-Kennwerte von CMJ und Single Leg (SJ ist abgewählt) */
+  assert.ok(labels.some(l => /CMJ ohne Arme/.test(l)) && labels.some(l => /Jump Height \(Imp-Mom\) \(CMJ\)/.test(l)) && labels.some(l => /\(SL-CMJ links\)/.test(l)) && !labels.some(l => /\(SJ\)/.test(l)) && !labels.some(l => /Swiss|Fmax|Hängen/.test(l)), labels.join(" | "));
   assert.ok(await page.$(".mline.mlite") && !(await page.$("#single .regwrap")), "Zeilen ohne Regler (Vergleich zur Gruppe aus)");
   assert.ok(labels.some(l => /Platz \d+\/\d+/.test(l)), "Rang sichtbar");
   assert.equal(await page.$("#single .spiderpanel"), null, "kein Netzdiagramm (Baustein aus)");
@@ -222,7 +231,7 @@ try {
   await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
   await page.waitForSelector("#single .panel h3");
   const jh = await page.$$eval("#single .panel h3", e => e.map(x => x.textContent));
-  assert.ok(jh.includes("Sprungauswertung") && !jh.some(h => /VALD|Sprungkraft|Rumpf|Maximal|Movement/.test(h)), "nur eine Karte für die Sprünge: " + jh.join(" | "));
+  assert.ok(jh.includes("Sprungleistung / Schnellkraft") && !jh.some(h => /VALD|Sprungkraft|Rumpf|Maximal|Movement/.test(h)), "nur eine Karte für die Sprünge: " + jh.join(" | "));
   const jl = await page.$$eval("#single .mline .lbl", e => e.map(x => x.textContent.replace(/\s+/g, " ").trim()));
   const want = [/^CMJ ohne Arme/, /^Squat Jump/, /^Eccentric Utilization Ratio \(EUR\)/, /^Concentric Peak Force \(CMJ\) N/, /^Concentric Peak Force \/ BM \(CMJ\) N\/kg/, /^Concentric Peak Force \(SJ\) N/, /^Concentric Peak Force \/ BM \(SJ\) N\/kg/, /^5er Hopp links/, /^5er Hopp rechts/, /^Seitendifferenz 5er Hopp/];
   assert.equal(jl.length, want.length, jl.join(" | ")); want.forEach((rx, i) => assert.match(jl[i], rx, `Zeile ${i + 1}: ${jl[i]}`));
@@ -232,7 +241,7 @@ try {
   assert.equal(await page.$$eval("#single .spiderpanel svg > line", l => l.length), 8, "Netz mit den acht Achsen der Vorlage");
   await shot("06_sprungauswertung_gesamt");
   const pdfJ = await pdfOf("Wende Sophie", "profil_sprungauswertung.pdf");
-  for (const t of ["SPRUNGAUSWERTUNG", "Eccentric Utilization Ratio (EUR)", "Concentric Peak Force (CMJ)", "Concentric Peak Force (SJ)", "5er Hopp links", "Seitendifferenz 5er Hopp", "Vorlage: Sprungauswertung gesamt"]) assert.ok(pdfJ.all.includes(t), "PDF ohne „" + t + "“");
+  for (const t of ["SPRUNGLEISTUNG / SCHNELLKRAFT", "Eccentric Utilization Ratio (EUR)", "Concentric Peak Force (CMJ)", "Concentric Peak Force (SJ)", "5er Hopp links", "Seitendifferenz 5er Hopp", "Vorlage: Sprungauswertung gesamt"]) assert.ok(pdfJ.all.includes(t), "PDF ohne „" + t + "“");
   for (const t of ["SL-CMJ", "Swiss", "Maximalkraft", "PSA"]) assert.ok(!pdfJ.all.includes(t), "PDF enthält „" + t + "“");
   assert.ok(pdfJ.all.indexOf("Eccentric Utilization Ratio") < pdfJ.all.indexOf("Concentric Peak Force (CMJ)") && pdfJ.all.indexOf("Concentric Peak Force (SJ)") < pdfJ.all.indexOf("5er Hopp links"), "Reihenfolge im PDF");
   /* ohne den Baustein stehen die Sprungkennwerte wieder in ihren eigenen Karten */
@@ -240,9 +249,47 @@ try {
   await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
   await page.waitForSelector("#single .panel h3");
   const jh2 = await page.$$eval("#single .panel h3", e => e.map(x => x.textContent));
-  assert.ok(jh2.includes("Sprungkraft") && jh2.includes("CMJ (VALD)") && jh2.includes("SJ (VALD)") && !jh2.includes("Sprungauswertung"), jh2.join(" | "));
+  assert.ok(jh2.includes("Sprungleistung / Schnellkraft") && jh2.includes("CMJ (VALD)") && jh2.includes("SJ (VALD)"), "ohne den Baustein stehen die VALD-Kennwerte wieder in eigenen Karten: " + jh2.join(" | "));
   await page.evaluate(prev => { KVApp.setActive(prev); KVApp.S.templates = KVApp.S.templates.filter(t => t.id !== "tpl:tmp"); KVApp.saveTemplates(); }, prevActive);
-  ok(`eine Karte „Sprungauswertung“ mit ${want.length} Zeilen in der Reihenfolge CMJ, SJ, EUR (${eu.eur.toFixed(3)}), Peak Force, 5er links/rechts, Seitendifferenz; PDF und Netz folgen; ohne Baustein getrennte Karten`);
+  ok(`eine Karte „Sprungleistung / Schnellkraft“ mit ${want.length} Zeilen in der Reihenfolge CMJ, SJ, EUR (${eu.eur.toFixed(3)}), Peak Force, 5er links/rechts, Seitendifferenz; PDF und Netz folgen; ohne Baustein getrennte Karten`);
+
+  console.log("5f. Einzelauswertung: Datumsauswahl (gewählter Test, nur dieser wird angezeigt) und Punkt „Einzelauswertung“ in den Templates");
+  await page.evaluate(() => KVApp.setActive("tpl:alle"));
+  await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
+  await page.waitForSelector("#pickDate option", { state: "attached" });
+  const dates = await page.$$eval("#pickDate option", o => o.map(x => x.textContent.replace(/\s+/g, " ").trim()));
+  assert.deepEqual(dates, ["21.04.2026 · letzter Test", "20.01.2026", "14.10.2025", "10.06.2025"], "Termine der Person, neuester zuerst");
+  const snap = () => page.evaluate(() => ({ meta: document.querySelector("#single .hero .meta").textContent, mass: (Array.from(document.querySelectorAll("#single .mline")).find(r => /Körpermasse/.test(r.textContent)) || { querySelector: () => ({ textContent: "" }) }).querySelector(".mv2").textContent, tag: (document.querySelector("#single table.tst .tag") || {}).textContent }));
+  const last = await snap();
+  assert.ok(/ausgewertet: 21\.04\.2026/.test(last.meta) && !/früherer Test/.test(last.meta) && last.mass === "66,0" && last.tag === "aktuell", JSON.stringify(last));
+  await page.selectOption("#pickDate", "1");   /* 14.10.2025: Masse 66,1 */
+  const early = await snap();
+  assert.ok(/ausgewertet: 14\.10\.2025/.test(early.meta) && /früherer Test gewählt/.test(early.meta) && early.mass === "66,1" && early.tag === "gewählt", JSON.stringify(early));
+  const pdfEarly = await pdfOf("Wende Sophie", "profil_frueherer_test.pdf");
+  assert.ok(pdfEarly.pageTexts[0].includes("14.10.2025") && pdfEarly.pageTexts[0].includes("66,1") && !pdfEarly.pageTexts[0].includes("SEGELN  ·  KADERTEST  ·  21.04.2026"), "PDF folgt dem gewählten Test");
+  assert.ok(pdfEarly.all.includes("Test vom 14.10.2025"), "Folgeseiten nennen den gewählten Test");
+  await page.uncheck("#pickRuns"); assert.equal(await page.$("#single table.tst"), null, "Verlauf ausgeblendet: nur der gewählte Test"); await page.check("#pickRuns");
+  /* andere Person: eigene Auswahl, Standard letzter Test */
+  await page.evaluate(() => { pickName = "Luv Paul"; renderSingle(); });
+  assert.equal(await page.inputValue("#pickDate"), "3", "andere Person: Standard ist der letzte Test");
+  await page.evaluate(() => { pickName = "Wende Sophie"; renderSingle(); });
+  assert.equal(await page.inputValue("#pickDate"), "1", "die Auswahl gilt je Person");
+  await page.selectOption("#pickDate", "3");
+  /* Punkt „Einzelauswertung“: Kategorie per Häkchen, wirkt sofort (Entwurf), „Änderungen verwerfen“ setzt zurück */
+  await page.evaluate(() => setTab("templates")); await page.waitForSelector("#kvSingle");
+  await page.selectOption("#kvTplBar select", "tpl:alle"); await page.waitForSelector("#kvSingle");
+  const chips = await page.$$eval("#kvSingle .kv-cat b", b => b.map(x => x.textContent));
+  assert.ok(chips.includes("Sprungleistung / Schnellkraft") && chips.includes("Movement Screen") && !chips.includes("Sprungkraft"), chips.join(" | "));
+  await page.locator("#kvSingle .kv-cat:has-text('Movement Screen') input").uncheck(); await page.waitForTimeout(500);
+  await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
+  assert.ok(!(await page.$$eval("#single .panel h3", e => e.map(x => x.textContent))).includes("Movement Screen"), "Kategorie sofort aus der Einzelauswertung");
+  assert.equal(await page.evaluate(() => KVApp.S.templates.length), 1, "nichts gespeichert, nur Entwurf");
+  await page.evaluate(() => setTab("templates")); await page.waitForSelector("#kvTplBar");
+  await page.click("#kvTplBar button:has-text('Änderungen verwerfen')"); await page.waitForTimeout(500);
+  await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); });
+  assert.ok((await page.$$eval("#single .panel h3", e => e.map(x => x.textContent))).includes("Movement Screen"), "verworfen: Kategorie wieder da");
+  await page.evaluate(() => KVApp.setActive(KVApp.S.templates[0].id));
+  ok("Datumsauswahl: gewählter Test (Werte, Kopf, Tabelle, PDF), Verlauf ausblendbar, Auswahl je Person; Kategorien der Einzelauswertung wirken in Echtzeit und lassen sich verwerfen");
 
   console.log("5d. PDF: Erweiterte Übersicht hinten angehängt, mit den im Reiter gewählten Testterminen");
   await page.evaluate(() => KVApp.setActive("tpl:sprungges"));
