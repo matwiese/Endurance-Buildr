@@ -913,6 +913,24 @@ function hexRgb(h){ h=h.replace("#",""); return [parseInt(h.substr(0,2),16),pars
 function clsTag(c){ var col=colorOfCls(c);
   return c?'<span class="tag cls" style="background:'+col+'1C;color:'+col+'">'+esc(c)+'</span>':'<span class="tag t-warn">ohne Klasse</span>'; }
 
+/* Aktueller Test = der letzte Test aus dem Rohdatenblatt; reine VALD- oder CSV-Zeilen (anderer Testtag) zählen nur, wenn es sonst keinen gibt */
+function defaultIdx(ts){
+  for(var i=ts.length-1;i>=0;i--) if(!ts[i].jumpOnly&&!ts[i].importOnly) return i;
+  return ts.length-1;
+}
+/* Werte des Tests ts[idx]. Gibt es an diesem Testtag keinen VALD-Test (anderes Datum als im Blatt), gelten die Sprungkennwerte des nächstliegenden
+   VALD-Tests: der letzte davor, sonst (nur beim aktuellen Test, later=true) der erste danach; from = dessen Datum. */
+function valuesFor(ts,idx,later){
+  var cur=ts[idx], val={}, jm=[];
+  METRICS.forEach(function(m){ val[m.k]=num(cur[m.k]); if(m.jump) jm.push(m); });
+  if(jm.length&&!jm.some(function(m){ return val[m.k]!=null; })){
+    var has=function(t){ return jm.some(function(m){ return num(t[m.k])!=null; }); }, src=null, i;
+    for(i=idx-1;i>=0&&!src;i--) if(has(ts[i])) src=ts[i];
+    if(!src&&later) for(i=idx+1;i<ts.length&&!src;i++) if(has(ts[i])) src=ts[i];
+    if(src){ jm.forEach(function(m){ var v=num(src[m.k]); if(v!=null) val[m.k]=v; }); return {val:val,from:src.date||"1"}; }
+  }
+  return {val:val,from:""};
+}
 function buildPlayers(){
   byName={};
   tests.forEach(function(t){ (byName[t.name]=byName[t.name]||[]).push(t); });
@@ -925,12 +943,12 @@ function buildPlayers(){
     });
     var pick=function(k){ for(var i=ts.length-1;i>=0;i--) if(ts[i][k]) return ts[i][k]; return ""; };
     var uniq=function(k){ var u=[]; ts.forEach(function(t){ var v=k==="dob"?dobDe(t[k]):t[k]; if(t[k]&&u.indexOf(v)<0) u.push(v); }); return u; };
-    var p={ name:n, tests:ts, cur:ts[ts.length-1], cls:pick("cls"), kader:pick("kader"),
+    var di=defaultIdx(ts);
+    var p={ name:n, tests:ts, defIdx:di, cur:ts[di], cls:pick("cls"), kader:pick("kader"),
             side:String(pick("side")).toUpperCase().charAt(0), dob:pick("dob"), image:pick("image")||FOTOS[n]||"",
             clsAll:uniq("cls"), dobAll:uniq("dob"), kaderAll:uniq("kader") };
     p.age=ageAt(p.dob,p.cur.date);
-    p.val={};
-    METRICS.forEach(function(m){ p.val[m.k]=num(p.cur[m.k]); });
+    var vf=valuesFor(ts,di,true); p.val=vf.val; p.valdFrom=vf.from;
     p.hasVal=METRICS.some(function(m){ return p.val[m.k]!=null; });
     p.nurFrueher=[];
     if(ts.length>1) METRICS.forEach(function(m){
@@ -1360,22 +1378,22 @@ function findPlayer(n){ for(var i=0;i<players.length;i++) if(players[i].name===n
    Netz vergleichen dann mit dem Stand zu diesem Testtag (je Person der letzte Test bis zu diesem Tag). Die Auswahl gilt je Person. */
 var EVALSEL={}, EVAL_RUNS=true;   /* Name -> {k: Testschlüssel, i: Index} */
 function evalIdx(p){
-  var last=p.tests.length-1, s=EVALSEL[p.name]; if(!s) return last;
-  var i=-1; if(s.k!=null){ for(var j=last;j>=0;j--) if(testKey(p.tests[j])===s.k){ i=j; break; } } else i=s.i;
-  return (i>=0&&i<last)?i:last;
+  var last=p.defIdx, s=EVALSEL[p.name]; if(!s) return last;
+  var i=-1; if(s.k!=null){ for(var j=p.tests.length-1;j>=0;j--) if(testKey(p.tests[j])===s.k){ i=j; break; } } else i=s.i;
+  return (i>=0&&i<p.tests.length)?i:last;
 }
 /* Kopie der Person mit dem Test idx als aktuellem Test */
 function playerAt(p,idx){
-  if(idx===p.tests.length-1) return p;
+  if(idx===p.defIdx) return p;
   var c={}; Object.keys(p).forEach(function(k){ c[k]=p[k]; });
-  c.cur=p.tests[idx]; c.age=ageAt(p.dob,c.cur.date); c.val={};
-  METRICS.forEach(function(m){ c.val[m.k]=num(c.cur[m.k]); });
+  c.cur=p.tests[idx]; c.age=ageAt(p.dob,c.cur.date);
+  var vf=valuesFor(p.tests,idx,false); c.val=vf.val; c.valdFrom=vf.from;
   c.hasVal=METRICS.some(function(m){ return c.val[m.k]!=null; }); c.nurFrueher=[];
   return c;
 }
 /* fn(Person) mit der gewählten Sicht ausführen: während fn läuft, besteht der Kader aus den Ständen zum gewählten Testtag */
 function inView(p,fn){
-  var idx=evalIdx(p); if(idx===p.tests.length-1) return fn(p);
+  var idx=evalIdx(p); if(idx===p.defIdx) return fn(p);
   var D=testKey(p.tests[idx]), keep=players, pv=playerAt(p,idx);
   players=keep.map(function(q){
     if(q.name===p.name) return pv;
@@ -1386,9 +1404,11 @@ function inView(p,fn){
   try{ return fn(pv); } finally{ players=keep; }
 }
 /* Beschriftung des ausgewerteten Tests: letzter Test = „aktuell“, früher gewählter = „gewählt“ */
-function curWord(p){ return p.cur===p.tests[p.tests.length-1]?"aktuell":"gew\u00e4hlt"; }
+/* Hinweis, wenn die VALD-Werte von einem anderen Tag als dem ausgewerteten Test stammen */
+function valdNote(p){ var d=p.valdFrom&&p.valdFrom!=="1"?" vom "+dobDe(p.valdFrom):""; return "Test"+d+" \u2014 am ausgewerteten Testtag"+(p.cur.date?" ("+dobDe(p.cur.date)+")":"")+" gibt es keinen VALD-Test"; }
+function curWord(p){ return p.cur===p.tests[p.defIdx]?"aktuell":"gew\u00e4hlt"; }
 function fillDate(p){
-  var sel=$("pickDate"), cur=evalIdx(p), labs=ovLabels(p), last=p.tests.length-1;
+  var sel=$("pickDate"), cur=evalIdx(p), labs=ovLabels(p), last=p.defIdx;
   sel.innerHTML=p.tests.map(function(t,i){ return i; }).reverse().map(function(i){
     return '<option value="'+i+'"'+(i===cur?" selected":"")+'>'+esc(labs[i])+(i===last?"  ·  letzter Test":"")+'</option>'; }).join("");
   sel.disabled=p.tests.length<2;
@@ -1396,7 +1416,7 @@ function fillDate(p){
 function setEvalDate(v){
   var p=findPlayer(pickName); if(!p) return;
   var i=parseInt(v,10);
-  if(!(i<p.tests.length-1)) delete EVALSEL[p.name]; else EVALSEL[p.name]={k:testKey(p.tests[i]),i:i};
+  if(i===p.defIdx) delete EVALSEL[p.name]; else EVALSEL[p.name]={k:testKey(p.tests[i]),i:i};
   renderSingle();
 }
 function openSheet(name){
@@ -1691,7 +1711,7 @@ function renderSingle(){
   inView(p0,function(p){ renderSingleOf(p,box); });
 }
 function renderSingleOf(p,box){
-  var ph=photoOf(p), g=effRef(p), col=colorOf(p), early=(p.cur!==p.tests[p.tests.length-1]);
+  var ph=photoOf(p), g=effRef(p), col=colorOf(p), early=(p.cur!==p.tests[p.defIdx]);
   var head='<div class="hero" style="border-top-color:'+col+'">'+
     (ph?'<img class="big" src="'+esc(ph)+'" alt="">':'<span class="bigph">'+esc(initials(p.name))+'</span>')+
     '<div><h2>'+esc(p.name)+'</h2><div class="meta">'+esc([p.cls||"ohne Bootsklasse",p.kader,p.side?"Auslage "+p.side:""].filter(Boolean).join(" \u00b7 "))+
@@ -1718,6 +1738,7 @@ function renderSingleOf(p,box){
   var mkCard=function(gr,extra){
     return '<div class="panel"'+(extra||"")+'><h3>'+esc(gr)+'</h3><div class="hint">Regler zeigt die Lage zum '+esc(glabel(g))+
       ' \u2014 Mitte ist der Durchschnitt.</div>'+
+      (gr===JUMPCAT&&p.valdFrom?'<div class="hint" style="color:#8A5E00">VALD-Kennwerte: '+valdNote(p)+'</div>':'')+
       groups[gr].map(function(m){ return TB("deviation")?metricSlider(p,m,g):metricLine(p,m); }).join("")+(gr===FMS?clrLine(p.cur):"")+'</div>';
   };
   var anthro=groups[ANTHRO]?'<div class="anthro">'+mkCard(ANTHRO,' style="border-top-color:var(--gold)"')+'</div>':"";
@@ -2245,7 +2266,7 @@ function pdfMetricItems(p){
   var og=outGroups(p), groups=og.groups, go=og.go, items=[];
   orderGroups(go).forEach(function(g){
     if(g===ANTHRO) return;
-    items.push({h:true,t:g,hh:PDF.gh});
+    items.push({h:true,t:g+(g===JUMPCAT&&p.valdFrom?"  \u00b7  VALD "+(p.valdFrom!=="1"?"vom "+dobDe(p.valdFrom):"anderer Tag"):""),hh:PDF.gh});
     groups[g].forEach(function(m){ items.push({h:false,m:m,hh:rowH()}); });
     if(g===FMS && (p.cur.clrL!=null||p.cur.clrR!=null)) items.push({h:false,clr:true,hh:9});
   });
@@ -2475,7 +2496,7 @@ function pdfHeadN(doc,p,sub){
 }
 function pdfPageN(doc,p,refG,cols,seite,total){
   var L=PDF.left, R=PDF.right, red=LSA.colors.red;
-  pdfHeadN(doc,p,"Leistungsdiagnostik  \u00b7  "+(p.cur!==p.tests[p.tests.length-1]?"Test vom "+dobDe(p.cur.date):"letzter Testdurchgang")+(TB("deviation")?"  \u00b7  Vergleich gegen "+glabel(refG):""));
+  pdfHeadN(doc,p,"Leistungsdiagnostik  \u00b7  "+(p.cur!==p.tests[p.defIdx]?"Test vom "+dobDe(p.cur.date):"letzter Testdurchgang")+(TB("deviation")?"  \u00b7  Vergleich gegen "+glabel(refG):""));
 
   if(!cols.length){
     doc.setFont("helvetica","normal"); doc.setFontSize(10.5); doc.setTextColor(110,120,130);
@@ -2614,7 +2635,7 @@ function printFallback(list,phs,chs){
     var perf="";
     if(p.hasVal){
       var og=outGroups(p), groups=og.groups, go=og.go;
-      perf=orderGroups(go).map(function(g){ return '<h2>'+esc(g).toUpperCase()+'</h2><table class="t">'+groups[g].map(function(m){
+      perf=orderGroups(go).map(function(g){ return '<h2>'+esc(g+(g===JUMPCAT&&p.valdFrom?"  \u00b7  VALD "+(p.valdFrom!=="1"?"vom "+dobDe(p.valdFrom):"anderer Tag"):"")).toUpperCase()+'</h2><table class="t">'+groups[g].map(function(m){
         var rk=(TB("rank")&&m.dir!==0)?rankOf(p,m.k):null, qq=p.cur.q[m.k];
         return '<tr><td class="k">'+esc(mName(m))+(qq?" · Q "+esc(qq):"")+'</td><td class="v">'+de(p.val[m.k],m.d)+
           '</td><td class="r">'+(rk?"Platz "+rk.r+"/"+rk.n:"")+'</td></tr>'; }).join("")+'</table>'; }).join("");

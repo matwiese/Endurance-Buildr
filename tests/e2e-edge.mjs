@@ -169,6 +169,34 @@ try {
     ok(`PDF erzeugt: ${pages} Seiten, ${(bytes.length / 1024).toFixed(0)} KB, ${((Date.now() - t0) / 1000).toFixed(1)} s (mit 65 Kennwerten × 4 Gruppen)`);
   } else console.log("  – übersprungen (jsPDF nicht vorhanden)");
 
+  console.log("L. VALD an einem anderen Tag als im Blatt: die Werte erscheinen trotzdem in „Sprungleistung / Schnellkraft“");
+  {
+    const p3 = await newPage();
+    const cp = path.join(dir, "roh_demo.csv"); fs.writeFileSync(cp, await p3.evaluate(() => DEMO_CSV));
+    await p3.setInputFiles("#fin", cp); await p3.waitForFunction(() => DEMO === false);
+    /* Sophie: VALD-Test 6 Wochen VOR ihrem letzten Blatt-Test (21.04.2026), Paul: 6 Wochen DANACH */
+    const odd = [];
+    [["Sophie Wende", "2026.03.10", 2.35], ["Paul Luv", "2026.06.02", 2.55]].forEach(([who, d, v]) => {
+      const one = (kind, trial, v0) => { const f = makeJump(CMJ, kind, { athlete: who, date: d, trial, v0, seed: trial + odd.length }); const q = path.join(dir, "L" + odd.length + "_" + f.name); fs.writeFileSync(q, f.text); odd.push(q); };
+      [1, 2].forEach(n => one("CMJ", n, v + n * 0.04)); [1, 2].forEach(n => one("SJ", 10 + n, v - 0.3 + n * 0.02)); one("SL-L", 21, v - 0.35); one("SL-R", 31, v - 0.4);
+    });
+    await upload(p3, odd);
+    const info = await p3.evaluate(() => ["Wende Sophie", "Luv Paul"].map(n => { const q = findPlayer(n); return { n, cur: q.cur.date, from: q.valdFrom, h: q.val.j_cmj_jump_height_imp_mom, tests: q.tests.length, vOnly: q.tests.filter(t => t.jumpOnly).length }; }));
+    assert.ok(info.every(i => i.h > 20 && i.vOnly === 1), JSON.stringify(info));
+    assert.equal(info[0].from, "2026-03-10"); assert.equal(info[1].from, "2026-06-02");
+    assert.ok(info.every(i => /21\.04\.2026|2026-04-21/.test(i.cur)), "aktueller Test bleibt der letzte aus dem Blatt, auch wenn der VALD-Test später liegt: " + JSON.stringify(info));
+    for (const [n, d] of [["Wende Sophie", "10.03.2026"], ["Luv Paul", "02.06.2026"]]) {
+      await p3.evaluate(x => { pickName = x; setTab("einzel"); }, n);
+      await p3.waitForSelector("#single .panel h3");
+      const card = await p3.evaluate(() => { const c = Array.from(document.querySelectorAll("#single .panel")).find(x => x.querySelector("h3").textContent === "Sprungleistung / Schnellkraft"); return c ? { labels: Array.from(c.querySelectorAll(".lbl")).map(l => l.textContent.replace(/\s+/g, " ").trim()), hint: c.textContent } : null; });
+      assert.ok(card && card.labels.some(l => /^Jump Height \(Imp-Mom\) \(CMJ\)/.test(l)) && card.labels.some(l => /^CMJ ohne Arme/.test(l)), n + ": VALD-Kennwerte fehlen in der Karte: " + JSON.stringify(card));
+      assert.ok(card.hint.includes("VALD-Kennwerte: Test vom " + d) && card.hint.includes("gibt es keinen VALD-Test"), n + ": Hinweis auf den VALD-Tag fehlt");
+      assert.ok(await p3.evaluate(([x, dd]) => pdfMetricItems(findPlayer(x)).some(i => i.h && i.t.indexOf("VALD vom " + dd) > 0), [n, d]), n + ": PDF-Überschrift nennt den VALD-Tag");
+    }
+    ok("VALD-Test vor bzw. nach dem letzten Blatt-Test: Kennwerte stehen in der Einzelauswertung (mit Hinweis auf den VALD-Tag und im PDF), aktueller Test bleibt der Blatt-Test");
+    await p3.context().close();
+  }
+
   console.log("K. Betrieb ohne dauerhaften Speicher (IndexedDB gesperrt)");
   const p2 = await newPage({ noIdb: true });
   await upload(p2, allPaths.slice(0, 8));
