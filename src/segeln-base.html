@@ -457,7 +457,7 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
   <footer>
     <img id="logoFoot" class="logo-foot" alt="Leistungssport Austria">
     Quelle: <code id="fname"></code>. Eingabe über <code>Segeln_Kadertest_Rohdaten.xlsx</code>, Blatt „Eingabe raw data“
-    (eine Zeile je Athlet:in und Testtermin), optional Blatt „Fotos“. Über „Rohdaten laden“ wird die Datei direkt eingelesen.
+    (eine Zeile je Athlet:in und Testtermin), optional Blatt „Fotos“ oder in der Datei eingefügte Bilder. Über „Rohdaten laden“ wird die Datei direkt eingelesen, Fotos aus der Datei kommen gleich in die Einzelauswertung.
     Abgeleitete Werte (BMI, PSA, Seitendifferenzen, bilaterales Defizit, relative Kraftwerte, Rumpf- und Screen-Summe)
     rechnet die App aus den Messwerten nach.
   </footer>
@@ -1214,7 +1214,7 @@ function renderFlags(){
     "Screen-Summe = Deep Squat + jeweils schwächere Seite von In-Line, Shoulder Mobility und ASLR (max. 12).","ok"]);
   var noPhoto=players.filter(function(p){return !photoOf(p);}).length;
   if(noPhoto) f.push(["Fotos fehlen",
-    noPhoto+" von "+players.length+" Athlet:innen ohne Bild. Entweder im Blatt „Fotos“ eine Bild-URL eintragen oder oben über „Fotos laden“ hochladen — "+
+    noPhoto+" von "+players.length+" Athlet:innen ohne Bild. Bilder lassen sich direkt in der Excel-Datei in die Zeile der Person einfügen (auch „Bild in Zelle“ oder Blatt „Fotos“; sie werden beim Laden übernommen), im Blatt „Fotos“ als Bild-URL eintragen oder oben über „Fotos laden“ hochladen — "+
     "Dateiname wie der Name im Blatt (z. B. Wende Sophie.jpg), dann ordnet die App automatisch zu.","ok"]);
   if(window.KVApp) f=KVApp.flags(f);
   $("flags").innerHTML=f.map(function(a){ return '<div class="flag '+(a[2]||"")+'"><b>'+esc(a[0])+'</b><p>'+esc(a[1])+'</p></div>'; }).join("");
@@ -2595,7 +2595,7 @@ function loadData(inp){
       var rd=new FileReader();
       rd.onload=function(e){
         try{
-          var wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});
+          var buf=e.target.result, wb=XLSX.read(new Uint8Array(buf),{type:"array"});
           var find=function(names){ for(var i=0;i<wb.SheetNames.length;i++){
             var L=wb.SheetNames[i].trim().toLowerCase();
             for(var j=0;j<names.length;j++) if(L===names[j]) return wb.SheetNames[i]; } return null; };
@@ -2606,8 +2606,16 @@ function loadData(inp){
           var fName=find(["fotos","foto","bilder"]);
           var rows=parseGrid(grid(sName));
           applyData(rows,f.name,fName?readFotos(grid(fName)):{});
-          toast(players.length+" Athlet:innen und "+tests.length+" Testzeilen aus „"+sName+"“ geladen."+
-            (UNKNOWN.length?" Nicht erkannte Spalten: "+UNKNOWN.join(", ")+".":""),7000);
+          var msg=players.length+" Athlet:innen und "+tests.length+" Testzeilen aus „"+sName+"“ geladen."+
+            (UNKNOWN.length?" Nicht erkannte Spalten: "+UNKNOWN.join(", ")+".":"");
+          toast(msg,7000);
+          /* in Excel eingefügte Bilder (schwebend oder „Bild in Zelle“) den Personen zuordnen: gleich in Einzelauswertung und PDF */
+          if(window.XlsxPhotos) XlsxPhotos.apply(buf,wb).then(function(n){
+            if(n){
+              render(); if(window.KVApp) KVApp.rememberBase(BASE_ROWS,FILE,FOTOS);
+              toast(msg+" "+n+(n===1?" Foto":" Fotos")+" aus der Excel-Datei übernommen.",7000);
+            } else if(XlsxPhotos.unsupported) toast(msg+" Bilder in der Excel-Datei lassen sich in diesem Browser nicht lesen – Fotos über „Fotos laden“ hinzufügen.",9000);
+          });
         }catch(err){ toast("Datei nicht lesbar: "+err.message,8000); }
         inp.value="";
       };

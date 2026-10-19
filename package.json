@@ -5,7 +5,7 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "test": "node --test tests/core.test.mjs tests/templates.test.mjs",
-    "test:e2e": "node tests/e2e.mjs && node tests/e2e-edge.mjs && node tests/e2e-templates.mjs",
+    "test:e2e": "node tests/e2e.mjs && node tests/e2e-edge.mjs && node tests/e2e-templates.mjs && node tests/e2e-photos.mjs",
     "mock-bridge": "node tools/mock-bridge.mjs"
   }
 }

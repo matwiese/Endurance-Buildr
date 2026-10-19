@@ -72,6 +72,16 @@ Am Ende jedes PDF-Profils hängt die **Erweiterte Übersicht** (eigene Seiten im
 - Das Häkchen „Bootsklasse im Kopf des PDFs anzeigen“ steuert **nur** die große Klasse oben rechts auf jeder PDF-Seite (Profilseite, Folgeseiten und Erweiterte Übersicht; auch in der Druckansicht). Voreinstellung: **aus**. Die Einstellung wird gespeichert (Browser-Datenbank und Sicherungsordner) und gilt auch nach dem Neu-Öffnen.
 - Alles andere bleibt, wie es war: die Zelle „Bootsklasse“ in den Stammdaten des PDFs, die Bezeichnung der Vergleichsgruppe („Durchschnitt ILCA 6“), Einzelauswertung, Profilblatt, Personenauswahl, Dateiname, Team-Ansichten und Excel.
 
+## Fotos aus der Excel-Rohdatendatei
+
+Beim Laden einer **.xlsx-Datei** („Rohdaten laden“) übernimmt die App die darin eingefügten Bilder automatisch als Fotos der Athlet:innen – sie stehen sofort in der Einzelauswertung (Kopf), im Kader und im PDF (Seite 1). Das Foto wird, wie beim manuellen Laden, quadratisch aus der Bildmitte zugeschnitten.
+
+- **Schwebende Bilder** („Einfügen → Bilder“): Das Bild muss in der Zeile der Person liegen (obere linke Ecke des Bildes zählt; bei hohen Bildern die erste Zeile mit einem Namen). Gelesen wird die Spalte „Name“ der Zeile. Das geht im Rohdatenblatt selbst (z. B. in einer Spalte „Foto“) oder auf dem Blatt „Fotos“ (Name in einer Spalte, Bild daneben).
+- **„Bild in Zelle“** (Excel 365): Bild in einer Zelle der Zeile der Person.
+- Mehrere Bilder für dieselbe Person: das erste von oben. Per „Fotos laden“ oder „Foto wählen“ von Hand gesetzte Fotos gehen immer vor. Die Fotos werden mit dem Rohdatenblatt gespeichert und sind nach dem Neu-Öffnen wieder da.
+- Weiter möglich: Bild-URL im Blatt „Fotos“ oder in der Spalte „Foto-URL“. CSV-Dateien können keine Bilder enthalten.
+- Nicht lesbar sind Bilder in Formaten, die der Browser nicht darstellt (z. B. EMF/WMF), und – wenn der Browser den Entpacker `DecompressionStream` nicht hat (sehr alte Versionen) – alle Excel-Bilder; dann erscheint ein Hinweis. Chrome und Edge sind aktuell unproblematisch.
+
 ## Eccentric Utilization Ratio (EUR) und die Vorlage „Sprungauswertung gesamt“
 
 - **EUR = Sprunghöhe CMJ ÷ Sprunghöhe SJ** (Standardformel). Ein Wert über 1 heißt: Der CMJ springt höher als der SJ, die Vordehnung (Dehnungs-Verkürzungs-Zyklus) wird genutzt; je höher, desto mehr. Der Kennwert steht unter den Sprungkraft-Tests („Eccentric Utilization Ratio (EUR)“, zwei Nachkommastellen, größer ist besser) und ist in Einzelauswertung, Gesamtübersicht, Rangliste, Excel, PDF und im Netzdiagramm wählbar. Er hängt mit dem PSA zusammen: PSA = (EUR − 1) · 100.
@@ -128,6 +138,7 @@ src/engine.js        CMJ-Engine (aus dem CMJ Analyzer, unverändert)
 src/jump-core.js     Verarbeitung je Sprung, Namensabgleich, Aggregation, Metrik-Definitionen
 src/templates.js     Auswertungsvorlagen (eingebaute, Filterregeln, Austauschformat)
 src/csv-import.js    CSV-Import weiterer Parameter (Spalten erkennen, eigene Parameter, Zeilen)
+src/xlsx-photos.js   Fotos aus der Excel-Datei (ZIP lesen, Bilder den Zeilen und damit den Personen zuordnen)
 src/jump-store.js    Sprungspeicher (IndexedDB), Sicherung
 src/sync.js          Sicherungsordner (File System Access API)
 src/app.js           Anbindung an die Auswertung, Vorlagen, Importe, Hinweise für „Datenqualität“
@@ -141,7 +152,8 @@ tools/letterhead.py  wandelt das Briefpapier-PDF in src/letterhead.js um
 tools/build.mjs      setzt alles zur fertigen Einzeldatei zusammen:  node tools/build.mjs
 tools/mock-bridge.mjs
 tests/               node --test tests/core.test.mjs tests/templates.test.mjs
-                     node tests/e2e.mjs · node tests/e2e-edge.mjs · node tests/e2e-templates.mjs   (Browser-Tests, Playwright)
+                     node tests/e2e.mjs · node tests/e2e-edge.mjs · node tests/e2e-templates.mjs · node tests/e2e-photos.mjs   (Browser-Tests, Playwright)
+tests/fixtures/      Excel-Testdateien mit eingefügten Fotos (erzeugt mit make_fotos.py, braucht XlsxWriter und Pillow)
 ```
 
 Die Einhängepunkte in der Segeln-Auswertung sind in `src/segeln-base.html` mit `KVApp`, `setDynamicMetrics`, `rebuildTests`, `AM()` (Kennwerte der Vorlage) und `TB()` (Bausteine) gekennzeichnet; sonst ist der Code des Originals unverändert.
