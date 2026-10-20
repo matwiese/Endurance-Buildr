@@ -284,6 +284,7 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
         <button class="btn-p" onclick="exportXlsx()">Gesamtübersicht als Excel</button>
         <button class="btn-s" onclick="exportAllPdf()">Alle Profile in einem PDF</button>
         <button class="btn-s" onclick="saveSingles()">Einzel-PDFs in Ordner</button>
+        <button class="btn-s" onclick="saveSinglesLatest()" title="Nur Personen, die beim letzten Testtermin dabei waren – mit ihrem Test an diesem Tag">Einzel-PDFs letzter Test in Ordner</button>
         <button class="btn-s" onclick="document.getElementById('fin').click()">Rohdaten laden</button>
         <button class="btn-s" onclick="clearRawData()" title="Das geladene Rohdatenblatt samt Fotos entfernen (z. B. wenn die falsche Datei geladen wurde)">Rohdaten leeren</button>
         <button class="btn-s" onclick="document.getElementById('pin').click()">Fotos laden</button>
@@ -1266,7 +1267,9 @@ function findPlayer(n){ for(var i=0;i<players.length;i++) if(players[i].name===n
    Standard ist der letzte Test. Wird ein früherer gewählt, zeigen Einzelauswertung und PDF genau diesen Test; Durchschnitt, Regler, Rang und
    Netz vergleichen dann mit dem Stand zu diesem Testtag (je Person der letzte Test bis zu diesem Tag). Die Auswahl gilt je Person. */
 var EVALSEL={}, EVAL_RUNS=true;   /* Name -> {k: Testschlüssel, i: Index} */
+var FORCE_KEY=null;   /* gesetzt während „Einzel-PDFs letzter Test“: alle Personen werden an diesem Testtag ausgewertet, unabhängig von der Auswahl in der Einzelauswertung */
 function evalIdx(p){
+  if(FORCE_KEY!=null){ for(var j=p.tests.length-1;j>=0;j--) if(testKey(p.tests[j])===FORCE_KEY) return j; return p.defIdx; }
   var last=p.defIdx, s=EVALSEL[p.name]; if(!s) return last;
   var i=-1; if(s.k!=null){ for(var j=p.tests.length-1;j>=0;j--) if(testKey(p.tests[j])===s.k){ i=j; break; } } else i=s.i;
   return (i>=0&&i<p.tests.length)?i:last;
@@ -2632,27 +2635,49 @@ function safeName(p){
 }
 /* Einzel-PDFs: je Person eine Datei, wenn möglich direkt in einen gewählten Ordner */
 var DIRH=null;
-function saveSingles(list){
+/* Personen, die beim letzten Testtermin dabei waren: Testtag = jüngster Termin im Rohdatenblatt (reine VALD-/CSV-Tage zählen nur, wenn es kein Blatt gibt);
+   dabei = an diesem Tag ist mindestens ein Messwert eingetragen. Ohne Testdaten im Blatt: alle mit Messwerten im jeweils letzten Test. */
+function lastTestInfo(){
+  var sheet=tests.filter(function(t){ return !t.jumpOnly&&!t.importOnly; }), src=sheet.length?sheet:tests, key=null, date="";
+  src.forEach(function(t){ var k=testKey(t); if(k!=null&&(key==null||k>key)){ key=k; date=t.date; } });
+  var own=function(t){ return METRICS.some(function(m){ return num(t[m.k])!=null; }); };
+  var list=players.filter(function(p){
+    if(key==null){ var t=p.tests[p.defIdx]; return !!t&&own(t); }
+    return p.tests.some(function(t){ return testKey(t)===key&&own(t); });
+  });
+  return {key:key,date:date,list:list};
+}
+function saveSinglesLatest(){
+  if(!players.length){ toast("Keine Daten geladen."); return; }
+  var li=lastTestInfo();
+  if(!li.list.length){ toast("Beim letzten Test sind keine Messwerte eingetragen."); return; }
+  saveSingles(li.list,{key:li.key,date:li.date,skipped:players.length-li.list.length});
+}
+function saveSingles(list,opt){
   list=(list||players.slice()).filter(Boolean);
   if(!list.length){ toast("Keine Daten geladen."); return; }
+  var latest=!!opt, done=function(){ FORCE_KEY=null; };
+  var label=latest&&opt.date?" (letzter Test "+dobDe(opt.date)+")":"", rest=latest&&opt.skipped?" "+opt.skipped+" Person"+(opt.skipped===1?"":"en")+" ohne Test an diesem Tag ausgelassen.":"";
   var canDir=(typeof window.showDirectoryPicker==="function");
   var step=canDir
     ? (DIRH?Promise.resolve(DIRH):window.showDirectoryPicker({mode:"readwrite",id:"segelkader"}).then(function(d){DIRH=d;return d;}))
     : Promise.resolve(null);
   step.then(function(dir){
-    toast("Erzeuge "+list.length+" Einzel-PDFs \u2026",20000);
+    toast("Erzeuge "+list.length+" Einzel-PDFs"+label+" \u2026",20000);
+    if(latest&&opt.key!=null) FORCE_KEY=opt.key;
     return Promise.all([needPdf(),resolvePhotos(list),resolveCharts(list)]).then(function(res){
       if(!res[0]){ toast("Ohne Internetzugang k\u00f6nnen keine PDF-Dateien erzeugt werden. Der Druckdialog bleibt als Weg.",7000);
-        printFallback(list,res[1],res[2]); return; }
+        try{ printFallback(list,res[1],res[2]); } finally{ done(); } return; }
       var photos=res[1], charts=res[2], i=0, written=0;
       function next(){
         if(i>=list.length){
-          toast(dir?written+" Einzel-PDFs im Ordner \u201e"+(dir.name||"gew\u00e4hlt")+"\u201c gespeichert."
-                   :written+" Einzel-PDFs heruntergeladen \u2014 sie liegen im Download-Ordner des Browsers.",7000);
+          done();
+          toast(dir?written+" Einzel-PDFs"+label+" im Ordner \u201e"+(dir.name||"gew\u00e4hlt")+"\u201c gespeichert."+rest
+                   :written+" Einzel-PDFs"+label+" heruntergeladen \u2014 sie liegen im Download-Ordner des Browsers."+rest,7000);
           return;
         }
         var p=list[i], doc=new jspdf.jsPDF({unit:"mm",format:"a4"});
-        pdfPage(doc,p,photos[i],charts[i],effRef(p));
+        inView(p,function(q){ pdfPage(doc,q,photos[i],charts[i],effRef(q)); });   /* wie im Sammel-PDF: der gewählte Test der Person (beim letzten Test: der vom letzten Tag) */
         var blob=doc.output("blob"), fn=safeName(p);
         i++;
         if(dir){
@@ -2669,6 +2694,7 @@ function saveSingles(list){
       next();
     });
   }).catch(function(err){
+    done();
     if(err && err.name==="AbortError") return;
     toast("Speichern nicht m\u00f6glich: "+(err&&err.message||err),7000);
   });
