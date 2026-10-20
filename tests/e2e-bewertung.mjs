@@ -178,6 +178,22 @@ try {
   assert.equal(await page.evaluate(() => MET.liege.dir), -1, "Wiederherstellung bringt die Wertung zurück");
   ok("Speicher leeren setzt zurück, Wiederherstellen bringt die Wahl zurück");
 
+  console.log("11. Spalten „Qualität“ des Blatts werden nirgends mehr angezeigt");
+  await page.evaluate(async () => { await KVApp.wipe(); });
+  await page.reload(); await page.waitForFunction(() => window.KVApp && KVApp.S.ready && players.length === 12);   /* wieder die Beispieldaten (mit Spalten „Qualität“) */
+  const qtxt = await page.evaluate(() => {
+    const out = {};
+    for (const t of ["kader", "leistung", "einzel", "entwicklung", "uebersicht"]) {
+      setTab(t);
+      if (t === "einzel") { pickName = "Anker Lena"; renderSingle(); }
+      out[t] = document.getElementById("view" + t[0].toUpperCase() + t.slice(1)).innerHTML;
+    }
+    out.print = ovPrint(findPlayer("Anker Lena"), (a, b) => a + b, "");
+    return out;
+  });
+  Object.entries(qtxt).forEach(([t, h]) => assert.ok(!/class="(qb|ovq)"|>Q (gut|mittel|schwach)</.test(h) && !/<span class="q">Q /.test(h), "Qualitätsanzeige in " + t));
+  ok("keine „Q …“-Angaben in Kader, Leistung, Einzel, Entwicklung, Übersicht und Druckansicht (Spalte wird weiter erkannt)");
+
   assert.deepEqual(errors, [], "Fehler im Browser:\n" + errors.join("\n"));
   ok("keine Fehler in der Browser-Konsole");
 } finally { await browser.close(); }

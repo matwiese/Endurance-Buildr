@@ -226,7 +226,6 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
 .hero .jn{font-size:clamp(40px,6vw,64px);text-align:right;max-width:40%}
 .sheet-top .bignum{font-size:40px;text-align:right}
 .lb .lbc{font-size:11px;color:#8B97A3;font-weight:500;margin-left:4px}
-.qb{display:inline-block;font-size:10.5px;font-weight:700;background:#EEF1F4;color:#4A555F;padding:1px 6px;border-radius:2px;margin-left:4px;vertical-align:1px}
 .clr{font-size:12.5px;color:#4A555F;padding:10px 0 2px;border-top:1px solid var(--line-soft)}
 .clr.pos{color:#8A5E00;background:var(--gold-soft);padding:8px 10px;border-top:0;margin-top:6px}
 .tst.mx td,.tst.mx th{white-space:nowrap}
@@ -260,7 +259,6 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
 .ovv{font-weight:700;font-size:14px}
 .ovd{display:inline-block;min-width:62px;margin-left:8px;font-size:12px;font-weight:700;text-align:right}
 .ovd.g{color:#2E7D4F} .ovd.b{color:#C98A04} .ovd.n{color:#8B97A3}
-.ovq{font-size:11px;color:var(--ink-2);margin-top:2px}
 .ovcalc{font-size:10px;color:#98A2AC;font-weight:600}
 .ovt tr.ovg td{background:var(--paper);font-family:var(--disp);font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ink-2);padding:10px 12px 6px}
 .ovt tr.ovg td:first-child{position:sticky;left:0}
@@ -664,9 +662,6 @@ COLDEF.forEach(function(c){
   var a=hnorm(c[0]), b=hnorm(c[0].replace(/\[.*?\]/g,""));
   if(!HMAP[a]) HMAP[a]=d; if(b && !HMAP[b]) HMAP[b]=d;
 });
-/* Messungen, die mit einer Qualitätsbewertung erfasst werden */
-var QUAL_KEYS=["hopL","hopR","liege"];
-function QK(){ return QUAL_KEYS.filter(inTpl); }   /* Qualitätsspalten nur für Tests der Vorlage */
 
 /* ---------- Helfer ---------- */
 var tmr;
@@ -733,13 +728,13 @@ function parseGrid(grid){
   if(!map.some(function(x){return x&&x.k==="name";})) throw new Error("Spalte „Name“ nicht gefunden.");
   var out=[];
   for(var r=hr+1;r<grid.length;r++){
-    var row=grid[r]||[], o={q:{},sheetRow:r+1};
+    var row=grid[r]||[], o={sheetRow:r+1};
     map.forEach(function(d,i){
       if(!d) return;
       var raw=row[i], v=(raw==null?"":raw);
       if(d.t==="date"){ if(typeof v==="number") v=serialToIso(v); v=String(v).trim(); if(v&&!o[d.k]) o[d.k]=v; }
       else if(d.t==="txt"){ v=String(v).trim(); if(v&&!o[d.k]) o[d.k]=v; }
-      else if(d.t==="q"){ v=String(v).trim(); if(v) o.q[d.k]=v; }
+      else if(d.t==="q"){ /* Spalten „Qualität“ werden erkannt (kein Hinweis auf unbekannte Spalte), aber weder ausgewertet noch angezeigt */ }
       else if(d.t==="clr"){ o[d.k]=clrVal(v); if(String(v).trim()&&o[d.k]==null) (o.bad=o.bad||[]).push(d.h+": „"+String(v).trim()+"“"); }
       else { var n=num(v); if(n!=null) o[d.k]=n;
              else if(String(v).trim()) (o.bad=o.bad||[]).push(d.h+": „"+String(v).trim()+"“"); }
@@ -782,7 +777,7 @@ function derive(o){
 }
 function testKey(t){ var d=dparts(t.date); return d? d[0]*10000+d[1]*100+d[2] : null; }
 var BASE_ROWS=[];   /* Zeilen aus Rohdatenblatt bzw. Beispieldaten, unverändert; Sprungwerte werden bei jedem Aufbau frisch dazugemischt */
-function cloneRow(r){ var c={}; Object.keys(r).forEach(function(k){ c[k]=r[k]; }); c.q=Object.assign({},r.q||{}); if(r.bad) c.bad=r.bad.slice(); return c; }
+function cloneRow(r){ var c={}; Object.keys(r).forEach(function(k){ c[k]=r[k]; }); if(r.bad) c.bad=r.bad.slice(); return c; }
 function rebuildTests(){
   var rows=BASE_ROWS.map(cloneRow);
   if(window.KVApp) rows=KVApp.mergeRows(rows);
@@ -1333,10 +1328,10 @@ function openSheet(name){
   var og=outGroups(p), groups=og.groups, go=og.go;
   var html=orderGroups(go).map(function(g){
     return '<div class="sub-h">'+esc(g)+'</div>'+groups[g].map(function(m){
-      var v=p.val[m.k], rk=(m.dir!==0)?rankOf(p,m.k):null, qq=p.cur.q[m.k];
+      var v=p.val[m.k], rk=(m.dir!==0)?rankOf(p,m.k):null;
       var rc=rk?(rk.r===1?"r1":rk.r<=3?"r2":"r3"):"";
       return '<div class="mrow"><span>'+esc(m.t)+(m.u?' <span style="color:#8B97A3">'+esc(m.u)+'</span>':'')+
-        (qq?' <span class="qb">Q '+esc(qq)+'</span>':'')+'</span>'+
+        '</span>'+
         '<span class="mv">'+de(v,m.d)+'</span>'+
         '<span class="mr '+rc+'">'+(rk?rk.r+"/"+rk.n:"—")+'</span></div>';
     }).join("")+(g===FMS?clrLine(p.cur):"");
@@ -1663,14 +1658,13 @@ function rankTag(p,m){
 }
 /* Ohne Baustein „Vergleich zur Gruppe“: nur Name und Wert */
 function metricLine(p,m){
-  var qq=p.cur.q[m.k];
   return '<div class="mline mlite"><span class="lbl">'+esc(m.t)+(m.u?' <span style="color:#8B97A3">'+esc(m.u)+'</span>':'')+
-    (qq?' <span class="qb">Q '+esc(qq)+'</span>':'')+rankTag(p,m)+'</span><span class="mv2">'+de(p.val[m.k],m.d)+'</span></div>';
+    rankTag(p,m)+'</span><span class="mv2">'+de(p.val[m.k],m.d)+'</span></div>';
 }
 function metricSlider(p,m,g){
-  var v=p.val[m.k], d=devOf(p,m.k,g), st=groupStat(g,m.k), qq=p.cur.q[m.k];
+  var v=p.val[m.k], d=devOf(p,m.k,g), st=groupStat(g,m.k);
   var lbl='<span class="lbl">'+esc(m.t)+(m.u?' <span style="color:#8B97A3">'+esc(m.u)+'</span>':'')+
-    (qq?' <span class="qb" title="Qualit\u00e4t der Ausf\u00fchrung">Q '+esc(qq)+'</span>':'')+rankTag(p,m)+'</span>';
+    rankTag(p,m)+'</span>';
   if(!d||!st||st.n<2){
     return '<div class="mline">'+lbl+'<span class="mv2">'+de(v,m.d)+'</span>'+
       '<span class="dev n">\u2014</span><span class="regwrap"><span class="reg"></span>'+
@@ -1974,7 +1968,7 @@ function ovModel(p){
     var rows=gg.groups[g].map(function(m){
       return {m:m, cells:T.map(function(t,ci){
         var v=num(t[m.k]), prev=ci?num(T[ci-1][m.k]):null;
-        return {v:v, q:(t.q&&t.q[m.k])||"", d:ci&&v!=null&&prev!=null?ovDelta(m,prev,v):null};
+        return {v:v, d:ci&&v!=null&&prev!=null?ovDelta(m,prev,v):null};
       })};
     });
     var cl=null;
@@ -2013,10 +2007,9 @@ function renderOverview(){
       return '<tr><td class="ovm">'+esc(m.t)+(m.u?' <span style="color:#8B97A3">'+esc(m.u)+'</span>':'')+
         (m.calc?' <span class="ovcalc" title="von der App gerechnet">ber.</span>':'')+'</td>'+
         T.map(function(t,ci){
-          var v=num(t[m.k]), prev=ci?num(T[ci-1][m.k]):null, qq=t.q&&t.q[m.k];
+          var v=num(t[m.k]), prev=ci?num(T[ci-1][m.k]):null;
           return '<td class="ovc'+(t===p.cur?' akt':'')+'"><span class="ovv">'+(v==null?'<span style="color:#AEB6BE">—</span>':de(v,m.d))+'</span>'+
-            (ci?ovChange(m,prev,v):'<span class="ovd n"></span>')+
-            (qq?'<div class="ovq">Q '+esc(qq)+'</div>':'')+'</td>';
+            (ci?ovChange(m,prev,v):'<span class="ovd n"></span>')+'</td>';
         }).join("")+'</tr>';
     }).join("");
     if(g===FMS && T.some(function(t){return t.clrL!=null||t.clrR!=null;})){
@@ -2070,12 +2063,11 @@ function buildTables(){
   players.filter(function(p){return p.hasVal;}).forEach(function(p){
     leist.push([p.name,p.cls,p.kader,p.cur.date?dobDe(p.cur.date):""].concat(AM().map(function(m){return p.val[m.k];}))); });
 
-  var rh=["Name","Testdatum","Bootsklasse","Kader","Clearing li","Clearing re"].concat(AM().map(mName)).concat(QK().map(function(k){return "Qualität "+MET[k].t;}));
+  var rh=["Name","Testdatum","Bootsklasse","Kader","Clearing li","Clearing re"].concat(AM().map(mName));
   var roh=[rh];
   tests.slice().sort(function(a,b){ return a.name.localeCompare(b.name,"de")||((testKey(a)||0)-(testKey(b)||0)); }).forEach(function(t){
     roh.push([t.name,t.date?dobDe(t.date):"",t.cls||"",t.kader||"",clrTxt(t.clrL),clrTxt(t.clrR)]
-      .concat(AM().map(function(m){return t[m.k]==null?"":t[m.k];}))
-      .concat(QK().map(function(k){return t.q[k]||"";}))); });
+      .concat(AM().map(function(m){return t[m.k]==null?"":t[m.k];}))); });
 
   var rank=[["Messung","Einheit","Richtung","1.","Wert","2.","Wert","3.","Wert","Ø Gesamt","n"]];
   AM().forEach(function(m){
@@ -2131,7 +2123,7 @@ function exportXlsx(){
     add(t.rank,"Ranglisten",[{wch:28},{wch:10},{wch:18},{wch:26},{wch:9},{wch:26},{wch:9},{wch:26},{wch:9},{wch:10},{wch:5}]);
     add(t.cm,"Bootsklassen",[{wch:16},{wch:8},{wch:8}].concat(mc(AM().length)));
     add(t.km,"Kader x Bootsklasse",[{wch:18}].concat(mc(classes().length+1)));
-    add(t.roh,"Leistung Rohdaten",[{wch:28},{wch:12},{wch:14},{wch:14},{wch:11},{wch:11}].concat(mc(AM().length+QK().length)));
+    add(t.roh,"Leistung Rohdaten",[{wch:28},{wch:12},{wch:14},{wch:14},{wch:11},{wch:11}].concat(mc(AM().length)));
     add(t.kz,"Kennzahlen",[{wch:30},{wch:32}]);
     XLSX.writeFile(wb,"Segeln_Kadertest_Gesamtuebersicht_"+stamp()+".xlsx");
     toast("Excel gespeichert: 7 Blätter, inklusive Ranglisten und Bootsklassen-Mittelwerten.");
@@ -2219,12 +2211,12 @@ function pdfFill(items,cap,gh){
   return cols;
 }
 function pdfMetricRow(doc,p,m,g,x,y){
-  var v=p.val[m.k], st=groupStat(g,m.k), dv=devOf(p,m.k,g), qq=p.cur.q[m.k];
+  var v=p.val[m.k], st=groupStat(g,m.k), dv=devOf(p,m.k,g);
   var vtxt=de(v,m.d);
   doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fValue); var vw=doc.getTextWidth(vtxt);
   doc.setFont("helvetica","normal"); doc.setTextColor(55,65,75);
   /* lange Bezeichnungen (z. B. „Concentric Peak Force / BM (CMJ) (N/kg)“) verkleinern, damit sie den Wert nicht berühren */
-  doc.text(pdfFit(doc,m.t+(m.u?" ("+m.u+")":"")+(qq?"  Q "+qq:""),x[1]-x[0]-vw-3,PDF.fLabel,6.6),x[0],y);
+  doc.text(pdfFit(doc,m.t+(m.u?" ("+m.u+")":""),x[1]-x[0]-vw-3,PDF.fLabel,6.6),x[0],y);
   doc.setFont("helvetica","bold"); doc.setFontSize(PDF.fValue); doc.setTextColor(18,22,27);
   doc.text(vtxt,x[1],y,{align:"right"});
   var rk=(TB("rank")&&m.dir!==0)?rankOf(p,m.k):null;
@@ -2447,12 +2439,12 @@ function pdfPageN(doc,p,refG,cols,seite,total){
   pdfFoot(doc,p,seite,total);
 }
 /* ---------- Anhang: Erweiterte Übersicht (die im Reiter gewählten Testtermine nebeneinander, Veränderung zum Test links davon) ---------- */
-var PDFOV={ gh:8.5, rh:5.7, rhq:8.4, head:11, labelW:54 };
+var PDFOV={ gh:8.5, rh:5.7, head:11, labelW:54 };
 function pdfOvItems(m){
   var items=[];
   m.groups.forEach(function(g){
     items.push({h:true,t:g.g.toUpperCase(),hh:PDFOV.gh});
-    g.rows.forEach(function(r){ items.push({h:false,r:r,hh:r.cells.some(function(c){return c.q;})?PDFOV.rhq:PDFOV.rh}); });
+    g.rows.forEach(function(r){ items.push({h:false,r:r,hh:PDFOV.rh}); });
     if(g.clr) items.push({h:false,clr:g.clr,hh:PDFOV.rh});
   });
   return items;
@@ -2495,7 +2487,6 @@ function pdfPageOv(doc,p,m,list,seite,total){
       if(c.v==null){ doc.setTextColor(174,182,190); doc.text("-",xr-ch,y+0.8,{align:"right"}); }
       else doc.text(de(c.v,m1.d),xr-ch,y+0.8,{align:"right"});
       if(c.d&&c.d.t!=="\u2014"){ var col=C[c.d.c]||C.n; doc.setFont("helvetica","bold"); doc.setFontSize(6.1); doc.setTextColor(col[0],col[1],col[2]); doc.text(pdfTxt(c.d.t),xr,y+0.8,{align:"right"}); }
-      if(c.q){ doc.setFont("helvetica","normal"); doc.setFontSize(5.4); doc.setTextColor(120,131,142); doc.text("Q "+c.q,xr-ch,y+3.7,{align:"right"}); }
     });
     doc.setDrawColor(236,239,242); doc.setLineWidth(0.2); doc.line(L,y+it.hh-2.6,R,y+it.hh-2.6);
     y+=it.hh;
@@ -2523,7 +2514,7 @@ function ovPrint(p,wrap,foot){
   var body=m.groups.map(function(g){
     var rows=g.rows.map(function(r){
       return '<tr><td>'+esc(r.m.t+(r.m.u?" ("+r.m.u+")":""))+'</td>'+r.cells.map(function(c){
-        return '<td><b>'+(c.v==null?'–':de(c.v,r.m.d))+'</b>'+(c.d&&c.d.t!=="\u2014"?' <i class="'+c.d.c+'">'+esc(c.d.t)+'</i>':(cols>1?' <i></i>':''))+(c.q?'<span class="q">Q '+esc(c.q)+'</span>':'')+'</td>'; }).join("")+'</tr>';
+        return '<td><b>'+(c.v==null?'–':de(c.v,r.m.d))+'</b>'+(c.d&&c.d.t!=="\u2014"?' <i class="'+c.d.c+'">'+esc(c.d.t)+'</i>':(cols>1?' <i></i>':''))+'</td>'; }).join("")+'</tr>';
     }).join("");
     if(g.clr) rows+='<tr><td>Clearing-Test li / re</td>'+g.clr.map(function(c){ return '<td style="font-size:6.5pt'+(c.pos?';font-weight:700;color:#8A5E00':'')+'">'+esc(c.t)+'</td>'; }).join("")+'</tr>';
     return '<tr class="og"><td colspan="'+(cols+1)+'">'+esc(g.g.toUpperCase())+'</td></tr>'+rows;
@@ -2558,8 +2549,8 @@ function printFallback(list,phs,chs){
     if(p.hasVal){
       var og=outGroups(p), groups=og.groups, go=og.go;
       perf=orderGroups(go).map(function(g){ return '<h2>'+esc(g+(g===JUMPCAT&&p.valdFrom?"  \u00b7  VALD "+(p.valdFrom!=="1"?"vom "+dobDe(p.valdFrom):"anderer Tag"):"")).toUpperCase()+'</h2><table class="t">'+groups[g].map(function(m){
-        var rk=(TB("rank")&&m.dir!==0)?rankOf(p,m.k):null, qq=p.cur.q[m.k];
-        return '<tr><td class="k">'+esc(mName(m))+(qq?" · Q "+esc(qq):"")+'</td><td class="v">'+de(p.val[m.k],m.d)+
+        var rk=(TB("rank")&&m.dir!==0)?rankOf(p,m.k):null;
+        return '<tr><td class="k">'+esc(mName(m))+'</td><td class="v">'+de(p.val[m.k],m.d)+
           '</td><td class="r">'+(rk?"Platz "+rk.r+"/"+rk.n:"")+'</td></tr>'; }).join("")+'</table>'; }).join("");
     } else perf='<h2>LEISTUNGSDIAGNOSTIK</h2><table class="t"><tr><td class="k">Keine Messwerte vorhanden.</td></tr></table>';
     var wrap=function(inner){ return '<div class="pp"><table class="w"><thead><tr><td></td></tr></thead><tfoot><tr><td></td></tr></tfoot><tbody><tr><td>'+inner+'</td></tr></tbody></table></div>'; };

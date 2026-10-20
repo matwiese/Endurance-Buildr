@@ -178,7 +178,7 @@ var KVApp = (function () {
         if (al && al !== OWN) c = K.canonName(al);
         var hit = K.findMatch(c, Object.keys(canons)), key = hit || c, ik = key + "|" + dateKey(ir.date), row = idx[ik];
         if (!row) {
-          row = { name: hit ? canons[hit] : ir.name, date: ir.date || "", q: {}, importOnly: true }; rows.push(row); idx[ik] = row; if (!hit) canons[c] = ir.name; info.added++;
+          row = { name: hit ? canons[hit] : ir.name, date: ir.date || "", importOnly: true }; rows.push(row); idx[ik] = row; if (!hit) canons[c] = ir.name; info.added++;
           if (!hit && hadBase) info.unmatched[ir.name] = (info.unmatched[ir.name] || 0) + 1;
         }
         Object.keys(ir).forEach(function (k) {
@@ -209,7 +209,7 @@ var KVApp = (function () {
     var info = { matched: 0, added: 0, filled: [], diffs: [], imp: imp };
     table.forEach(function (e) {
       var k = e.key + "|" + dateKey(e.date), row = idx[k];
-      if (!row) { row = { name: e.athlete, date: e.date, q: {}, jumpOnly: true }; rows.push(row); idx[k] = row; info.added++; } else info.matched++;
+      if (!row) { row = { name: e.athlete, date: e.date, jumpOnly: true }; rows.push(row); idx[k] = row; info.added++; } else info.matched++;
       var vals = K.rowValues(e); Object.keys(vals).forEach(function (m) { if (keep[m]) row[m] = vals[m]; });
       /* CMJ-/SJ-Felder des Rohdatenblatts aus VALD füllen (Blattwert hat Vorrang; große Abweichung wird gemeldet) */
       [["cmj", "CMJ"], ["sj", "SJ"]].forEach(function (x) {
