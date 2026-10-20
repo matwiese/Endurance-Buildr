@@ -126,3 +126,17 @@ details.kv-d p,details.kv-d li{line-height:1.5}
 .kv-cat{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line-soft);padding:8px 11px;cursor:pointer;background:#FAFBFC;font-size:13.5px}
 .kv-cat:hover{border-color:var(--ink);background:#fff}
 .kv-cat small{display:block;color:var(--ink-2);font-size:12px;margin-top:2px}
+
+/* Reiter „Bewertung“ */
+table.kv-bew td.kv-dirs{white-space:nowrap}
+table.kv-bew .kv-dir{display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:13px;color:var(--ink-2);cursor:pointer}
+table.kv-bew .kv-dir input{accent-color:var(--navy);margin:0}
+table.kv-bew .kv-dir:has(input:checked){color:var(--ink);font-weight:600}
+table.kv-bew .kv-dir.dp:has(input:checked){color:var(--green)}
+table.kv-bew .kv-dir.dm:has(input:checked){color:var(--red)}
+table.kv-bew tr.chg td{background:var(--gold-soft)}
+table.kv-bew tr.grp td{background:var(--paper)}
+table.kv-bew .kv-unit{color:var(--ink-2);font-size:12px}
+table.kv-bew .kv-def{white-space:nowrap}
+table.kv-bew td.kv-rs{text-align:right}
+@media (max-width:760px){table.kv-bew .kv-dir{display:flex;margin:3px 0}}

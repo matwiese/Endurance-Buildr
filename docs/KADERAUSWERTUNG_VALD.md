@@ -4,13 +4,14 @@ Datei: **`kaderauswertung_segeln_vald.html`** – eine einzelne HTML-Datei, per 
 
 ## Was neu ist
 
-Drei neue Reiter neben „Datenqualität“:
+Vier neue Reiter neben „Datenqualität“:
 
 | Reiter | Inhalt |
 |---|---|
 | **Sprungdaten** | Sprungspeicher, VALD-Import (Massenimport), CSV-Upload, Zuordnung der Namen, Liste aller Sprünge mit erkannter Art |
 | **Parameter** | Auswahl aller 215 ForceDecks-Kennwerte, gespeicherte Kombinationen, Werte-Tabelle je Versuch |
 | **Auswertungstemplates** | Vorlagen für Einzelauswertung, PDF und Excel (was angekreuzt ist, erscheint), CSV-Import weiterer Parameter, Speicher und Sicherungsordner |
+| **Bewertung** | Je Test festlegen, ob ein höherer oder ein niedrigerer Wert besser ist (oder ohne Wertung) – wirkt in allen Berechnungen und im Netzdiagramm |
 
 Oben rechts steht immer die gewählte **Vorlage** (Auswertungsauswahl).
 
@@ -59,6 +60,15 @@ Das PDF-Profil nutzt das Briefpapier `LSA_Briefpapier_2026-07-30-druck.pdf` (For
 - Die Adresszeilen sind in **Helvetica** gesetzt (das Original verwendet die Hausschrift Outfit; eine Schrift in der Datei würde das PDF um ein Vielfaches vergrößern). Die Logos in der Bildschirmoberfläche der Auswertung sind unverändert.
 - **Ohne Internetzugang** (jsPDF lässt sich nicht laden) öffnet sich der Druckdialog; die Druckansicht trägt dasselbe Briefpapier. Dort „Als PDF speichern“ wählen.
 - Anderes Briefpapier verwenden: Datei nach `assets/` legen und `python3 -I tools/letterhead.py assets/<Datei>.pdf src/letterhead.js` ausführen (`pypdf` nötig), danach `node tools/build.mjs`. Das Skript liest Formen, Logo-Umrisse und die Lage der Fußzeilenschrift aus dem PDF und berechnet daraus den freien Bereich. Bei neuen Farben die Tabelle `RGB` in `tools/letterhead.py` anpassen.
+
+## Bewertung: höher oder niedriger ist besser (Reiter „Bewertung“)
+
+- Der Reiter listet **alle Tests, die in der Auswertung vorkommen**: die Tests des Rohdatenblatts, eigene Parameter aus CSV-Importen und die im Reiter „Parameter“ angehakten VALD-Kennwerte – gegliedert nach Gruppen, mit Suche und dem Filter „nur geänderte“.
+- Je Test wählst du: **höher ist besser**, **niedriger ist besser** oder **ohne Wertung**. Die Spalte „Voreinstellung“ zeigt, womit die App rechnet, solange nichts geändert ist. Geänderte Zeilen sind markiert und lassen sich einzeln („Voreinstellung“) oder gesamt („Alle auf Voreinstellung“) zurücknehmen.
+- **Voreinstellung für Zeiten und Differenzen: niedriger ist besser** – z. B. **HBL (Hürden-Bumerang-Lauf)**, Reaktion, Seitendifferenzen. Alle Kraft-, Sprung- und Wiederholungswerte: höher ist besser. Körpergröße, Körpermasse, BMI, Bilaterales Defizit und HBL Höhe: ohne Wertung. VALD-Kennwerte bringen ihre eigene Voreinstellung mit.
+- **Die Wahl wirkt sofort überall**, ohne neu laden zu müssen: Rang im Kader und Rangliste, Abweichung zur Gruppe (grün = besser als der Durchschnitt, gelb = schwächer; Regler der Einzelauswertung und PDF), z-Wert, **Netzdiagramm** (außen = besser, bei „niedriger ist besser“ liegt also die kleinste Zeit außen), Entwicklung, Veränderungsfarben der Erweiterten Übersicht, Trendtexte, Excel und PDF.
+- **Ohne Wertung** nimmt einen Test aus Rang, Farbwertung und Netzdiagramm; der Messwert bleibt sichtbar. Ein Test ohne Wertung kann keine Netzachse sein – steht er in einer Vorlage als Achse, entfällt die Achse.
+- Gespeichert wird die Wahl im Browser-Speicher (Schlüssel `dirs`), sie ist Teil von „Speicher sichern“ und der automatischen Sicherung im Ordner und kommt mit „Sicherung laden“ zurück. „Rohdaten leeren“ lässt sie unberührt, „Alles löschen“ setzt sie zurück. Die Wertung eines eigenen Parameters lässt sich auch in der Tabelle „Eigene Parameter“ (Reiter „Auswertungstemplates“) ändern; diese Änderung ersetzt eine frühere Wahl im Reiter „Bewertung“.
 
 ## Einzelauswertung: Testtermin wählen und Einzelauswertung-Punkt in den Templates
 

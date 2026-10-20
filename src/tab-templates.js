@@ -409,7 +409,7 @@
     var body = el("tbody", {}, S.custom.map(function (d) {
       var tx = function (key, w, type) { var i = el("input", { type: type || "text", value: d[key], style: "width:" + w + "px", "aria-label": key }); i.onchange = function () { d[key] = type === "number" ? Math.max(0, Math.min(3, +i.value || 0)) : i.value.trim() || d[key]; A.saveCustom(); A.refresh(true); }; return i; };
       var dir = el("select", { "aria-label": "Wertung" }, [[0, "ohne Wertung"], [1, "größer = besser"], [-1, "kleiner = besser"]].map(function (o) { return el("option", { value: o[0], selected: +d.dir === o[0] }, o[1]); }));
-      dir.onchange = function () { d.dir = +dir.value; A.saveCustom(); A.refresh(true); };
+      dir.onchange = function () { d.dir = +dir.value; A.setDir(d.k, null); A.saveCustom(); A.refresh(true); };   /* eine Wahl im Reiter „Bewertung“ wird dabei zurückgenommen */
       var n = 0; S.imports.forEach(function (imp) { imp.rows.forEach(function (r) { if (r[d.k] != null) n++; }); });
       var asking = U.delCustom === d.k;
       return el("tr", {}, el("td", {}, tx("t", 180)), el("td", {}, tx("u", 70)), el("td", {}, tx("d", 52, "number")), el("td", {}, dir), el("td", {}, tx("g", 150)), el("td", { class: "n" }, String(n)),

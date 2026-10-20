@@ -304,6 +304,7 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
       <button class="tab" id="tabSprung" role="tab" aria-selected="false" onclick="setTab('sprung')">Sprungdaten</button>
       <button class="tab" id="tabParameter" role="tab" aria-selected="false" onclick="setTab('parameter')">Parameter</button>
       <button class="tab" id="tabTemplates" role="tab" aria-selected="false" onclick="setTab('templates')">Auswertungstemplates</button>
+      <button class="tab" id="tabBewertung" role="tab" aria-selected="false" onclick="setTab('bewertung')">Bewertung</button>
     </div>
   </div>
 </div>
@@ -457,6 +458,13 @@ footer code{background:#E3E6EA;padding:1px 5px;font-size:11.5px}
     </section>
   </div>
 
+  <div id="viewBewertung" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Bewertung der Tests</h2><span class="note" id="kvBewNote"></span></div>
+      <div id="kvBew"></div>
+    </section>
+  </div>
+
   <footer>
     <img id="logoFoot" class="logo-foot" alt="Leistungssport Austria">
     Quelle: <code id="fname"></code>. Eingabe über <code>Segeln_Kadertest_Rohdaten.xlsx</code>, Blatt „Eingabe raw data“
@@ -553,11 +561,23 @@ var METRICS=[
  {k:"bz1rmRel",t:"1-RM Bankziehen relativ",  s:"BZ rel.", u:"kg/kg", dir:1, d:2, g:"Oberkörper", calc:1},
  {k:"bzWh",    t:"Max. WH Bankziehen",       s:"WH BZ", u:"WH", dir:1, d:0, g:"Oberkörper"},
  {k:"liege",   t:"Liegestütze",              s:"Liegest.", u:"WH", dir:1, d:0, g:"Oberkörper"},
- {k:"hbl",     t:"HBL",                      s:"HBL", u:"s", dir:1, d:0, g:"Schnelligkeit"},
+ {k:"hbl",     t:"HBL",                      s:"HBL", u:"s", dir:-1, d:0, g:"Schnelligkeit"},
  {k:"hblH",    t:"HBL Höhe",                 u:"",     dir:0,  d:1, g:"Schnelligkeit"}
 ];
 var STATIC_METRICS=METRICS.slice();
 var MET={}; METRICS.forEach(function(m){MET[m.k]=m;});
+/* Wertung je Test (Reiter „Bewertung“): 1 = höher ist besser, -1 = niedriger ist besser, 0 = ohne Wertung.
+   Abweichungen von der Voreinstellung (m.dir0) stehen in DIR_OVR; m.dir wird danach in place gesetzt, sodass Rang, Abweichung, z-Wert,
+   Netzdiagramm, Übersicht, Entwicklung, PDF und Excel dieselbe Richtung verwenden. */
+var DIR_OVR={};
+function applyDirs(){
+  METRICS.forEach(function(m){
+    if(m.dir0===undefined) m.dir0=m.dir;
+    var o=DIR_OVR[m.k]; m.dir=(o===1||o===-1||o===0)?o:m.dir0;
+  });
+}
+function setDirs(map){ DIR_OVR=map&&typeof map==="object"?map:{}; applyDirs(); }
+applyDirs();
 /* Aktive Auswertungsvorlage (Reiter „Auswertungstemplates“): bestimmt, was Einzelauswertung, Profilblatt, PDF und Excel zeigen.
    AM() = Kennwerte der Vorlage (ohne Vorlage: alle), TB(x) = Baustein an/aus (spider, deviation, rank, runs). */
 function AM(){ return (window.KVApp&&KVApp.tplMetrics)?KVApp.tplMetrics(METRICS):METRICS; }
@@ -579,8 +599,9 @@ function runCols(kind,max){
 function spiderAxes(){ return (window.KVApp&&KVApp.tplSpider)?KVApp.tplSpider():SPIDER.filter(inTpl); }
 /* Sprungkennwerte aus dem Sprungspeicher (VALD) kommen als zusätzliche Metriken dazu; Auswahl steht im Tab „Parameter“ */
 function setDynamicMetrics(defs){
-  METRICS=STATIC_METRICS.concat(defs||[]);
+  METRICS=STATIC_METRICS.concat((defs||[]).map(function(d){ return Object.assign({},d); }));   /* Kopien: die Wertung wird hier überschrieben, die Definition (eigener Parameter) bleibt unverändert */
   MET={}; METRICS.forEach(function(m){MET[m.k]=m;});
+  applyDirs();
   if(!MET[curMetric]) curMetric="fmsSum";
   if(!MET[devMetric]) devMetric="fmsSum";
   var sel=document.getElementById("metric"); if(sel) sel.innerHTML="";   /* Kennzahl-Auswahl der Rangliste neu aufbauen */
@@ -917,7 +938,7 @@ function stats(){
 /* ---------- Navigation ---------- */
 function setTab(t){
   tab=t;
-  ["kader","leistung","einzel","entwicklung","uebersicht","qualitaet","sprung","parameter","templates"].forEach(function(x){
+  ["kader","leistung","einzel","entwicklung","uebersicht","qualitaet","sprung","parameter","templates","bewertung"].forEach(function(x){
     $("view"+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle("hidden",x!==t);
     $("tab"+x.charAt(0).toUpperCase()+x.slice(1)).setAttribute("aria-selected",x===t);
   });

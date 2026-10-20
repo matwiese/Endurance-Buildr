@@ -132,6 +132,15 @@ var KVApp = (function () {
     ST.kvSet("custom", S.custom); ST.kvSet("imports", S.imports); ST.kvSet("templates", S.templates); S.tplVer++;
   };
   A.saveCustom = function () { ST.kvSet("custom", S.custom); S.tplVer++; };
+  /* ---------- Wertung je Test (Reiter „Bewertung“) ---------- */
+  /* dir: 1 = höher ist besser, -1 = niedriger ist besser, 0 = ohne Wertung; null = Voreinstellung. Wirkt in Rang, Abweichung, Netzdiagramm, Übersicht, Entwicklung, PDF und Excel. */
+  A.setDir = function (key, dir) {
+    var m = MET[key]; if (!m) return;
+    if (dir == null || dir === m.dir0) delete DIR_OVR[key]; else DIR_OVR[key] = dir;
+    applyDirs(); ST.kvSet("dirs", DIR_OVR); S.tplVer++; scheduleRefresh();
+  };
+  A.resetDirs = function () { setDirs({}); ST.kvDelete("dirs"); S.tplVer++; scheduleRefresh(); };
+  A.dirsChanged = function () { return Object.keys(DIR_OVR).length; };
 
   /* ---------- Zuordnung VALD-Name → Name im Rohdatenblatt ---------- */
   function resolver(excel) {
@@ -233,6 +242,7 @@ var KVApp = (function () {
     if (tab === "templates" && A.renderTemplates) A.renderTemplates();
   };
   A.onTab = function (t) {
+    if (t === "bewertung" && A.renderBewertung) A.renderBewertung();
     if (t === "sprung" && A.renderSprung) A.renderSprung();
     if (t === "parameter" && A.renderParams) A.renderParams();
     if (t === "templates" && A.renderTemplates) A.renderTemplates();
@@ -334,6 +344,7 @@ var KVApp = (function () {
     S.activeTpl = ST.kvGet("activeTemplate", "tpl:alle");
     S.custom = ST.kvGet("custom", []) || [];
     S.imports = ST.kvGet("imports", []) || [];
+    setDirs(ST.kvGet("dirs", {}));
     S.tplVer++;
     var base = ST.kvGet("base", null);
     return base;
@@ -348,7 +359,7 @@ var KVApp = (function () {
   };
   A.wipe = function () {
     return ST.clearAll().then(function () {
-      draft = null; S.results = []; S.aliases = {}; S.templates = []; S.activeTpl = "tpl:alle"; S.custom = []; S.imports = []; S.tplVer++;
+      draft = null; S.results = []; S.aliases = {}; S.templates = []; S.activeTpl = "tpl:alle"; S.custom = []; S.imports = []; setDirs({}); S.tplVer++;
       S.settings = { agg: "best", thr: 20, keepRaw: true, fillCmjSj: true, skipKnown: true, showClass: false }; A.renderTplSelect();
     });
   };
@@ -368,10 +379,10 @@ var KVApp = (function () {
       } else if (S.results.length || S.imports.length) {
         FILE = S.results.length ? "Sprungspeicher (VALD)" : "CSV-Import"; DEMO = false; ingestRows([]); render();
         toast("Gespeicherte Daten geladen" + (S.results.length ? ": " + S.results.length + " Sprünge" : "") + ".", 4500);
-      } else if (S.templates.length || S.activeTpl !== "tpl:alle") { rebuildTests(); render(); }
+      } else if (S.templates.length || S.activeTpl !== "tpl:alle" || Object.keys(DIR_OVR).length) { rebuildTests(); render(); }
       ST.persist();
       KVSync.init().then(function (sy) { if (sy.handle && sy.perm !== "granted") toast("Sicherungsordner: Zugriff bitte im Reiter „Auswertungstemplates“ bestätigen.", 6500); });
-      if (tab === "sprung" || tab === "parameter" || tab === "templates") A.onTab(tab);
+      if (tab === "sprung" || tab === "parameter" || tab === "templates" || tab === "bewertung") A.onTab(tab);
     });
   };
   return A;

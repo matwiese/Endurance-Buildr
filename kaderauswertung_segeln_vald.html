@@ -394,6 +394,20 @@ details.kv-d p,details.kv-d li{line-height:1.5}
 .kv-cat{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line-soft);padding:8px 11px;cursor:pointer;background:#FAFBFC;font-size:13.5px}
 .kv-cat:hover{border-color:var(--ink);background:#fff}
 .kv-cat small{display:block;color:var(--ink-2);font-size:12px;margin-top:2px}
+
+/* Reiter „Bewertung“ */
+table.kv-bew td.kv-dirs{white-space:nowrap}
+table.kv-bew .kv-dir{display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:13px;color:var(--ink-2);cursor:pointer}
+table.kv-bew .kv-dir input{accent-color:var(--navy);margin:0}
+table.kv-bew .kv-dir:has(input:checked){color:var(--ink);font-weight:600}
+table.kv-bew .kv-dir.dp:has(input:checked){color:var(--green)}
+table.kv-bew .kv-dir.dm:has(input:checked){color:var(--red)}
+table.kv-bew tr.chg td{background:var(--gold-soft)}
+table.kv-bew tr.grp td{background:var(--paper)}
+table.kv-bew .kv-unit{color:var(--ink-2);font-size:12px}
+table.kv-bew .kv-def{white-space:nowrap}
+table.kv-bew td.kv-rs{text-align:right}
+@media (max-width:760px){table.kv-bew .kv-dir{display:flex;margin:3px 0}}
 </style>
 </head>
 <body>
@@ -431,6 +445,7 @@ details.kv-d p,details.kv-d li{line-height:1.5}
       <button class="tab" id="tabSprung" role="tab" aria-selected="false" onclick="setTab('sprung')">Sprungdaten</button>
       <button class="tab" id="tabParameter" role="tab" aria-selected="false" onclick="setTab('parameter')">Parameter</button>
       <button class="tab" id="tabTemplates" role="tab" aria-selected="false" onclick="setTab('templates')">Auswertungstemplates</button>
+      <button class="tab" id="tabBewertung" role="tab" aria-selected="false" onclick="setTab('bewertung')">Bewertung</button>
     </div>
   </div>
 </div>
@@ -584,6 +599,13 @@ details.kv-d p,details.kv-d li{line-height:1.5}
     </section>
   </div>
 
+  <div id="viewBewertung" class="hidden">
+    <section>
+      <div class="sec-head"><h2>Bewertung der Tests</h2><span class="note" id="kvBewNote"></span></div>
+      <div id="kvBew"></div>
+    </section>
+  </div>
+
   <footer>
     <img id="logoFoot" class="logo-foot" alt="Leistungssport Austria">
     Quelle: <code id="fname"></code>. Eingabe über <code>Segeln_Kadertest_Rohdaten.xlsx</code>, Blatt „Eingabe raw data“
@@ -680,11 +702,23 @@ var METRICS=[
  {k:"bz1rmRel",t:"1-RM Bankziehen relativ",  s:"BZ rel.", u:"kg/kg", dir:1, d:2, g:"Oberkörper", calc:1},
  {k:"bzWh",    t:"Max. WH Bankziehen",       s:"WH BZ", u:"WH", dir:1, d:0, g:"Oberkörper"},
  {k:"liege",   t:"Liegestütze",              s:"Liegest.", u:"WH", dir:1, d:0, g:"Oberkörper"},
- {k:"hbl",     t:"HBL",                      s:"HBL", u:"s", dir:1, d:0, g:"Schnelligkeit"},
+ {k:"hbl",     t:"HBL",                      s:"HBL", u:"s", dir:-1, d:0, g:"Schnelligkeit"},
  {k:"hblH",    t:"HBL Höhe",                 u:"",     dir:0,  d:1, g:"Schnelligkeit"}
 ];
 var STATIC_METRICS=METRICS.slice();
 var MET={}; METRICS.forEach(function(m){MET[m.k]=m;});
+/* Wertung je Test (Reiter „Bewertung“): 1 = höher ist besser, -1 = niedriger ist besser, 0 = ohne Wertung.
+   Abweichungen von der Voreinstellung (m.dir0) stehen in DIR_OVR; m.dir wird danach in place gesetzt, sodass Rang, Abweichung, z-Wert,
+   Netzdiagramm, Übersicht, Entwicklung, PDF und Excel dieselbe Richtung verwenden. */
+var DIR_OVR={};
+function applyDirs(){
+  METRICS.forEach(function(m){
+    if(m.dir0===undefined) m.dir0=m.dir;
+    var o=DIR_OVR[m.k]; m.dir=(o===1||o===-1||o===0)?o:m.dir0;
+  });
+}
+function setDirs(map){ DIR_OVR=map&&typeof map==="object"?map:{}; applyDirs(); }
+applyDirs();
 /* Aktive Auswertungsvorlage (Reiter „Auswertungstemplates“): bestimmt, was Einzelauswertung, Profilblatt, PDF und Excel zeigen.
    AM() = Kennwerte der Vorlage (ohne Vorlage: alle), TB(x) = Baustein an/aus (spider, deviation, rank, runs). */
 function AM(){ return (window.KVApp&&KVApp.tplMetrics)?KVApp.tplMetrics(METRICS):METRICS; }
@@ -706,8 +740,9 @@ function runCols(kind,max){
 function spiderAxes(){ return (window.KVApp&&KVApp.tplSpider)?KVApp.tplSpider():SPIDER.filter(inTpl); }
 /* Sprungkennwerte aus dem Sprungspeicher (VALD) kommen als zusätzliche Metriken dazu; Auswahl steht im Tab „Parameter“ */
 function setDynamicMetrics(defs){
-  METRICS=STATIC_METRICS.concat(defs||[]);
+  METRICS=STATIC_METRICS.concat((defs||[]).map(function(d){ return Object.assign({},d); }));   /* Kopien: die Wertung wird hier überschrieben, die Definition (eigener Parameter) bleibt unverändert */
   MET={}; METRICS.forEach(function(m){MET[m.k]=m;});
+  applyDirs();
   if(!MET[curMetric]) curMetric="fmsSum";
   if(!MET[devMetric]) devMetric="fmsSum";
   var sel=document.getElementById("metric"); if(sel) sel.innerHTML="";   /* Kennzahl-Auswahl der Rangliste neu aufbauen */
@@ -1044,7 +1079,7 @@ function stats(){
 /* ---------- Navigation ---------- */
 function setTab(t){
   tab=t;
-  ["kader","leistung","einzel","entwicklung","uebersicht","qualitaet","sprung","parameter","templates"].forEach(function(x){
+  ["kader","leistung","einzel","entwicklung","uebersicht","qualitaet","sprung","parameter","templates","bewertung"].forEach(function(x){
     $("view"+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle("hidden",x!==t);
     $("tab"+x.charAt(0).toUpperCase()+x.slice(1)).setAttribute("aria-selected",x===t);
   });
@@ -5008,6 +5043,15 @@ var KVApp = (function () {
     ST.kvSet("custom", S.custom); ST.kvSet("imports", S.imports); ST.kvSet("templates", S.templates); S.tplVer++;
   };
   A.saveCustom = function () { ST.kvSet("custom", S.custom); S.tplVer++; };
+  /* ---------- Wertung je Test (Reiter „Bewertung“) ---------- */
+  /* dir: 1 = höher ist besser, -1 = niedriger ist besser, 0 = ohne Wertung; null = Voreinstellung. Wirkt in Rang, Abweichung, Netzdiagramm, Übersicht, Entwicklung, PDF und Excel. */
+  A.setDir = function (key, dir) {
+    var m = MET[key]; if (!m) return;
+    if (dir == null || dir === m.dir0) delete DIR_OVR[key]; else DIR_OVR[key] = dir;
+    applyDirs(); ST.kvSet("dirs", DIR_OVR); S.tplVer++; scheduleRefresh();
+  };
+  A.resetDirs = function () { setDirs({}); ST.kvDelete("dirs"); S.tplVer++; scheduleRefresh(); };
+  A.dirsChanged = function () { return Object.keys(DIR_OVR).length; };
 
   /* ---------- Zuordnung VALD-Name → Name im Rohdatenblatt ---------- */
   function resolver(excel) {
@@ -5109,6 +5153,7 @@ var KVApp = (function () {
     if (tab === "templates" && A.renderTemplates) A.renderTemplates();
   };
   A.onTab = function (t) {
+    if (t === "bewertung" && A.renderBewertung) A.renderBewertung();
     if (t === "sprung" && A.renderSprung) A.renderSprung();
     if (t === "parameter" && A.renderParams) A.renderParams();
     if (t === "templates" && A.renderTemplates) A.renderTemplates();
@@ -5210,6 +5255,7 @@ var KVApp = (function () {
     S.activeTpl = ST.kvGet("activeTemplate", "tpl:alle");
     S.custom = ST.kvGet("custom", []) || [];
     S.imports = ST.kvGet("imports", []) || [];
+    setDirs(ST.kvGet("dirs", {}));
     S.tplVer++;
     var base = ST.kvGet("base", null);
     return base;
@@ -5224,7 +5270,7 @@ var KVApp = (function () {
   };
   A.wipe = function () {
     return ST.clearAll().then(function () {
-      draft = null; S.results = []; S.aliases = {}; S.templates = []; S.activeTpl = "tpl:alle"; S.custom = []; S.imports = []; S.tplVer++;
+      draft = null; S.results = []; S.aliases = {}; S.templates = []; S.activeTpl = "tpl:alle"; S.custom = []; S.imports = []; setDirs({}); S.tplVer++;
       S.settings = { agg: "best", thr: 20, keepRaw: true, fillCmjSj: true, skipKnown: true, showClass: false }; A.renderTplSelect();
     });
   };
@@ -5244,10 +5290,10 @@ var KVApp = (function () {
       } else if (S.results.length || S.imports.length) {
         FILE = S.results.length ? "Sprungspeicher (VALD)" : "CSV-Import"; DEMO = false; ingestRows([]); render();
         toast("Gespeicherte Daten geladen" + (S.results.length ? ": " + S.results.length + " Sprünge" : "") + ".", 4500);
-      } else if (S.templates.length || S.activeTpl !== "tpl:alle") { rebuildTests(); render(); }
+      } else if (S.templates.length || S.activeTpl !== "tpl:alle" || Object.keys(DIR_OVR).length) { rebuildTests(); render(); }
       ST.persist();
       KVSync.init().then(function (sy) { if (sy.handle && sy.perm !== "granted") toast("Sicherungsordner: Zugriff bitte im Reiter „Auswertungstemplates“ bestätigen.", 6500); });
-      if (tab === "sprung" || tab === "parameter" || tab === "templates") A.onTab(tab);
+      if (tab === "sprung" || tab === "parameter" || tab === "templates" || tab === "bewertung") A.onTab(tab);
     });
   };
   return A;
@@ -6365,7 +6411,7 @@ var KVApp = (function () {
     var body = el("tbody", {}, S.custom.map(function (d) {
       var tx = function (key, w, type) { var i = el("input", { type: type || "text", value: d[key], style: "width:" + w + "px", "aria-label": key }); i.onchange = function () { d[key] = type === "number" ? Math.max(0, Math.min(3, +i.value || 0)) : i.value.trim() || d[key]; A.saveCustom(); A.refresh(true); }; return i; };
       var dir = el("select", { "aria-label": "Wertung" }, [[0, "ohne Wertung"], [1, "größer = besser"], [-1, "kleiner = besser"]].map(function (o) { return el("option", { value: o[0], selected: +d.dir === o[0] }, o[1]); }));
-      dir.onchange = function () { d.dir = +dir.value; A.saveCustom(); A.refresh(true); };
+      dir.onchange = function () { d.dir = +dir.value; A.setDir(d.k, null); A.saveCustom(); A.refresh(true); };   /* eine Wahl im Reiter „Bewertung“ wird dabei zurückgenommen */
       var n = 0; S.imports.forEach(function (imp) { imp.rows.forEach(function (r) { if (r[d.k] != null) n++; }); });
       var asking = U.delCustom === d.k;
       return el("tr", {}, el("td", {}, tx("t", 180)), el("td", {}, tx("u", 70)), el("td", {}, tx("d", 52, "number")), el("td", {}, dir), el("td", {}, tx("g", 150)), el("td", { class: "n" }, String(n)),
@@ -6430,6 +6476,107 @@ var KVApp = (function () {
     var note = document.getElementById("kvTplNote"); if (note) note.textContent = "aktiv: " + A.tplName();
     root.replaceChildren(el("div", { class: "kv-stack" }, panelBar(),
       el("div", { class: "kv-panel kv-count" }, el("span", { id: "kvTplCount" }, countText())), panelSingle(), panelBlocks(), panelSpider(), panelTests(), panelJumps(), panelImport(), panelSync()));
+  };
+})(KVApp);
+</script>
+<script>
+/* ---- src/tab-bewertung.js ---- */
+/* ===== Reiter „Bewertung“ =====
+   Alle Tests, die in der Auswertung vorkommen (Rohdatenblatt, eigene CSV-Parameter, angehakte VALD-Kennwerte), mit der Wahl,
+   ob ein höherer oder ein niedrigerer Wert besser ist – oder ob der Test ohne Wertung bleibt.
+   Die Wahl wirkt sofort auf alle Berechnungen (Rang, Abweichung zur Gruppe, z-Wert, Netzdiagramm, Entwicklung, Übersicht, PDF, Excel)
+   und wird mit den anderen Einstellungen gespeichert und gesichert (Schlüssel „dirs“). */
+(function (A) {
+  "use strict";
+  var S = A.S, el = A.el;
+  var B = { q: "", only: false };
+  var OPTS = [[1, "höher ist besser"], [-1, "niedriger ist besser"], [0, "ohne Wertung"]];
+  var NAME = { "1": "höher besser", "-1": "niedriger besser", "0": "ohne Wertung" };
+
+  function btn(label, fn, cls, o) { o = o || {}; return el("button", { type: "button", class: "kv-b " + (cls || ""), disabled: !!o.disabled, title: o.title || false, onclick: fn }, label); }
+  function source(m) { return m.jump ? "VALD" : S.custom.some(function (c) { return c.k === m.k; }) ? "CSV-Import" : "Rohdatenblatt"; }
+  function tokens(q) { return q.toLowerCase().split(/\s+/).filter(Boolean); }
+  function hay(m) { return (m.t + " " + (m.s || "") + " " + (m.u || "") + " " + (m.g || "") + " " + source(m)).toLowerCase(); }
+  function changed(m) { return m.dir !== m.dir0; }
+
+  function noteText() {
+    var n = METRICS.length, c = A.dirsChanged();
+    return n + " Tests · " + (c ? c + " abweichend von der Voreinstellung" : "alle in der Voreinstellung");
+  }
+  function updateNote() {
+    var n = document.getElementById("kvBewNote"); if (n) n.textContent = noteText();
+    var r = document.getElementById("kvBewReset"); if (r) r.disabled = !A.dirsChanged();
+  }
+
+  /* Zeile einer Messgröße; die Radiogruppe ändert die Wertung sofort (die Auswertung baut sich danach von selbst neu auf) */
+  function row(key) {
+    var m = MET[key], tr = el("tr", { "data-k": key, class: changed(m) ? "chg" : "" });
+    var radios = OPTS.map(function (o) {
+      var i = el("input", { type: "radio", name: "kvdir_" + key, value: String(o[0]), checked: m.dir === o[0], "aria-label": m.t + ": " + o[1] });
+      i.addEventListener("change", function () { if (i.checked) set(key, o[0]); });
+      return el("label", { class: "kv-dir d" + (o[0] === 1 ? "p" : o[0] === -1 ? "m" : "n") }, i, el("span", {}, o[1]));
+    });
+    var reset = btn("Voreinstellung", function () { set(key, null); }, "s", { title: "Voreinstellung: " + NAME[m.dir0] });
+    tr.append(
+      el("td", {}, m.t, m.u ? el("small", { class: "kv-unit" }, " [" + m.u + "]") : null),
+      el("td", { class: "u" }, source(m)),
+      el("td", { class: "u kv-def" }, NAME[m.dir0]),
+      el("td", { class: "kv-dirs" }, radios),
+      el("td", { class: "kv-rs" }, reset));
+    reset.hidden = !changed(m);
+    return tr;
+  }
+  function set(key, dir) {
+    A.setDir(key, dir);
+    var tr = document.querySelector('#kvBew tr[data-k="' + key.replace(/"/g, '\\"') + '"]'), m = MET[key];
+    if (tr && m) {
+      tr.classList.toggle("chg", changed(m));
+      Array.prototype.forEach.call(tr.querySelectorAll("input[type=radio]"), function (i) { i.checked = +i.value === m.dir; });
+      var b = tr.querySelector(".kv-rs button"); if (b) b.hidden = !changed(m);
+    }
+    updateNote();
+  }
+
+  function table() {
+    var toks = tokens(B.q), groups = [], by = {};
+    METRICS.forEach(function (m) {
+      if (B.only && !changed(m)) return;
+      var h = hay(m); if (!toks.every(function (t) { return h.indexOf(t) >= 0; })) return;
+      var g = m.g || "Weitere"; if (!by[g]) { by[g] = []; groups.push(g); } by[g].push(m.k);
+    });
+    var body = el("tbody", {});
+    groups.forEach(function (g) {
+      body.append(el("tr", { class: "grp" }, el("td", { colspan: 5 }, g)));
+      by[g].forEach(function (k) { body.append(row(k)); });
+    });
+    if (!groups.length) body.append(el("tr", {}, el("td", { colspan: 5, class: "kv-empty" }, B.only ? "Keine abweichenden Tests." : "Kein Test gefunden.")));
+    return el("div", { class: "kv-tblbox" }, el("table", { class: "kv-t kv-bew" },
+      el("thead", {}, el("tr", {}, ["Test", "Quelle", "Voreinstellung", "Besser ist …", ""].map(function (h) { return el("th", {}, h); }))), body));
+  }
+
+  A.renderBewertung = function () {
+    var root = document.getElementById("kvBew"); if (!root) return;
+    if (!S.ready) { root.replaceChildren(el("div", { class: "kv-empty" }, "Speicher wird geöffnet …")); return; }
+    var holder = el("div", { id: "kvBewTable" }, table());
+    var redraw = function () { holder.replaceChildren(table()); };
+    var q = el("input", { type: "search", placeholder: "Test suchen …", "aria-label": "Test suchen", value: B.q });
+    q.addEventListener("input", function () { B.q = q.value; redraw(); });
+    var only = el("input", { type: "checkbox", id: "kvBewOnly", checked: B.only });
+    only.addEventListener("change", function () { B.only = only.checked; redraw(); });
+    var reset = btn("Alle auf Voreinstellung", function () {
+      if (!A.dirsChanged() || !window.confirm("Alle geänderten Wertungen (" + A.dirsChanged() + ") auf die Voreinstellung zurücksetzen?")) return;
+      A.resetDirs(); A.renderBewertung(); toast("Wertungen zurückgesetzt.");
+    }, "d", { disabled: !A.dirsChanged() });
+    reset.id = "kvBewReset";
+    var note = document.getElementById("kvBewNote"); if (note) note.textContent = noteText();
+    root.replaceChildren(el("div", { class: "kv-stack" },
+      el("div", { class: "kv-panel" },
+        el("h3", {}, "Welcher Wert ist besser?"),
+        el("p", { class: "hint" }, "Lege je Test fest, ob ein höherer oder ein niedrigerer Wert besser ist (z. B. bei Zeiten wie Hürden-Bumerang-Lauf oder Reaktion: niedriger = besser). " +
+          "Die Wahl gilt sofort überall: Rang, Abweichung zur Gruppe (grün/rot), z-Wert, Netzdiagramm (außen = besser), Entwicklung, Erweiterte Übersicht, PDF und Excel. " +
+          "„Ohne Wertung“ nimmt einen Test aus Rang, Farbwertung und Netzdiagramm; der Messwert selbst bleibt sichtbar. VALD-Kennwerte erscheinen hier, sobald sie im Reiter „Parameter“ angehakt sind."),
+        el("div", { class: "kv-row" }, q, el("label", {}, only, "nur geänderte"), reset)),
+      holder));
   };
 })(KVApp);
 </script>
