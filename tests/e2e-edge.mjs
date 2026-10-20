@@ -191,7 +191,7 @@ try {
       const card = await p3.evaluate(() => { const c = Array.from(document.querySelectorAll("#single .panel")).find(x => x.querySelector("h3").textContent === "Sprungleistung / Schnellkraft"); return c ? { labels: Array.from(c.querySelectorAll(".lbl")).map(l => l.textContent.replace(/\s+/g, " ").trim()), hint: c.textContent } : null; });
       assert.ok(card && card.labels.some(l => /^Jump Height \(Imp-Mom\) \(CMJ\)/.test(l)) && card.labels.some(l => /^CMJ ohne Arme/.test(l)), n + ": VALD-Kennwerte fehlen in der Karte: " + JSON.stringify(card));
       assert.ok(card.hint.includes("VALD-Kennwerte: Test vom " + d) && card.hint.includes("gibt es keinen VALD-Test"), n + ": Hinweis auf den VALD-Tag fehlt");
-      assert.ok(await p3.evaluate(([x, dd]) => pdfMetricItems(findPlayer(x)).some(i => i.h && i.t.indexOf("VALD vom " + dd) > 0), [n, d]), n + ": PDF-Überschrift nennt den VALD-Tag");
+      assert.ok(await p3.evaluate(([x, dd]) => pdfGroups(findPlayer(x)).some(g => g.items.some(i => i.h && i.t.indexOf("VALD vom " + dd) > 0)), [n, d]), n + ": PDF-Überschrift nennt den VALD-Tag");
     }
     ok("VALD-Test vor bzw. nach dem letzten Blatt-Test: Kennwerte stehen in der Einzelauswertung (mit Hinweis auf den VALD-Tag und im PDF), aktueller Test bleibt der Blatt-Test");
     await p3.context().close();

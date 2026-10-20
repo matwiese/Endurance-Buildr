@@ -353,6 +353,22 @@ try {
   await page.uncheck("#kvShowClass"); await page.waitForFunction(() => KVApp.S.settings.showClass === false);
   ok("Voreinstellung aus: große Klasse fehlt im Kopf jeder PDF-Seite, Stammdaten und Einzelauswertung zeigen sie weiter; mit Häkchen im Kopf aller Seiten, bleibt nach Neustart erhalten");
 
+  console.log("5g. PDF-Seitenaufbau: Movement Screen + Rumpfkraftausdauer + Schnelligkeit (mit HBL) auf einer Seite, Sprungleistung + Oberkörper auf der nächsten");
+  const keepTpl = await page.evaluate(() => KVApp.S.activeTpl);
+  await page.evaluate(() => KVApp.setActive("tpl:sportmotorik"));
+  const pdfSeiten = await pdfOf("Wende Sophie", "profil_seitenaufbau.pdf");
+  const [, s2, s3, s4] = pdfSeiten.pageTexts;
+  for (const t of ["MOVEMENT SCREEN", "RUMPFKRAFTAUSDAUER", "SCHNELLIGKEIT", "HBL (s)", "HBL Höhe"]) assert.ok(s2.includes(t), `Seite 2 ohne „${t}“`);
+  assert.ok(!/SPRUNGLEISTUNG|OBERK/.test(s2), "Seite 2 nur Movement Screen, Rumpf, Schnelligkeit");
+  for (const t of ["SPRUNGLEISTUNG / SCHNELLKRAFT", "OBERKÖRPER", "CMJ ohne Arme", "5er Hopp links", "Hängen (s)", "1-RM Bankziehen (kg)"]) assert.ok(s3.includes(t), `Seite 3 ohne „${t}“`);
+  assert.ok(!/MOVEMENT SCREEN|SCHNELLIGKEIT|HBL/.test(s3), "HBL steht nicht mehr beim Oberkörper");
+  assert.ok(s4.includes("MAXIMALKRAFT") && s4.includes("Fmax beidseitig"), "Weitere Gruppen (Maximalkraft) folgen danach");
+  await page.evaluate(() => { pickName = "Wende Sophie"; setTab("einzel"); }); await page.waitForSelector("#single .panel h3");
+  const hbl = await page.evaluate(() => { const c = n => Array.from(document.querySelectorAll("#single .panel")).find(x => x.querySelector("h3").textContent === n); const lab = x => x ? Array.from(x.querySelectorAll(".lbl")).map(l => l.textContent) : []; return { sch: lab(c("Schnelligkeit")).join("|"), ober: lab(c("Oberkörper")).join("|") }; });
+  assert.ok(/HBL/.test(hbl.sch) && !/HBL/.test(hbl.ober), "HBL gehört zur Schnelligkeit: " + JSON.stringify(hbl));
+  await page.evaluate(k => KVApp.setActive(k), keepTpl);
+  ok("Seite 2: Movement Screen | Rumpf + Schnelligkeit mit HBL; Seite 3: Sprungleistung / Schnellkraft | Oberkörper; Maximalkraft danach; HBL auch in der Einzelauswertung bei der Schnelligkeit");
+
   console.log("6. Excel folgt der Vorlage");
   if (fs.existsSync(libXlsx)) {
     const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 30000 }), page.click("button:has-text('Gesamtübersicht als Excel')")]);

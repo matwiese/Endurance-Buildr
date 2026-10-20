@@ -553,8 +553,8 @@ var METRICS=[
  {k:"bz1rmRel",t:"1-RM Bankziehen relativ",  s:"BZ rel.", u:"kg/kg", dir:1, d:2, g:"Oberkörper", calc:1},
  {k:"bzWh",    t:"Max. WH Bankziehen",       s:"WH BZ", u:"WH", dir:1, d:0, g:"Oberkörper"},
  {k:"liege",   t:"Liegestütze",              s:"Liegest.", u:"WH", dir:1, d:0, g:"Oberkörper"},
- {k:"hbl",     t:"HBL",                      s:"HBL", u:"s", dir:1, d:0, g:"Oberkörper"},
- {k:"hblH",    t:"HBL Höhe",                 u:"",     dir:0,  d:1, g:"Oberkörper"}
+ {k:"hbl",     t:"HBL",                      s:"HBL", u:"s", dir:1, d:0, g:"Schnelligkeit"},
+ {k:"hblH",    t:"HBL Höhe",                 u:"",     dir:0,  d:1, g:"Schnelligkeit"}
 ];
 var STATIC_METRICS=METRICS.slice();
 var MET={}; METRICS.forEach(function(m){MET[m.k]=m;});
@@ -2135,24 +2135,52 @@ function pdfFit(doc,t,maxW,size,min){
 function pdfCut(t,n){ t=String(t); return t.length>n?t.slice(0,n-1)+"\u2026":t; }
 function tplTag(){ return (window.KVApp&&!KVApp.tplIsAll())?"  \u00b7  Vorlage: "+KVApp.tplName():""; }
 function pdfTxt(s){ return String(s==null?"":s).replace(/\u2212/g,"-").replace(/\u2009/g," "); }
-function pdfMetricItems(p){
-  var og=outGroups(p), groups=og.groups, go=og.go, items=[];
-  orderGroups(go).forEach(function(g){
+/* Gruppen des PDFs mit ihren Zeilen: [{g, items, h}] (ohne Anthropometrie, die steht auf Seite 1) */
+function pdfGroups(p){
+  var og=outGroups(p), groups=og.groups, out=[];
+  orderGroups(og.go).forEach(function(g){
     if(g===ANTHRO) return;
-    items.push({h:true,t:g+(g===JUMPCAT&&p.valdFrom?"  \u00b7  VALD "+(p.valdFrom!=="1"?"vom "+dobDe(p.valdFrom):"anderer Tag"):""),hh:PDF.gh});
-    groups[g].forEach(function(m){ items.push({h:false,m:m,hh:rowH()}); });
-    if(g===FMS && (p.cur.clrL!=null||p.cur.clrR!=null)) items.push({h:false,clr:true,hh:9});
+    var items=[{h:true,t:g+(g===JUMPCAT&&p.valdFrom?"  \u00b7  VALD "+(p.valdFrom!=="1"?"vom "+dobDe(p.valdFrom):"anderer Tag"):""),hh:PDF.gh}], h=PDF.gh;
+    groups[g].forEach(function(m){ var hh=rowH(); items.push({h:false,m:m,hh:hh}); h+=hh; });
+    if(g===FMS && (p.cur.clrL!=null||p.cur.clrR!=null)){ items.push({h:false,clr:true,hh:9}); h+=9; }
+    out.push({g:g,items:items,h:h});
   });
-  return items;
+  return out;
 }
-/* Messwerte auf Spalten verteilen: je Seite zwei Spalten, Überschriften nie allein am Spaltenende */
+/* Seitenaufbau nach den Folgeseiten des PDFs: zusammengehörige Gruppen stehen gemeinsam auf einer Seite
+   (Seite A: Movement Screen, Rumpfkraftausdauer, Schnelligkeit; Seite B: Sprungleistung / Schnellkraft, Oberkörper); alle weiteren Gruppen
+   (Maximalkraft, eigene Parameter, VALD-Gruppen …) schließen dahinter an. Jeder Block beginnt auf einer neuen Seite. */
+var PDF_BLOCKS=[[FMS,"Rumpfkraftausdauer","Schnelligkeit"],[JUMPCAT,"Oberkörper"]];
+/* Gruppen nacheinander auf Spalten verteilen: eine Gruppe, die als Ganzes in eine frische Spalte passt, wird nicht geteilt; zu lange Gruppen laufen
+   über mehrere Spalten (mit „Fortsetzung“, Überschriften nie allein am Spaltenende) */
+function pdfPack(groups,cap){
+  var cols=[], col=[], h=0, last="";
+  groups.forEach(function(g){
+    if(h>0 && h+g.h>cap && g.h<=cap){ cols.push(col); col=[]; h=0; }
+    g.items.forEach(function(it,i){
+      if(it.h){
+        last=it.t;
+        var need=it.hh+(g.items[i+1]&&!g.items[i+1].h?g.items[i+1].hh:0);
+        if(h+need>cap && col.length){ cols.push(col); col=[]; h=0; }
+        col.push(it); h+=it.hh; return;
+      }
+      if(h+it.hh>cap){ cols.push(col); col=[{h:true,t:last+" (Fortsetzung)",hh:PDF.gh}]; h=PDF.gh; }
+      col.push(it); h+=it.hh;
+    });
+  });
+  if(col.length) cols.push(col);
+  return cols;
+}
+/* Spalten aller Folgeseiten, je zwei Spalten = eine Seite (der letzte Block einer Seite wird mit einer leeren Spalte aufgefüllt) */
 function pdfColumns(p){
-  var items=pdfMetricItems(p), cap=PDF.foot-2-PDF.top;
-  var n=pdfFill(items,cap).length, tot=0;
-  items.forEach(function(it){ tot+=it.hh; });
-  var even=n+(n%2);   /* auf ganze Seiten auffüllen und gleichmäßig verteilen */
-  for(var c=Math.ceil(tot/even); c<cap; c+=4){ var r=pdfFill(items,c); if(r.length<=even) return r; }
-  return pdfFill(items,cap);
+  var groups=pdfGroups(p), cap=PDF.foot-2-PDF.top, used={}, blocks=[], by={};
+  groups.forEach(function(g){ by[g.g]=g; });
+  PDF_BLOCKS.forEach(function(names){ names.forEach(function(n){ used[n]=1; }); var b=names.map(function(n){ return by[n]; }).filter(Boolean); if(b.length) blocks.push(b); });
+  var rest=groups.filter(function(g){ return !used[g.g]; });
+  if(rest.length){ if(blocks.length) blocks[blocks.length-1]=blocks[blocks.length-1].concat(rest); else blocks.push(rest); }
+  var cols=[];
+  blocks.forEach(function(b){ var c=pdfPack(b,cap); if(c.length%2) c.push([]); cols=cols.concat(c); });
+  return cols;
 }
 function pdfFill(items,cap,gh){
   var cols=[], col=[], h=0, lastHead="";
