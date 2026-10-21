@@ -134,6 +134,14 @@ Wie im CMJ Analyzer (`classifyJump`): Die Testart aus VALD (Dateikopf der Bridge
 - **VALD an einem anderen Tag als im Blatt**: Liegt der VALD-Test nicht auf demselben Tag wie ein Test im Rohdatenblatt, bleibt er ein eigener Testtermin („nur VALD“ in Tabellen und Datumsauswahl). Der **aktuelle Test** einer Person ist trotzdem der letzte Test aus dem Blatt, und in der Einzelauswertung stehen unter „Sprungleistung / Schnellkraft“ die Kennwerte des **nächstliegenden VALD-Tests** – der letzte davor, sonst der erste danach – mit dem Hinweis „VALD-Kennwerte: Test vom … – am ausgewerteten Testtag gibt es keinen VALD-Test“ (im PDF in der Kategorieüberschrift: „VALD vom …“). Gleiches gilt für Kader, Rangliste und Excel. Wer den VALD-Test selbst als Testtermin sehen will, wählt sein Datum in der Datumsauswahl der Einzelauswertung. Gibt es am Testtag selbst VALD-Daten, gelten diese.
 - **Zusammenführen mit dem Blatt**: nach Name (Reihenfolge, Umlaute, Zweitnamen egal) und Testtag. Namen ohne Treffer erscheinen als eigene Personen ohne Bootsklasse und lassen sich im Reiter Sprungdaten → „Zuordnung der Athlet:innen“ von Hand zuordnen.
 
+## Gemeinsame Person: Einzelauswertung, Entwicklung, Erweiterte Übersicht
+
+Die Person, die du in der **Einzelauswertung** wählst (Auswahlfeld oder „Zurück/Weiter“), übernehmen **Entwicklung** und **Erweiterte Übersicht** automatisch, sobald du in den Reiter wechselst – du musst sie dort nicht noch einmal suchen.
+
+- Die Übernahme geschieht erst, nachdem in der Einzelauswertung eine Person gewählt wurde; vorher zeigt die Entwicklung wie bisher den Vergleich „Alle mit mehreren Durchgängen“.
+- Was du danach im Reiter selbst änderst (andere Person, ein Vergleich nach Bootsklasse oder „Alle mit mehreren Durchgängen“, Testspalten der Übersicht), bleibt erhalten – bis du in der Einzelauswertung eine andere Person wählst. Die Einzelauswertung selbst folgt der Auswahl in den anderen Reitern nicht.
+- Ein neues Rohdatenblatt setzt die Auswahl zurück.
+
 ## Der Speicher
 
 - Ablage in der **Browser-Datenbank (IndexedDB)** dieses Rechners: Sprünge mit Erkennung und allen Kennwerten, optional die Rohkurven, Namenszuordnungen, **Vorlagen und die aktive Vorlage, eigene Parameter, CSV-Importe** und das zuletzt geladene Blatt. Alles bleibt nach Schließen und Neustart erhalten und wird nach jeder Änderung automatisch gespeichert.
@@ -169,6 +177,7 @@ src/app.js           Anbindung an die Auswertung, Vorlagen, Importe, Hinweise f�
 src/tab-sprung.js    Reiter „Sprungdaten“ (inkl. VALD-Import)
 src/tab-param.js     Reiter „Parameter“
 src/tab-templates.js Reiter „Auswertungstemplates“
+src/tab-bewertung.js Reiter „Bewertung“ (höher/niedriger besser je Test)
 src/letterhead.js    Briefpapier Leistungssport Austria als Vektordaten (erzeugt von tools/letterhead.py, nicht von Hand ändern)
 src/segeln-base.html Segeln-Auswertung (Original mit wenigen Einhängepunkten; PDF-Export im LSA-Design)
 assets/              Briefpapier-PDF (Vorlage für tools/letterhead.py)
@@ -176,7 +185,7 @@ tools/letterhead.py  wandelt das Briefpapier-PDF in src/letterhead.js um
 tools/build.mjs      setzt alles zur fertigen Einzeldatei zusammen:  node tools/build.mjs
 tools/mock-bridge.mjs
 tests/               node --test tests/core.test.mjs tests/templates.test.mjs
-                     node tests/e2e.mjs · node tests/e2e-edge.mjs · node tests/e2e-templates.mjs · node tests/e2e-photos.mjs   (Browser-Tests, Playwright)
+                     node tests/e2e.mjs · node tests/e2e-edge.mjs · node tests/e2e-templates.mjs · node tests/e2e-photos.mjs · node tests/e2e-bewertung.mjs · node tests/e2e-letzter-test.mjs · node tests/e2e-person.mjs   (Browser-Tests, Playwright)
 tests/fixtures/      Excel-Testdateien mit eingefügten Fotos (erzeugt mit make_fotos.py, braucht XlsxWriter und Pillow)
 ```
 

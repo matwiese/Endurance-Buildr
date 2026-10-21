@@ -1080,6 +1080,7 @@ function setTab(t){
     $("tab"+x.charAt(0).toUpperCase()+x.slice(1)).setAttribute("aria-selected",x===t);
   });
   if(t==="einzel") renderSingle();
+  syncPerson(t);
   if(t==="entwicklung") renderTrend();
   if(t==="uebersicht") renderOverview();
   if(window.KVApp) KVApp.onTab(t);
@@ -1584,6 +1585,17 @@ function urlToDataUrl(url){
 
 /* ---------- Einzelauswertung ---------- */
 var pickName="", refGroup="auto";
+/* Die in der Einzelauswertung gewählte Person übernehmen „Entwicklung“ und „Erweiterte Übersicht“ beim Wechsel in den Reiter.
+   Erst nach einer Wahl in der Einzelauswertung (PICKED) und nur bei einer anderen Person als zuletzt übernommen (SYNC): was dort danach von Hand gewählt wird
+   (auch ein Vergleich „Alle mit mehreren Durchgängen“), bleibt, bis in der Einzelauswertung eine andere Person gewählt wird. */
+var PICKED=false, SYNC={dev:"",ov:""};
+function setPick(n){ pickName=n; PICKED=true; }
+function syncPerson(t){
+  if(!PICKED||!pickName||!findPlayer(pickName)) return;
+  if(t==="entwicklung"&&SYNC.dev!==pickName){ SYNC.dev=pickName; devWho=pickName; }
+  if(t==="uebersicht"&&SYNC.ov!==pickName){ SYNC.ov=pickName; if(ovWho!==pickName){ ovWho=pickName; ovSel=[]; } }
+}
+function syncReset(){ PICKED=false; SYNC={dev:"",ov:""}; }
 function autoRef(p){ return p.cls?"c:"+p.cls:"team"; }
 function effRef(p){
   var g = refGroup==="auto" ? autoRef(p) : refGroup;
@@ -1617,7 +1629,7 @@ function fillPick(){
 function stepPick(d){
   var list=pickList(); if(!list.length) return;
   var i=0; for(var k=0;k<list.length;k++) if(list[k].name===pickName) i=k;
-  i=(i+d+list.length)%list.length; pickName=list[i].name;
+  i=(i+d+list.length)%list.length; setPick(list[i].name);
   fillPick(); renderSingle();
 }
 var SPIDER=["fmsSum","swSum","cmj","fmaxRel","tap","haeng","bz1rmRel","hbl"];
@@ -2852,7 +2864,7 @@ function clearRawData(){
   if(!window.confirm("Rohdatenblatt „"+FILE+"“ ("+BASE_ROWS.length+" Zeilen) samt Fotos aus der Datei entfernen?\n\nSprünge aus VALD, Vorlagen, CSV-Importe und Einstellungen bleiben erhalten. Danach lässt sich ein neues Blatt laden.")) return;
   var name=FILE;
   if(window.KVApp) KVApp.clearBase();
-  FOTOS={}; PHOTOS={}; EVALSEL={}; pickName=""; devWho=""; ovWho=""; ovSel=[]; UNKNOWN=[];
+  FOTOS={}; PHOTOS={}; EVALSEL={}; pickName=""; devWho=""; ovWho=""; ovSel=[]; syncReset(); UNKNOWN=[];
   if(window.KVApp&&(KVApp.S.results.length||KVApp.S.imports.length)){ DEMO=false; FILE=KVApp.S.results.length?"Sprungspeicher (VALD)":"CSV-Import"; ingestRows([]); }
   else { DEMO=true; FILE="Beispieldaten (fiktiv)"; ingestRows(parseGrid(parseCsv(DEMO_CSV))); }
   render();
@@ -2874,7 +2886,7 @@ function applyData(rows,fname,fotos){
     if(!rows.length) throw new Error("Im Blatt stehen keine Namen.");
     FOTOS=fotos||{}; FILE=fname; DEMO=false;
     ingestRows(rows);
-    pickName=""; devWho=""; ovWho=""; ovSel=[];
+    pickName=""; devWho=""; ovWho=""; ovSel=[]; syncReset();
     render();
     if(window.KVApp) KVApp.rememberBase(rows,fname,FOTOS);
     return true;
@@ -2936,7 +2948,7 @@ function loadData(inp){
 $("q").addEventListener("input",render);
 $("onlyTest").addEventListener("change",render);
 $("metric").addEventListener("change",function(){ curMetric=this.value; renderBoard(); });
-$("pick").addEventListener("change",function(){ pickName=this.value; renderSingle(); });
+$("pick").addEventListener("change",function(){ setPick(this.value); renderSingle(); });
 $("entWho").addEventListener("change",function(){ devWho=this.value; renderTrend(); });
 $("entMetric").addEventListener("change",function(){ devMetric=this.value; renderTrend(); });
 $("entNorm").addEventListener("change",renderTrend);
