@@ -197,6 +197,34 @@ try {
     await p3.context().close();
   }
 
+  console.log("M. Squat Jump mit Ausholbewegung (in VALD als „SJ“ getestet): keine überhöhte Sprunghöhe, Hinweise sichtbar");
+  {
+    const p4 = await newPage();
+    const cp = path.join(dir, "roh_demo_m.csv"); fs.writeFileSync(cp, await p4.evaluate(() => DEMO_CSV));
+    await p4.setInputFiles("#fin", cp); await p4.waitForFunction(() => DEMO === false);
+    const mk = (kind, trial, v0, seed, tag) => { const f = makeJump(CMJ, kind, { athlete: "Sophie Wende", date: "2026.04.21", trial, v0, seed }); const q = path.join(dir, "M" + trial + "_" + f.name); fs.writeFileSync(q, tag ? f.text.replace("Test,CMJ", "Test,SJ") : f.text); return q; };
+    /* ein sauberer SJ, zwei CMJ-artige Sprünge (Gegenbewegung) unter der Testart „SJ“, dazu zwei CMJ */
+    const m = [mk("SJ", 11, 2.1, 4), mk("CMJ", 12, 2.4, 5, true), mk("CMJ", 13, 2.4, 9, true), mk("CMJ", 1, 2.4, 2), mk("CMJ", 2, 2.4, 3)];
+    await upload(p4, m);
+    const sj = await p4.evaluate(() => { const rs = KVApp.S.results.filter(r => KVCore.typeOf(r) === "SJ"); return rs.map(r => ({ trial: r.trial, vs: r.vs["Jump Height (Imp-Mom)"], ft: r.vs["Jump Height (Flight Time)"], used: KVCore.valuesOf(r)["Jump Height (Imp-Mom)"], cm: !!KVApp.sjCm(r) })); });
+    assert.equal(sj.length, 3, JSON.stringify(sj)); assert.equal(sj.filter(x => x.cm).length, 2, JSON.stringify(sj));
+    assert.ok(sj.filter(x => x.cm).every(x => x.vs > 1.5 * x.ft && Math.abs(x.used - x.ft) < 0.1 * x.ft), "Gegenbewegung: Rechnung ab Stand statt überhöhter SJ-Höhe: " + JSON.stringify(sj));
+    const row = await p4.evaluate(() => { const t = findPlayer("Wende Sophie").tests.filter(x => /21\.04\.2026|2026-04-21/.test(x.date))[0]; return { sj: t.sj, vSj: t.vSj, jh: t.j_sj_jump_height_imp_mom }; });
+    const best = Math.max(...sj.map(x => x.used)), bestFt = Math.max(...sj.map(x => x.ft));
+    assert.ok(Math.abs(row.vSj - best) < 0.05 && row.vSj < 1.1 * bestFt, "bester Versuch zählt mit der Höhe ab Stand (≈ Flugzeit), nicht mit der überhöhten SJ-Rechnung: " + JSON.stringify({ row, sj }));
+    await p4.evaluate(() => setTab("qualitaet"));
+    const flags = await p4.$$eval("#flags .flag", e => e.map(x => x.textContent));
+    assert.ok(flags.some(f => /Squat Jump mit Gegenbewegung/.test(f) && /Impuls/.test(f) && /Flugzeit/.test(f)), flags.join(" | "));
+    await p4.evaluate(() => setTab("sprung")); await p4.waitForSelector("#kvSprung .kv-chk");
+    assert.equal(await p4.locator("#kvSprung .kv-chk:has-text('Gegenbewegung')").count(), 2);
+    /* Wert im Blatt unplausibel (z. B. Tippfehler 110,5 statt 42,7): Hinweis in „Datenqualität“, Blattwert hat weiter Vorrang */
+    await p4.evaluate(() => { const r = BASE_ROWS.filter(x => x.name === "Wende Sophie" && /21\.04\.2026/.test(x.date))[0]; r.sj = 110.5; rebuildTests(); render(); setTab("qualitaet"); });
+    const flags2 = await p4.$$eval("#flags .flag", e => e.map(x => x.textContent));
+    assert.ok(flags2.some(f => /Sprunghöhe unplausibel/.test(f) && /Wende Sophie 21\.04\.2026 · SJ = 110,5 cm/.test(f)), flags2.join(" | "));
+    ok(`2 von 3 SJ mit Ausholbewegung erkannt (Impuls ${sj.find(x => x.cm).vs.toFixed(0)} cm statt Flugzeit ${sj.find(x => x.cm).ft.toFixed(0)} cm): Auswertung ab Stand, bester Versuch ≈ Flugzeit-Höhe, Hinweis in „Datenqualität“ und „Sprungdaten“`);
+    await p4.context().close();
+  }
+
   console.log("K. Betrieb ohne dauerhaften Speicher (IndexedDB gesperrt)");
   const p2 = await newPage({ noIdb: true });
   await upload(p2, allPaths.slice(0, 8));

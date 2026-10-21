@@ -1241,6 +1241,9 @@ function renderFlags(){
       if(c[x[0]]!=null&&c[x[1]]!=null&&c[x[0]]!==c[x[1]]) a.push(x[2]+" "+c[x[0]]+"/"+c[x[1]]); });
     if(a.length) asy.push(p.name+" ("+a.join(", ")+")"); });
   if(asy.length) f.push(["Seitenunterschiede im Movement Screen",asy.join("; ")+" — Werte links/rechts. Im Screen gilt jeder Seitenunterschied als Hinweis."]);
+  var jh=[]; tests.forEach(function(t){ [["cmj","CMJ"],["sj","SJ"]].forEach(function(x){
+    if(t[x[0]]!=null && (t[x[0]]>80||t[x[0]]<5)) jh.push(t.name+(t.date?" "+dobDe(t.date):"")+" · "+x[1]+" = "+de(t[x[0]],1)+" cm"); }); });
+  if(jh.length) f.push(["Sprunghöhe unplausibel",jh.join("; ")+" — CMJ/SJ-Höhen außerhalb von 5 bis 80 cm sind sehr unwahrscheinlich (Tippfehler im Blatt, falsche Einheit oder verrutschte Spalte?). Der Wert aus dem Blatt hat Vorrang vor VALD und wird so angezeigt; bitte im Blatt prüfen."]);
   var sd=[]; players.forEach(function(p){
     if(p.val.hopDiff!=null&&p.val.hopDiff>ASYM_LIMIT) sd.push(p.name+" 5er Hopp "+de(p.val.hopDiff,1)+" %");
     if(p.val.fmaxDiff!=null&&p.val.fmaxDiff>ASYM_LIMIT) sd.push(p.name+" Fmax "+de(p.val.fmaxDiff,1)+" %"); });

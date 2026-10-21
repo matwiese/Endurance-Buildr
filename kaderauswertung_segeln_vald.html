@@ -1382,6 +1382,9 @@ function renderFlags(){
       if(c[x[0]]!=null&&c[x[1]]!=null&&c[x[0]]!==c[x[1]]) a.push(x[2]+" "+c[x[0]]+"/"+c[x[1]]); });
     if(a.length) asy.push(p.name+" ("+a.join(", ")+")"); });
   if(asy.length) f.push(["Seitenunterschiede im Movement Screen",asy.join("; ")+" — Werte links/rechts. Im Screen gilt jeder Seitenunterschied als Hinweis."]);
+  var jh=[]; tests.forEach(function(t){ [["cmj","CMJ"],["sj","SJ"]].forEach(function(x){
+    if(t[x[0]]!=null && (t[x[0]]>80||t[x[0]]<5)) jh.push(t.name+(t.date?" "+dobDe(t.date):"")+" · "+x[1]+" = "+de(t[x[0]],1)+" cm"); }); });
+  if(jh.length) f.push(["Sprunghöhe unplausibel",jh.join("; ")+" — CMJ/SJ-Höhen außerhalb von 5 bis 80 cm sind sehr unwahrscheinlich (Tippfehler im Blatt, falsche Einheit oder verrutschte Spalte?). Der Wert aus dem Blatt hat Vorrang vor VALD und wird so angezeigt; bitte im Blatt prüfen."]);
   var sd=[]; players.forEach(function(p){
     if(p.val.hopDiff!=null&&p.val.hopDiff>ASYM_LIMIT) sd.push(p.name+" 5er Hopp "+de(p.val.hopDiff,1)+" %");
     if(p.val.fmaxDiff!=null&&p.val.fmaxDiff>ASYM_LIMIT) sd.push(p.name+" Fmax "+de(p.val.fmaxDiff,1)+" %"); });
@@ -4086,9 +4089,24 @@ var KVCore = (function () {
     if (ty === "SL-CMJ" || ty === "SL-SJ") return (s === "L" || s === "R") ? ty + "|" + s : null;
     return null;   /* Drop Jumps u. a. werden (noch) nicht ausgewertet */
   }
+  /* Plausibilitätsprüfung Squat Jump: Impuls- und Flugzeit-Höhe müssen übereinstimmen (beim sauberen SJ bis auf wenige Prozent). Weichen sie stark ab, hat der Sprung eine
+     Ausholbewegung (der Kennwert „Jump Height“ stammt dann aus der SJ-Rechnung ab Beginn des Hauptanstiegs, in der die Abwärtsgeschwindigkeit der Gegenbewegung fehlt – die Höhe
+     wird etwa doppelt so groß). Die Auswertung ab Stand (wie beim CMJ) stimmt in beiden Fällen und liefert die Flugzeit-Höhe wieder. */
+  function sjSuspect(r) {
+    var vs = r && r.vs; if (!vs || !r.vc) return null;
+    var im = numOf(vs["Jump Height (Imp-Mom)"]), ft = numOf(vs["Jump Height (Flight Time)"]);
+    if (!fin(im) || !fin(ft) || ft <= 0) return null;
+    return Math.abs(im - ft) > Math.max(2, 0.15 * ft) ? { im: im, ft: ft } : null;
+  }
+  function sjFromCmj(vc) {
+    var out = {};
+    Object.keys(SJ_MAP).forEach(function (k) { SJ_MAP[k].forEach(function (nm) { if (vc[nm] != null) out[nm] = vc[nm]; }); });
+    if (vc["Bodyweight in Kilograms"] != null) out["Bodyweight in Kilograms"] = vc["Bodyweight in Kilograms"];
+    return out;
+  }
   function valuesOf(r) {
     var ty = typeOf(r);
-    if (ty === "SJ" || ty === "SL-SJ") return r.vs || null;
+    if (ty === "SJ" || ty === "SL-SJ") return sjSuspect(r) ? sjFromCmj(r.vc) : (r.vs || null);
     if (ty === "CMJ" || ty === "SL-CMJ") return r.vc || null;
     return null;
   }
@@ -4193,7 +4211,7 @@ var KVCore = (function () {
   return {
     ALL: ALL, BYNAME: BYNAME, SJ_MAP: SJ_MAP, GROUPS: GROUPS, LSI_NAMES: LSI_NAMES, AGG: AGG, BEST_KEY: BEST_KEY, SL_SKIP: SL_SKIP,
     fin: fin, numOf: numOf, isoDate: isoDate, canonName: canonName, findMatch: findMatch, headMeta: headMeta, nameFromFile: nameFromFile,
-    processFile: processFile, typeOf: typeOf, sideOf: sideOf, groupOf: groupOf, valuesOf: valuesOf, groupAllows: groupAllows, usable: usable,
+    processFile: processFile, typeOf: typeOf, sideOf: sideOf, groupOf: groupOf, valuesOf: valuesOf, sjSuspect: sjSuspect, groupAllows: groupAllows, usable: usable,
     dirOf: dirOf, metricKey: metricKey, aggregate: aggregate, buildTable: buildTable, metricDefs: metricDefs, rowValues: rowValues
   };
 })();
@@ -5190,6 +5208,9 @@ var KVApp = (function () {
   A.clearBase = function () { ST.kvDelete("base"); };
   A.rememberBase = function (rows, fname, fotos) { ST.kvSet("base", { rows: rows, file: fname, fotos: fotos || {}, saved: Date.now() }); };
 
+  /* Squat Jump mit Ausholbewegung (Impuls- und Flugzeit-Höhe weichen ab): {im, ft} oder null – nur für Sprünge, die als SJ zählen */
+  A.sjCm = function (r) { var t = K.typeOf(r); return (t === "SJ" || t === "SL-SJ") ? K.sjSuspect(r) : null; };
+
   /* ---------- Hinweise für das Blatt „Datenqualität“ ---------- */
   A.flags = function (f) {
     var all = S.results, out = f.slice();
@@ -5215,6 +5236,9 @@ var KVApp = (function () {
     var chk = all.filter(function (r) { return r.check && !r.override; });
     if (chk.length) out.push(["Sprungart prüfen", chk.slice(0, 8).map(function (r) { return r.athlete + " " + A.fmtDate(r.date) + " " + r.trial; }).join("; ") + (chk.length > 8 ? " … (+" + (chk.length - 8) + ")" : "") +
       " — die Testart aus VALD passt nicht zur Kraftkurve. Im Tab „Sprungdaten“ kann die Art korrigiert werden."]);
+    var cmj = all.filter(function (r) { return r.use && A.sjCm(r); });
+    if (cmj.length) out.push(["Squat Jump mit Gegenbewegung", cmj.slice(0, 8).map(function (r) { var c = A.sjCm(r); return r.athlete + " " + A.fmtDate(r.date) + " " + r.trial + " (Impuls " + A.nf(c.im, 1) + " cm, Flugzeit " + A.nf(c.ft, 1) + " cm)"; }).join("; ") + (cmj.length > 8 ? " … (+" + (cmj.length - 8) + ")" : "") +
+      " — die Höhe aus dem Impuls weicht stark von der Flugzeit-Höhe ab, der Sprung hatte eine Ausholbewegung. Für diese Sprünge gelten die Kennwerte der Auswertung ab Stand (wie CMJ), nicht die Squat-Jump-Rechnung; sonst wäre die Sprunghöhe etwa doppelt so groß. Im Tab „Sprungdaten“ lässt sich die Art auf CMJ ändern oder der Sprung abwählen."]);
     var noSide = all.filter(function (r) { var t = K.typeOf(r); return (t === "SL-CMJ" || t === "SL-SJ") && !K.sideOf(r); });
     if (noSide.length) out.push(["Single Leg ohne Seite", noSide.length + " einbeinige Sprünge ohne erkannte Seite (links/rechts) – sie zählen nicht, bis die Seite im Tab „Sprungdaten“ gesetzt ist."]);
     var dj = all.filter(function (r) { var t = K.typeOf(r); return t === "DJ" || t === "SL-DJ"; });
@@ -5626,7 +5650,7 @@ var KVApp = (function () {
     var list = S.results.filter(function (r) {
       if (U.filt) {
         var t = K.typeOf(r);
-        if (U.filt === "check") { if (!((r.check && !r.override) || !r.ok)) return false; }
+        if (U.filt === "check") { if (!((r.check && !r.override) || !r.ok || A.sjCm(r))) return false; }
         else if (U.filt === "off") { if (r.use) return false; }
         else if (U.filt === "SL") { if (t !== "SL-CMJ" && t !== "SL-SJ") return false; }
         else if (U.filt === "DJ") { if (t !== "DJ" && t !== "SL-DJ") return false; }
@@ -5671,6 +5695,8 @@ var KVApp = (function () {
       var flags = [];
       if (!r.ok) flags.push(el("span", { class: "kv-bad", title: (r.warnings || []).join(" ") }, "nicht auswertbar"));
       if (r.check && !r.override) flags.push(el("span", { class: "kv-chk", title: "Testart laut VALD passt nicht zur Kraftkurve" }, "prüfen"));
+      var cm = A.sjCm(r);
+      if (cm) flags.push(el("span", { class: "kv-chk", title: "Squat Jump mit Ausholbewegung: Höhe aus dem Impuls " + nf(cm.im, 1) + " cm, aus der Flugzeit " + nf(cm.ft, 1) + " cm. Die Kennwerte stammen aus der Auswertung ab Stand (wie CMJ)." }, "Gegenbewegung"));
       if (isSL && !K.sideOf(r)) flags.push(el("span", { class: "kv-bad" }, "Seite fehlt"));
       if ((ty === "DJ" || ty === "SL-DJ")) flags.push(el("span", { class: "kv-mini" }, "nicht ausgewertet"));
       var open = U.open.has(r.id);

@@ -250,6 +250,9 @@ var KVApp = (function () {
   A.clearBase = function () { ST.kvDelete("base"); };
   A.rememberBase = function (rows, fname, fotos) { ST.kvSet("base", { rows: rows, file: fname, fotos: fotos || {}, saved: Date.now() }); };
 
+  /* Squat Jump mit Ausholbewegung (Impuls- und Flugzeit-Höhe weichen ab): {im, ft} oder null – nur für Sprünge, die als SJ zählen */
+  A.sjCm = function (r) { var t = K.typeOf(r); return (t === "SJ" || t === "SL-SJ") ? K.sjSuspect(r) : null; };
+
   /* ---------- Hinweise für das Blatt „Datenqualität“ ---------- */
   A.flags = function (f) {
     var all = S.results, out = f.slice();
@@ -275,6 +278,9 @@ var KVApp = (function () {
     var chk = all.filter(function (r) { return r.check && !r.override; });
     if (chk.length) out.push(["Sprungart prüfen", chk.slice(0, 8).map(function (r) { return r.athlete + " " + A.fmtDate(r.date) + " " + r.trial; }).join("; ") + (chk.length > 8 ? " … (+" + (chk.length - 8) + ")" : "") +
       " — die Testart aus VALD passt nicht zur Kraftkurve. Im Tab „Sprungdaten“ kann die Art korrigiert werden."]);
+    var cmj = all.filter(function (r) { return r.use && A.sjCm(r); });
+    if (cmj.length) out.push(["Squat Jump mit Gegenbewegung", cmj.slice(0, 8).map(function (r) { var c = A.sjCm(r); return r.athlete + " " + A.fmtDate(r.date) + " " + r.trial + " (Impuls " + A.nf(c.im, 1) + " cm, Flugzeit " + A.nf(c.ft, 1) + " cm)"; }).join("; ") + (cmj.length > 8 ? " … (+" + (cmj.length - 8) + ")" : "") +
+      " — die Höhe aus dem Impuls weicht stark von der Flugzeit-Höhe ab, der Sprung hatte eine Ausholbewegung. Für diese Sprünge gelten die Kennwerte der Auswertung ab Stand (wie CMJ), nicht die Squat-Jump-Rechnung; sonst wäre die Sprunghöhe etwa doppelt so groß. Im Tab „Sprungdaten“ lässt sich die Art auf CMJ ändern oder der Sprung abwählen."]);
     var noSide = all.filter(function (r) { var t = K.typeOf(r); return (t === "SL-CMJ" || t === "SL-SJ") && !K.sideOf(r); });
     if (noSide.length) out.push(["Single Leg ohne Seite", noSide.length + " einbeinige Sprünge ohne erkannte Seite (links/rechts) – sie zählen nicht, bis die Seite im Tab „Sprungdaten“ gesetzt ist."]);
     var dj = all.filter(function (r) { var t = K.typeOf(r); return t === "DJ" || t === "SL-DJ"; });

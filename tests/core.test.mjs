@@ -124,3 +124,27 @@ test("Ausgeschlossene und unlesbare Sprünge zählen nicht", () => {
   assert.equal(KV.groupOf(c), null);
   assert.throws(() => KV.processFile({ id: "k", name: "kaputt.csv", text: "a,b\n1,2\n" }, { thr: 20 }));
 });
+
+test("Squat Jump mit Ausholbewegung: Höhe stimmt mit der Flugzeit überein statt fast doppelt so groß zu sein", () => {
+  const H = "Jump Height (Imp-Mom)", FT = "Jump Height (Flight Time)";
+  /* sauberer SJ: Impuls- und Flugzeit-Höhe stimmen überein, keine Umrechnung */
+  const clean = KV.processFile(rec("SJ", { v0: 2.05, seed: 3 }), { thr: 20 });
+  assert.equal(KV.sjSuspect(clean), null);
+  assert.equal(KV.valuesOf(clean)[H], clean.vs[H], "sauberer SJ bleibt unverändert");
+  /* ein Sprung mit Gegenbewegung, in VALD als „SJ“ getestet (VALD-Angabe hat Vorrang) */
+  const f = makeJump(CMJ, "CMJ", { v0: 2.4, seed: 5 });
+  const r = KV.processFile({ id: "cm", name: f.name, text: f.text.replace("Test,CMJ", "Test,SJ"), source: "Test" }, { thr: 20 });
+  assert.equal(r.type, "SJ"); assert.ok(r.check, "Prüfhinweis zur Sprungart");
+  assert.ok(r.vs[H] > 1.5 * r.vs[FT], `SJ-Rechnung ist bei Gegenbewegung zu hoch (${r.vs[H].toFixed(1)} statt ${r.vs[FT].toFixed(1)} cm)`);
+  const s = KV.sjSuspect(r); assert.ok(s && s.im > s.ft);
+  const v = KV.valuesOf(r);
+  assert.ok(Math.abs(v[H] - v[FT]) < 0.1 * v[FT], `Höhe Impuls ${v[H].toFixed(1)} ≈ Flugzeit ${v[FT].toFixed(1)}`);
+  assert.equal(v[H], r.vc[H], "Werte aus der Auswertung ab Stand");
+  assert.ok(v["Concentric Peak Force"] != null && v["Peak Power / BM"] != null, "Kennwerte der SJ-Gruppe bleiben vorhanden");
+  /* Aggregation „bester Versuch“: der aufgeblähte Versuch gewinnt nicht mehr */
+  const ok1 = KV.processFile(rec("SJ", { v0: 2.4, seed: 7, trial: 1 }), { thr: 20 });
+  const best = KV.aggregate([r, ok1], "best", [H]);
+  assert.ok(best[H] < 1.1 * Math.max(r.vc[H], ok1.vs[H]), `bester Versuch ${best[H].toFixed(1)} cm`);
+  /* als CMJ bestimmt gilt die normale Rechnung */
+  assert.equal(KV.valuesOf({ ...r, override: "CMJ" })[H], r.vc[H]);
+});

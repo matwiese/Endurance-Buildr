@@ -146,9 +146,24 @@ var KVCore = (function () {
     if (ty === "SL-CMJ" || ty === "SL-SJ") return (s === "L" || s === "R") ? ty + "|" + s : null;
     return null;   /* Drop Jumps u. a. werden (noch) nicht ausgewertet */
   }
+  /* Plausibilitätsprüfung Squat Jump: Impuls- und Flugzeit-Höhe müssen übereinstimmen (beim sauberen SJ bis auf wenige Prozent). Weichen sie stark ab, hat der Sprung eine
+     Ausholbewegung (der Kennwert „Jump Height“ stammt dann aus der SJ-Rechnung ab Beginn des Hauptanstiegs, in der die Abwärtsgeschwindigkeit der Gegenbewegung fehlt – die Höhe
+     wird etwa doppelt so groß). Die Auswertung ab Stand (wie beim CMJ) stimmt in beiden Fällen und liefert die Flugzeit-Höhe wieder. */
+  function sjSuspect(r) {
+    var vs = r && r.vs; if (!vs || !r.vc) return null;
+    var im = numOf(vs["Jump Height (Imp-Mom)"]), ft = numOf(vs["Jump Height (Flight Time)"]);
+    if (!fin(im) || !fin(ft) || ft <= 0) return null;
+    return Math.abs(im - ft) > Math.max(2, 0.15 * ft) ? { im: im, ft: ft } : null;
+  }
+  function sjFromCmj(vc) {
+    var out = {};
+    Object.keys(SJ_MAP).forEach(function (k) { SJ_MAP[k].forEach(function (nm) { if (vc[nm] != null) out[nm] = vc[nm]; }); });
+    if (vc["Bodyweight in Kilograms"] != null) out["Bodyweight in Kilograms"] = vc["Bodyweight in Kilograms"];
+    return out;
+  }
   function valuesOf(r) {
     var ty = typeOf(r);
-    if (ty === "SJ" || ty === "SL-SJ") return r.vs || null;
+    if (ty === "SJ" || ty === "SL-SJ") return sjSuspect(r) ? sjFromCmj(r.vc) : (r.vs || null);
     if (ty === "CMJ" || ty === "SL-CMJ") return r.vc || null;
     return null;
   }
@@ -253,7 +268,7 @@ var KVCore = (function () {
   return {
     ALL: ALL, BYNAME: BYNAME, SJ_MAP: SJ_MAP, GROUPS: GROUPS, LSI_NAMES: LSI_NAMES, AGG: AGG, BEST_KEY: BEST_KEY, SL_SKIP: SL_SKIP,
     fin: fin, numOf: numOf, isoDate: isoDate, canonName: canonName, findMatch: findMatch, headMeta: headMeta, nameFromFile: nameFromFile,
-    processFile: processFile, typeOf: typeOf, sideOf: sideOf, groupOf: groupOf, valuesOf: valuesOf, groupAllows: groupAllows, usable: usable,
+    processFile: processFile, typeOf: typeOf, sideOf: sideOf, groupOf: groupOf, valuesOf: valuesOf, sjSuspect: sjSuspect, groupAllows: groupAllows, usable: usable,
     dirOf: dirOf, metricKey: metricKey, aggregate: aggregate, buildTable: buildTable, metricDefs: metricDefs, rowValues: rowValues
   };
 })();

@@ -294,7 +294,7 @@
     var list = S.results.filter(function (r) {
       if (U.filt) {
         var t = K.typeOf(r);
-        if (U.filt === "check") { if (!((r.check && !r.override) || !r.ok)) return false; }
+        if (U.filt === "check") { if (!((r.check && !r.override) || !r.ok || A.sjCm(r))) return false; }
         else if (U.filt === "off") { if (r.use) return false; }
         else if (U.filt === "SL") { if (t !== "SL-CMJ" && t !== "SL-SJ") return false; }
         else if (U.filt === "DJ") { if (t !== "DJ" && t !== "SL-DJ") return false; }
@@ -339,6 +339,8 @@
       var flags = [];
       if (!r.ok) flags.push(el("span", { class: "kv-bad", title: (r.warnings || []).join(" ") }, "nicht auswertbar"));
       if (r.check && !r.override) flags.push(el("span", { class: "kv-chk", title: "Testart laut VALD passt nicht zur Kraftkurve" }, "prüfen"));
+      var cm = A.sjCm(r);
+      if (cm) flags.push(el("span", { class: "kv-chk", title: "Squat Jump mit Ausholbewegung: Höhe aus dem Impuls " + nf(cm.im, 1) + " cm, aus der Flugzeit " + nf(cm.ft, 1) + " cm. Die Kennwerte stammen aus der Auswertung ab Stand (wie CMJ)." }, "Gegenbewegung"));
       if (isSL && !K.sideOf(r)) flags.push(el("span", { class: "kv-bad" }, "Seite fehlt"));
       if ((ty === "DJ" || ty === "SL-DJ")) flags.push(el("span", { class: "kv-mini" }, "nicht ausgewertet"));
       var open = U.open.has(r.id);
