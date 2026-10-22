@@ -136,6 +136,12 @@ Wie im CMJ Analyzer (`classifyJump`): Die Testart aus VALD (Dateikopf der Bridge
 - **VALD an einem anderen Tag als im Blatt**: Liegt der VALD-Test nicht auf demselben Tag wie ein Test im Rohdatenblatt, bleibt er ein eigener Testtermin („nur VALD“ in Tabellen und Datumsauswahl). Der **aktuelle Test** einer Person ist trotzdem der letzte Test aus dem Blatt, und in der Einzelauswertung stehen unter „Sprungleistung / Schnellkraft“ die Kennwerte des **nächstliegenden VALD-Tests** – der letzte davor, sonst der erste danach – mit dem Hinweis „VALD-Kennwerte: Test vom … – am ausgewerteten Testtag gibt es keinen VALD-Test“ (im PDF in der Kategorieüberschrift: „VALD vom …“). Gleiches gilt für Kader, Rangliste und Excel. Wer den VALD-Test selbst als Testtermin sehen will, wählt sein Datum in der Datumsauswahl der Einzelauswertung. Gibt es am Testtag selbst VALD-Daten, gelten diese.
 - **Zusammenführen mit dem Blatt**: nach Name (Reihenfolge, Umlaute, Zweitnamen egal) und Testtag. Namen ohne Treffer erscheinen als eigene Personen ohne Bootsklasse und lassen sich im Reiter Sprungdaten → „Zuordnung der Athlet:innen“ von Hand zuordnen.
 
+## Rohdatenblatt: Clearing-Test, Reaktion und HBL
+
+- **Clearing-Test** (Spalten „Clearing li“ / „Clearing re“): **0 = positiv** (Schmerz), **1 = negativ**. Text wird ebenfalls verstanden: „positiv“, „pos“, „+“, „ja“, „x“, „Schmerz“ gelten als positiv; „negativ“, „neg“, „-“, „nein“, „o. B.“ als negativ. Ein positives Clearing setzt Shoulder Mobility dieser Seite in der Screen-Summe auf 0 Punkte und erzeugt den Hinweis in „Datenqualität“. Leere Zellen bleiben ohne Angabe.
+- **Reaktion [s]** und **HBL [s]** werden mit **zwei Nachkommastellen** angezeigt (z. B. 0,35 s, 14,50 s); HBL Höhe mit einer.
+- Das PDF trägt im Kopf **keinen Vermerk zur Vorlage** mehr; welche Vorlage aktiv ist, steht oben in der Auswertung neben dem Vorlagenfeld.
+
 ## Gemeinsame Person: Einzelauswertung, Entwicklung, Erweiterte Übersicht
 
 Die Person, die du in der **Einzelauswertung** wählst (Auswahlfeld oder „Zurück/Weiter“), übernehmen **Entwicklung** und **Erweiterte Übersicht** automatisch, sobald du in den Reiter wechselst – du musst sie dort nicht noch einmal suchen.

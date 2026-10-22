@@ -693,7 +693,7 @@ var METRICS=[
  {k:"fmaxDiff",t:"Seitendifferenz Fmax",     u:"%",    dir:-1, d:1, g:"Maximalkraft", pp:1, calc:1},
  {k:"bld",     t:"Bilaterales Defizit",      u:"%",    dir:0,  d:1, g:"Maximalkraft", pp:1, calc:1},
 
- {k:"reakt",   t:"Reaktion",                 u:"s",    dir:-1, d:3, g:"Schnelligkeit"},
+ {k:"reakt",   t:"Reaktion",                 u:"s",    dir:-1, d:2, g:"Schnelligkeit"},
  {k:"tap",     t:"Tapping",                  s:"Tapping", u:"Kont./6 s", dir:1, d:0, g:"Schnelligkeit"},
 
  {k:"haeng",   t:"Hängen",                   s:"Hängen", u:"s", dir:1, d:0, g:"Oberkörper"},
@@ -701,7 +701,7 @@ var METRICS=[
  {k:"bz1rmRel",t:"1-RM Bankziehen relativ",  s:"BZ rel.", u:"kg/kg", dir:1, d:2, g:"Oberkörper", calc:1},
  {k:"bzWh",    t:"Max. WH Bankziehen",       s:"WH BZ", u:"WH", dir:1, d:0, g:"Oberkörper"},
  {k:"liege",   t:"Liegestütze",              s:"Liegest.", u:"WH", dir:1, d:0, g:"Oberkörper"},
- {k:"hbl",     t:"HBL",                      s:"HBL", u:"s", dir:-1, d:0, g:"Schnelligkeit"},
+ {k:"hbl",     t:"HBL",                      s:"HBL", u:"s", dir:-1, d:2, g:"Schnelligkeit"},
  {k:"hblH",    t:"HBL Höhe",                 u:"",     dir:0,  d:1, g:"Schnelligkeit"}
 ];
 var STATIC_METRICS=METRICS.slice();
@@ -843,10 +843,11 @@ function num(v){ if(v==null||v==="") return null; if(typeof v==="number") return
   var n=parseFloat(String(v).trim().replace(",",".")); return isNaN(n)?null:n; }
 function initials(n){ var p=String(n).split(/\s+/); return ((p[0]||"")[0]||"")+((p[1]||"")[0]||""); }
 function rnd(x,d){ var f=Math.pow(10,d); return Math.round(x*f)/f; }
-/* Clearing-Test: positiv (Schmerz) = 1, negativ = 0 */
+/* Clearing-Test im Blatt: 0 = positiv (Schmerz), 1 = negativ; auch als Text (positiv/negativ, pos/neg, +/-, ja/nein, x, o.B.).
+   Intern: positiv = 1, negativ = 0 (so rechnet die Screen-Summe und so werden Hinweise gesetzt). */
 function clrVal(v){ v=String(v==null?"":v).trim().toLowerCase(); if(!v) return null;
-  if(/^(pos|\+|ja|j$|x$|1$|schmerz)/.test(v)) return 1;
-  if(/^(neg|-|–|nein|n$|0$|o\.?\s*b)/.test(v)) return 0;
+  if(/^(pos|\+|ja|j$|x$|0$|schmerz)/.test(v)) return 1;
+  if(/^(neg|-|–|nein|n$|1$|o\.?\s*b)/.test(v)) return 0;
   return null; }
 function clrTxt(v){ return v===1?"positiv":v===0?"negativ":"—"; }
 
@@ -2305,7 +2306,6 @@ function pdfFit(doc,t,maxW,size,min){
   return t;
 }
 function pdfCut(t,n){ t=String(t); return t.length>n?t.slice(0,n-1)+"\u2026":t; }
-function tplTag(){ return (window.KVApp&&!KVApp.tplIsAll())?"  \u00b7  Vorlage: "+KVApp.tplName():""; }
 function pdfTxt(s){ return String(s==null?"":s).replace(/\u2212/g,"-").replace(/\u2009/g," "); }
 /* Gruppen des PDFs mit ihren Zeilen: [{g, items, h}] (ohne Anthropometrie, die steht auf Seite 1) */
 function pdfGroups(p){
@@ -2546,7 +2546,7 @@ function pdfPageOne(doc,p,photo,chart,refG,total){
 }
 
 /* ---------- Folgeseiten: Leistungsdiagnostik ---------- */
-/* Kopf der Folgeseiten: Name, Untertitel (+ Vorlagenname rechts, soweit Platz ist), Klasse, Linie */
+/* Kopf der Folgeseiten: Name, Untertitel, Klasse, Linie */
 function pdfHeadN(doc,p,sub){
   var L=PDF.left, R=PDF.right, red=LSA.colors.red;
   pdfLetterhead(doc);
@@ -2557,12 +2557,6 @@ function pdfHeadN(doc,p,sub){
   doc.text(pdfFit(doc,p.name.toUpperCase(),R-L-cw-6,14,10),L,54);
   doc.setFont("helvetica","normal"); doc.setFontSize(8.3); doc.setTextColor(110,120,130);
   sub=pdfFit(doc,sub,R-L-32,8.3,6.8); doc.text(sub,L,60);
-  var vt=tplTag().replace(/^\s*\u00b7\s*/,"");   /* Vorlagenname rechts in derselben Zeile, so lang wie Platz ist */
-  if(vt){
-    var room=R-L-doc.getTextWidth(sub)-8;
-    while(vt.length>14 && doc.getTextWidth(vt)>room) vt=vt.slice(0,-2).replace(/\s+$/,"")+"\u2026";
-    if(doc.getTextWidth(vt)<=room) doc.text(vt,R,60,{align:"right"});
-  }
   doc.setTextColor(red[0],red[1],red[2]); doc.setFont("helvetica","bold"); doc.setFontSize(15);
   if(cls) doc.text(cls,R,54,{align:"right"});
   pdfRule(doc,65);

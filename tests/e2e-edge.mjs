@@ -225,6 +225,28 @@ try {
     await p4.context().close();
   }
 
+  console.log("N. Clearing-Test 0 = positiv, 1 = negativ; Reaktion und HBL mit 2 Nachkommastellen");
+  {
+    const p5 = await newPage();
+    const r = await p5.evaluate(() => {
+      const head = ["Name", "Testdatum", "Clearing li", "Clearing re", "Reaktion [s]", "HBL [s]", "Shoulder li", "Shoulder re", "ASLR li", "ASLR re", "In-Line li", "In-Line re", "Deep Squat"];
+      const rows = [head,
+        ["Test Eins", "21.04.2026", 0, 1, 0.3456, 14.5, 3, 3, 3, 3, 3, 3, 3],         /* links 0 = positiv, rechts 1 = negativ */
+        ["Test Zwei", "21.04.2026", "positiv", "negativ", 0.3, 14, 3, 3, 3, 3, 3, 3, 3],
+        ["Test Drei", "21.04.2026", "1", "0", 0.3, 14, 3, 3, 3, 3, 3, 3, 3],
+        ["Test Vier", "21.04.2026", 1, 1, 0.3, 14, 3, 3, 3, 3, 3, 3, 3]];     /* beide negativ: volle Punkte */
+      const out = parseGrid(rows).map(o => derive(o));
+      return { codes: [0, 1, "0", "1", "positiv", "negativ", "pos", "neg", "x", "o.B.", "ja", "nein", "", null].map(v => clrVal(v)), rows: out.map(o => ({ n: o.name, l: o.clrL, r: o.clrR, fms: o.fmsSum, reakt: o.reakt, txt: clrTxt(o.clrL) + "/" + clrTxt(o.clrR) })),
+        d: [MET.reakt.d, MET.hbl.d, MET.hblH.d], f: [de(0.3456, MET.reakt.d), de(14.5, MET.hbl.d)] };
+    });
+    assert.deepEqual(r.codes, [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, null, null], "0 = positiv, 1 = negativ (auch als Text)");
+    assert.deepEqual(r.rows.map(x => x.txt), ["positiv/negativ", "positiv/negativ", "negativ/positiv", "negativ/negativ"]);
+    assert.deepEqual(r.rows.map(x => x.fms), [9, 9, 9, 12], "Screen-Summe: ein positives Clearing setzt Shoulder Mobility dieser Seite auf 0 (12 → 9), zwei negative lassen 12");
+    assert.deepEqual(r.d, [2, 2, 1]); assert.deepEqual(r.f, ["0,35", "14,50"]);
+    ok("Clearing: 0 = positiv, 1 = negativ (und Text wie bisher); Reaktion 0,35 s, HBL 14,50 s");
+    await p5.context().close();
+  }
+
   console.log("K. Betrieb ohne dauerhaften Speicher (IndexedDB gesperrt)");
   const p2 = await newPage({ noIdb: true });
   await upload(p2, allPaths.slice(0, 8));

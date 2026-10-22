@@ -156,10 +156,11 @@ try {
 
   console.log("5. PDF zeigt nur, was in der Vorlage angekreuzt ist");
   const pdf = await pdfOf("Wende Sophie", "profil_kurz.pdf");
-  for (const t of ["CMJ ohne Arme", "Jump Height (Imp-Mom)", "Peak Power / BM", "Platz ", "Vorlage: Testtag Kurz"]) assert.ok(pdf.all.includes(t), "PDF ohne „" + t + "“");
+  for (const t of ["CMJ ohne Arme", "Jump Height (Imp-Mom)", "Peak Power / BM", "Platz "]) assert.ok(pdf.all.includes(t), "PDF ohne „" + t + "“");
   for (const t of ["Swiss", "Fmax", "Bankziehen", "LEISTUNGSPROFIL", "Tapping", "Hopp", "Eccentric Peak Power"]) assert.ok(!pdf.all.includes(t), "PDF enthält „" + t + "“, obwohl nicht angekreuzt");
+  assert.ok(!pdf.all.includes("Vorlage:"), "kein Vermerk „Vorlage: …“ rechts oben im PDF");
   assert.ok(pdf.pages < pdfAll.pages, `weniger Seiten (${pdf.pages} statt ${pdfAll.pages})`);
-  ok(`PDF ${pdf.pages} Seiten statt ${pdfAll.pages}: nur Vorlage, kein Netzdiagramm, Rangplätze, Vorlagenname im Kopf`);
+  ok(`PDF ${pdf.pages} Seiten statt ${pdfAll.pages}: nur Vorlage, kein Netzdiagramm, Rangplätze, kein Vorlagenvermerk im Kopf`);
   console.log("5b. Netzdiagramm: Anzahl der Achsen und je Achse ein Kennwert wählen");
   await page.evaluate(() => setTab("templates"));
   await page.waitForSelector("#kvSpider");
@@ -241,7 +242,7 @@ try {
   assert.equal(await page.$$eval("#single .spiderpanel svg > line", l => l.length), 8, "Netz mit den acht Achsen der Vorlage");
   await shot("06_sprungauswertung_gesamt");
   const pdfJ = await pdfOf("Wende Sophie", "profil_sprungauswertung.pdf");
-  for (const t of ["SPRUNGLEISTUNG / SCHNELLKRAFT", "Eccentric Utilization Ratio (EUR)", "Concentric Peak Force (CMJ)", "Concentric Peak Force (SJ)", "5er Hopp links", "Seitendifferenz 5er Hopp", "Vorlage: Sprungauswertung gesamt"]) assert.ok(pdfJ.all.includes(t), "PDF ohne „" + t + "“");
+  for (const t of ["SPRUNGLEISTUNG / SCHNELLKRAFT", "Eccentric Utilization Ratio (EUR)", "Concentric Peak Force (CMJ)", "Concentric Peak Force (SJ)", "5er Hopp links", "Seitendifferenz 5er Hopp"]) assert.ok(pdfJ.all.includes(t), "PDF ohne „" + t + "“");
   for (const t of ["SL-CMJ", "Swiss", "Maximalkraft", "PSA"]) assert.ok(!pdfJ.all.includes(t), "PDF enthält „" + t + "“");
   assert.ok(pdfJ.all.indexOf("Eccentric Utilization Ratio") < pdfJ.all.indexOf("Concentric Peak Force (CMJ)") && pdfJ.all.indexOf("Concentric Peak Force (SJ)") < pdfJ.all.indexOf("5er Hopp links"), "Reihenfolge im PDF");
   /* ohne den Baustein stehen die Sprungkennwerte wieder in ihren eigenen Karten */
@@ -436,7 +437,7 @@ try {
   const re = await page.evaluate(() => ({ tpl: KVApp.S.templates.map(t => t.name), active: KVApp.tplName(), sel: document.getElementById("tplSel").selectedOptions[0].textContent, custom: KVApp.S.custom.length, imports: KVApp.S.imports.length, players: players.length, sprint: findPlayer("Segel Jonas").cur.c_sprint_10_m }));
   assert.deepEqual(re.tpl, ["Testtag Kurz"]); assert.equal(re.active, "Testtag Kurz"); assert.equal(re.sel, "Testtag Kurz"); assert.equal(re.custom, 2); assert.equal(re.imports, 2); assert.equal(re.sprint, 2.05);
   const pdf5 = await pdfOf("Wende Sophie", "profil_nach_neustart.pdf");
-  assert.ok(pdf5.all.includes("Vorlage: Testtag Kurz") && !pdf5.all.includes("Swiss"), "PDF nach Neustart weiter nach Vorlage");
+  assert.ok(pdf5.all.includes("Platz ") && !pdf5.all.includes("Swiss") && !pdf5.all.includes("Vorlage:"), "PDF nach Neustart weiter nach Vorlage (Rang, ohne Swiss)");
   assert.deepEqual(await page.evaluate(() => KVApp.S.templates[0].spider), ["fmsSum", "swSum", "cmj", "fmaxRel", "tap", "haeng", "bz1rmRel", "hbl"], "Achsen nach Neustart");
   ok(`nach Neu-Laden: Vorlage „${re.active}“ aktiv, ${re.custom} eigene Parameter, ${re.imports} Importe, ${re.players} Athlet:innen, Netzdiagramm-Achsen erhalten`);
 
