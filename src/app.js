@@ -248,7 +248,17 @@ var KVApp = (function () {
     if (t === "templates" && A.renderTemplates) A.renderTemplates();
   };
   A.clearBase = function () { ST.kvDelete("base"); };
-  A.rememberBase = function (rows, fname, fotos) { ST.kvSet("base", { rows: rows, file: fname, fotos: fotos || {}, saved: Date.now() }); };
+  /* v: Stand der Einlese-Regeln. v 2 = Clearing-Test 0 = positiv, 1 = negativ (Zellinhalt steht in clrLRaw/clrRRaw und wird bei jedem Aufbau neu gelesen) */
+  A.rememberBase = function (rows, fname, fotos) { ST.kvSet("base", { rows: rows, file: fname, fotos: fotos || {}, saved: Date.now(), v: 2 }); };
+  /* Ein vor Version 2 gespeichertes Blatt hat die Clearing-Werte schon nach der alten Regel (1 = positiv) umgerechnet, den Zellinhalt kennt die App nicht mehr:
+     einmal nachfragen, ob die Werte umgedreht werden sollen (nötig, wenn im Blatt Zahlen 0/1 stehen) – Text wie „positiv/negativ“ bleibt gleich. */
+  function migrateBase(base) {
+    var old = function (r) { return (r.clrL != null || r.clrR != null) && r.clrLRaw == null && r.clrRRaw == null; };
+    if (base.rows.some(old) && window.confirm("Clearing-Test: Die Codierung ist jetzt 0 = positiv, 1 = negativ.\n\nDas gespeicherte Rohdatenblatt wurde noch nach der alten Regel (1 = positiv) eingelesen.\n\nOK = Clearing-Werte im gespeicherten Blatt umdrehen (richtig, wenn die Spalten „Clearing li/re“ Zahlen 0/1 enthalten)\nAbbrechen = unverändert lassen (wenn dort Text wie „positiv/negativ“ steht)\n\nAlternativ lässt sich das Rohdatenblatt einfach neu laden."))
+      base.rows.forEach(function (r) { if (old(r)) ["clrL", "clrR"].forEach(function (k) { if (r[k] === 0 || r[k] === 1) r[k] = 1 - r[k]; }); });
+    base.v = 2; ST.kvSet("base", base);
+    return base;
+  }
 
   /* Squat Jump mit Ausholbewegung (Impuls- und Flugzeit-Höhe weichen ab): {im, ft} oder null – nur für Sprünge, die als SJ zählen */
   A.sjCm = function (r) { var t = K.typeOf(r); return (t === "SJ" || t === "SL-SJ") ? K.sjSuspect(r) : null; };
@@ -353,6 +363,7 @@ var KVApp = (function () {
     setDirs(ST.kvGet("dirs", {}));
     S.tplVer++;
     var base = ST.kvGet("base", null);
+    if (base && base.rows && base.rows.length && !base.v) base = migrateBase(base);
     return base;
   };
   A.restore = function (file) {

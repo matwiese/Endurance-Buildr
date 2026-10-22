@@ -737,7 +737,7 @@ function parseGrid(grid){
       if(d.t==="date"){ if(typeof v==="number") v=serialToIso(v); v=String(v).trim(); if(v&&!o[d.k]) o[d.k]=v; }
       else if(d.t==="txt"){ v=String(v).trim(); if(v&&!o[d.k]) o[d.k]=v; }
       else if(d.t==="q"){ /* Spalten „Qualität“ werden erkannt (kein Hinweis auf unbekannte Spalte), aber weder ausgewertet noch angezeigt */ }
-      else if(d.t==="clr"){ o[d.k]=clrVal(v); if(String(v).trim()&&o[d.k]==null) (o.bad=o.bad||[]).push(d.h+": „"+String(v).trim()+"“"); }
+      else if(d.t==="clr"){ o[d.k]=clrVal(v); if(String(v).trim()) o[d.k+"Raw"]=String(v).trim(); if(String(v).trim()&&o[d.k]==null) (o.bad=o.bad||[]).push(d.h+": „"+String(v).trim()+"“"); }
       else { var n=num(v); if(n!=null) o[d.k]=n;
              else if(String(v).trim()) (o.bad=o.bad||[]).push(d.h+": „"+String(v).trim()+"“"); }
     });
@@ -752,6 +752,7 @@ function parseGrid(grid){
 /* Abgeleitete Werte immer aus den Messwerten nachrechnen; steht im Blatt ein abweichender Wert, wird das notiert */
 function derive(o){
   o.recalc=[];
+  ["clrL","clrR"].forEach(function(k){ if(o[k+"Raw"]!=null) o[k]=clrVal(o[k+"Raw"]); });   /* Clearing aus dem Zellinhalt des Blatts lesen: eine geänderte Codierung gilt sofort, auch für gespeicherte Blätter */
   var set=function(k,v,tol){
     var alt=o[k];
     if(alt!=null && Math.abs(alt-v)>tol) o.recalc.push(MET[k].t+" (Blatt "+de(alt,MET[k].d)+", gerechnet "+de(v,MET[k].d)+")");

@@ -247,6 +247,31 @@ try {
     await p5.context().close();
   }
 
+  console.log("O. Gespeichertes Rohdatenblatt aus älterer Version: Clearing-Werte umdrehen (einmalige Rückfrage)");
+  for (const accept of [true, false]) {
+    const p6 = await newPage(); let asked = 0, msg = "";
+    p6.on("dialog", async d => { asked++; msg = d.message(); await (accept ? d.accept() : d.dismiss()); });
+    /* Stand einer älteren Version: Clearing nach alter Regel umgerechnet (1 = positiv), kein Zellinhalt, keine Versionsangabe */
+    await p6.evaluate(async () => {
+      await KVStore.kvSet("base", { rows: [{ name: "Alt Eins", date: "21.04.2026", cls: "49er", kader: "A", clrL: 1, clrR: 0, cmj: 30, q: {}, sheetRow: 2 }, { name: "Alt Zwei", date: "21.04.2026", cls: "49er", kader: "A", clrL: 0, clrR: 0, cmj: 31, q: {}, sheetRow: 3 }], file: "alt.xlsx", fotos: {}, saved: 1 });
+    });
+    await p6.reload(); await p6.waitForFunction(() => window.KVApp && KVApp.S.ready && window.players && players.length === 2);
+    const show = () => p6.evaluate(() => players.map(q => q.name + ": " + clrTxt(q.cur.clrL) + " / " + clrTxt(q.cur.clrR)).sort());
+    assert.equal(asked, 1); assert.match(msg, /0 = positiv, 1 = negativ/);
+    assert.deepEqual(await show(), accept ? ["Alt Eins: negativ / positiv", "Alt Zwei: positiv / positiv"] : ["Alt Eins: positiv / negativ", "Alt Zwei: negativ / negativ"]);
+    assert.equal(await p6.evaluate(() => KVStore.kvGet("base").v), 2);
+    await p6.reload(); await p6.waitForFunction(() => window.KVApp && KVApp.S.ready && window.players && players.length === 2);
+    assert.equal(asked, 1, "nur einmal fragen"); assert.deepEqual(await show(), accept ? ["Alt Eins: negativ / positiv", "Alt Zwei: positiv / positiv"] : ["Alt Eins: positiv / negativ", "Alt Zwei: negativ / negativ"]);
+    /* ein neu geladenes Blatt liest den Zellinhalt bei jedem Aufbau: 0 = positiv, 1 = negativ, bleibt auch nach Neustart */
+    const csv = path.join(dir, "clr_neu.csv"); fs.writeFileSync(csv, "Name;Testdatum;Boat Class;Clearing li;Clearing re;CMJ o.A. [cm]\nNeu Null;21.04.2026;49er;0;0;30\nNeu Eins;21.04.2026;49er;1;1;31\n");
+    await p6.setInputFiles("#fin", csv); await p6.waitForFunction(() => players.length === 2 && players.some(q => q.name === "Neu Null"));
+    assert.deepEqual(await show(), ["Neu Eins: negativ / negativ", "Neu Null: positiv / positiv"]);
+    await p6.reload(); await p6.waitForFunction(() => window.KVApp && KVApp.S.ready && window.players && players.length === 2);
+    assert.equal(asked, 1); assert.deepEqual(await show(), ["Neu Eins: negativ / negativ", "Neu Null: positiv / positiv"]);
+    await p6.context().close();
+  }
+  ok("älteres Blatt: Rückfrage genau einmal (OK = umdrehen, Abbrechen = unverändert); neu geladene Blätter: 0 = positiv, 1 = negativ, auch nach Neustart");
+
   console.log("K. Betrieb ohne dauerhaften Speicher (IndexedDB gesperrt)");
   const p2 = await newPage({ noIdb: true });
   await upload(p2, allPaths.slice(0, 8));

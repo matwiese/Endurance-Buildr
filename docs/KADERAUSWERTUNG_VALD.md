@@ -138,7 +138,8 @@ Wie im CMJ Analyzer (`classifyJump`): Die Testart aus VALD (Dateikopf der Bridge
 
 ## Rohdatenblatt: Clearing-Test, Reaktion und HBL
 
-- **Clearing-Test** (Spalten „Clearing li“ / „Clearing re“): **0 = positiv** (Schmerz), **1 = negativ**. Text wird ebenfalls verstanden: „positiv“, „pos“, „+“, „ja“, „x“, „Schmerz“ gelten als positiv; „negativ“, „neg“, „-“, „nein“, „o. B.“ als negativ. Ein positives Clearing setzt Shoulder Mobility dieser Seite in der Screen-Summe auf 0 Punkte und erzeugt den Hinweis in „Datenqualität“. Leere Zellen bleiben ohne Angabe.
+- **Clearing-Test** (Spalten „Clearing li“ / „Clearing re“): **0 = positiv** (Schmerz), **1 = negativ**. Text wird ebenfalls verstanden: „positiv“, „pos“, „+“, „ja“, „x“, „Schmerz“ gelten als positiv; „negativ“, „neg“, „-“, „nein“, „o. B.“ als negativ. Ein positives Clearing setzt Shoulder Mobility dieser Seite in der Screen-Summe auf 0 Punkte und erzeugt den Hinweis in „Datenqualität“. Leere Zellen bleiben ohne Angabe. Die App merkt sich den Zellinhalt und liest ihn bei jedem Aufbau neu – die Regel gilt also auch für schon gespeicherte (neu geladene) Blätter.
+- **Blatt aus einer älteren Version**: Ein vor dieser Regel gespeichertes Rohdatenblatt hatte die Clearing-Werte schon nach der alten Regel (1 = positiv) umgerechnet. Beim ersten Start fragt die App deshalb **einmal**: *OK* dreht die Werte im gespeicherten Blatt um (richtig, wenn die Spalten Zahlen 0/1 enthalten), *Abbrechen* lässt sie unverändert (bei Text wie „positiv/negativ“). Danach wird nicht mehr gefragt. Einfacher geht es immer über erneutes „Rohdaten laden“.
 - **Reaktion [s]** und **HBL [s]** werden mit **zwei Nachkommastellen** angezeigt (z. B. 0,35 s, 14,50 s); HBL Höhe mit einer.
 - Das PDF trägt im Kopf **keinen Vermerk zur Vorlage** mehr; welche Vorlage aktiv ist, steht oben in der Auswertung neben dem Vorlagenfeld.
 
