@@ -28,13 +28,13 @@ h3{font-family:var(--disp);font-size:15px;letter-spacing:.12em;text-transform:up
 .num{font-variant-numeric:tabular-nums}
 
 /* Header */
-.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--panel);border-bottom:3px solid var(--accent);flex:0 0 auto}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--panel);border-bottom:3px solid var(--accent);flex:0 0 auto}
 .brand{display:flex;align-items:center;gap:10px;margin-right:6px}
 .logo{width:34px;height:34px;display:grid;place-items:center;background:var(--accent);color:#fff;font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.02em;border-radius:3px}
 .brand b{font-family:var(--disp);font-size:22px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;display:block;line-height:1}
 .brand small{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
-.modes{display:flex;gap:2px}
-.mode{white-space:nowrap;background:transparent;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:8px 14px;font-family:var(--disp);font-size:16px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:-11px}
+.modes{display:flex;gap:2px;min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.mode{white-space:nowrap;background:transparent;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:8px 9px;font-family:var(--disp);font-size:16px;letter-spacing:.05em;text-transform:uppercase;font-weight:600;margin-bottom:-11px}
 .mode:hover{color:var(--fg)}
 .mode[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg)}
 .actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
@@ -130,6 +130,12 @@ table.splits input.manual{border-color:var(--warn)}
 .metric small{color:var(--muted);font-size:11px}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--bg);border:1px solid var(--line-2)}
 .pill i{width:9px;height:9px;border-radius:50%}
+.chip{display:inline-block;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:10px;background:var(--line-2);color:var(--muted);margin-left:4px}
+table.splits tr.best td{color:var(--ok)}
+.mx{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.mx th,.mx td{padding:4px 5px;border-bottom:1px solid var(--line);text-align:right}
+.mx th:first-child,.mx td:first-child{text-align:left}
+.mx th{color:var(--muted);font-weight:600;font-size:11px}
 canvas.chart{width:100%;height:190px;display:block;background:var(--bg);border-radius:3px;margin-top:8px}
 
 .shots{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
@@ -157,7 +163,7 @@ canvas.chart{width:100%;height:190px;display:block;background:var(--bg);border-r
 .keys{display:grid;grid-template-columns:auto 1fr;gap:5px 16px;font-size:13px}
 .keys kbd{font-family:var(--mono);background:var(--bg);border:1px solid var(--line-2);border-radius:3px;padding:1px 6px;font-size:12px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:4px;font-weight:600;font-size:13px;z-index:60;max-width:calc(100% - 32px);box-shadow:0 8px 30px rgba(0,0,0,.5)}
-#vid{position:fixed;left:-10px;top:-10px;width:2px;height:2px;opacity:0;pointer-events:none}
+.vid-el{position:fixed;left:-10px;top:-10px;width:2px;height:2px;opacity:0;pointer-events:none}
 
 @media (max-width:980px){
   body{overflow:auto;height:auto;min-height:100%}
@@ -167,7 +173,10 @@ canvas.chart{width:100%;height:190px;display:block;background:var(--bg);border-r
   .sep{width:1px;height:26px;margin:0 4px}
   .swatches{grid-template-columns:repeat(6,1fr)}
   .panel{border-left:0;overflow:visible;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
-  .mode{padding:8px 7px;font-size:14px;letter-spacing:.06em}
+  .modes{order:3;flex:1 1 100%}
+  #hudHint{display:none}
+  .hud{font-size:11px}
+  .mode{padding:8px 9px;font-size:14px;letter-spacing:.06em;margin-bottom:-8px}
   .zoom{margin-left:0}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -177,18 +186,19 @@ canvas.chart{width:100%;height:190px;display:block;background:var(--bg);border-r
 <header class="top">
   <div class="brand"><span class="logo">SL</span><div><b>SprintLab</b><small>Videoanalyse · Prototyp</small></div></div>
   <nav class="modes" role="tablist" aria-label="Modus">
-    <button class="mode" role="tab" data-mode="analyse" aria-selected="true">Analyse</button>
-    <button class="mode" role="tab" data-mode="sprint" aria-selected="false">Sprint-Profil</button>
-    <button class="mode" role="tab" data-mode="kino" aria-selected="false">Kinogramm</button>
+    <button class="mode" role="tab" data-mode="analyse" aria-selected="true">Videoanalyse</button>
+    <button class="mode" role="tab" data-mode="kino" aria-selected="false" title="Nutzt das Video aus „Videoanalyse“">Kinogramm</button>
+    <button class="mode" role="tab" data-mode="sprint" aria-selected="false" title="Eigenes Video">Sprint-Profil</button>
+    <button class="mode" role="tab" data-mode="cod" aria-selected="false" title="Eigenes Video">Richtungswechsel</button>
   </nav>
   <div class="actions">
     <label class="btn btn-p" for="fileIn">Video öffnen</label>
     <input type="file" id="fileIn" accept="video/*,.mov,.mp4,.m4v" hidden>
     <button class="btn" id="btnDemo" type="button">Demo laden</button>
-    <button class="btn" id="btnSave" type="button">Projekt speichern</button>
-    <label class="btn" for="projIn">Projekt laden</label>
+    <button class="btn" id="btnSave" type="button" title="Projekt (Zeichnungen, Marken) als Datei sichern">Speichern</button>
+    <label class="btn" for="projIn" title="Gesichertes Projekt laden">Laden</label>
     <input type="file" id="projIn" accept=".json,application/json" hidden>
-    <button class="btn" id="btnSnap" type="button">Standbild PNG</button>
+    <button class="btn" id="btnSnap" type="button" title="Aktuelles Bild mit Zeichnungen als PNG">Standbild</button>
     <button class="btn" id="btnHelp" type="button" aria-label="Tastenkürzel">?</button>
   </div>
 </header>
@@ -250,10 +260,10 @@ canvas.chart{width:100%;height:190px;display:block;background:var(--bg);border-r
   </div>
 
   <aside class="panel" id="panel">
-    <!-- ANALYSE -->
-    <div data-panel="analyse" style="display:contents">
-      <section class="card">
-        <h3>Video</h3>
+    <!-- GEMEINSAM (gilt für das Video des aktiven Reiters) -->
+    <div data-panel="shared" style="display:contents">
+      <details class="card" open id="vidCard">
+        <summary>Video · <span id="wsName">Videoanalyse</span></summary>
         <div class="kv"><span>Quelle</span><b id="vName">–</b></div>
         <div class="kv"><span>Auflösung · Frames</span><b id="vInfo">–</b></div>
         <div class="form" style="margin-top:10px">
@@ -261,17 +271,22 @@ canvas.chart{width:100%;height:190px;display:block;background:var(--bg);border-r
           <label class="fld"><span>Aufnahme-fps (Echtzeit)</span><input class="in" id="capFps" type="number" min="1" max="2000" step="any"></label>
         </div>
         <div class="row" style="margin-top:8px"><button class="btn btn-sm" id="btnDetect" type="button">fps automatisch erkennen</button></div>
-        <p class="hint">Zeitlupen-Export (z. B. 240 fps aufgenommen, als 30 fps gespeichert): Datei-fps 30, Aufnahme-fps 240. Zeiten werden immer mit der Aufnahme-fps gerechnet.</p>
-      </section>
+        <p class="hint">Jeder Reiter hat sein eigenes Video. Zeitlupen-Export (240 fps aufgenommen, als 30 fps gespeichert): Datei-fps 30, Aufnahme-fps 240. Zeiten werden immer mit der Aufnahme-fps gerechnet.</p>
+      </details>
       <section class="card" id="selCard" hidden>
         <h3>Auswahl</h3>
         <div class="kv"><span id="selType">–</span><b id="selVal">–</b></div>
         <div class="form" style="margin-top:8px">
           <label class="fld wide" id="selTextWrap"><span>Text</span><input class="in" id="selText" type="text"></label>
+          <label class="fld wide" id="selCalWrap"><span>Kalibrierlänge (m)</span><input class="in" id="selCal" type="number" min="0.01" step="0.01"></label>
           <label class="chk fld wide"><input type="checkbox" id="selBound"> Nur im eigenen Frame zeigen</label>
         </div>
         <div class="row" style="margin-top:8px"><button class="btn btn-sm" id="selJump" type="button">Zum Frame</button><button class="btn btn-sm" id="selDel" type="button">Löschen</button></div>
       </section>
+    </div>
+
+    <!-- VIDEOANALYSE -->
+    <div data-panel="analyse" style="display:contents">
       <section class="card">
         <h3>Zeichnungen</h3>
         <label class="chk"><input type="checkbox" id="bindNew" checked> Neue Zeichnungen an den aktuellen Frame binden</label>
@@ -329,7 +344,7 @@ canvas.chart{width:100%;height:190px;display:block;background:var(--bg);border-r
         <canvas class="chart" id="chFV" aria-label="Kraft- und Leistungs-Geschwindigkeits-Profil"></canvas>
         <div class="row" style="margin-top:10px"><button class="btn btn-sm" id="spCsv" type="button">CSV exportieren</button></div>
       </section>
-      <details class="card">
+      <details class="card" open>
         <summary>Aufbau · Stangen-Parallaxe</summary>
         <div class="form three">
           <label class="fld"><span>Kamera-Abstand D (m)</span><input class="in" id="pxD" type="number" step="0.5" value="18"></label>
@@ -352,10 +367,60 @@ canvas.chart{width:100%;height:190px;display:block;background:var(--bg);border-r
       </details>
     </div>
 
+    <!-- RICHTUNGSWECHSEL -->
+    <div data-panel="cod" style="display:contents" hidden>
+      <section class="card">
+        <h3>Test</h3>
+        <div class="form">
+          <label class="fld wide"><span>Athlet</span><input class="in" id="cdName" type="text" placeholder="Athlet"></label>
+          <label class="fld wide"><span>Testvorlage</span>
+            <select class="in" id="cdTpl">
+              <option value="505-10">5-0-5 · 10 m Anlauf</option>
+              <option value="505-15">5-0-5 · 15 m Anlauf</option>
+              <option value="505-mod">Modifizierter 5-0-5 · Start an der Schranke</option>
+              <option value="free">Eigene Strecken</option>
+            </select></label>
+          <label class="fld"><span>Anlauf bis Wendelinie (m)</span><input class="in" id="cdApp" type="number" min="0" step="0.5"></label>
+          <label class="fld"><span>Schranke vor Wendelinie (m)</span><input class="in" id="cdGate" type="number" min="0.5" step="0.5"></label>
+          <div class="fld"><span>Wendebein</span><div class="seg" id="cdSide" role="group" aria-label="Wendebein"><button type="button" data-v="L" aria-pressed="true">Links</button><button type="button" data-v="R" aria-pressed="false">Rechts</button></div></div>
+          <label class="fld"><span>Versuch</span><input class="in" id="cdLabel" type="text" placeholder="z. B. V1"></label>
+        </div>
+      </section>
+      <section class="card">
+        <h3>Marken</h3>
+        <table class="splits">
+          <thead><tr><th>Ereignis</th><th>Frame</th><th>t (s)</th><th></th></tr></thead>
+          <tbody id="cdBody"></tbody>
+        </table>
+        <div class="row" style="margin-top:10px">
+          <button class="btn btn-p btn-sm" id="cdNext" type="button">Nächste Marke setzen ⏎</button>
+          <button class="btn btn-sm" id="cdClear" type="button">Zurücksetzen</button>
+        </div>
+        <p class="hint">Schranke: Frame, in dem die Hüfte die Schrankenlinie kreuzt. Wende-Kontakt / Abdruck: erster bzw. letzter Frame mit Bodenkontakt des Wendefußes. Pflicht sind nur „Schranke hin“ und „Schranke zurück“, alles andere ergänzt die Phasen.</p>
+      </section>
+      <section class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px"><h3 style="margin:0">Ergebnis</h3><span class="pill" id="cdPill"><i></i>–</span></div>
+        <div class="metrics" id="cdMetrics"></div>
+        <canvas class="chart" id="chCod" style="height:112px" aria-label="Phasen des Richtungswechsels"></canvas>
+        <label class="fld" style="margin-top:10px"><span>Lineare 10-m-Zeit (s) für das COD-Defizit</span>
+          <div class="row"><input class="in" id="cdT10" type="number" min="0" step="0.001" placeholder="z. B. 1.850" style="flex:1;width:auto"><button class="btn btn-sm" id="cdT10Sp" type="button">Aus Sprint-Profil</button></div></label>
+        <div id="cdAngles" style="margin-top:10px"></div>
+        <div class="row" style="margin-top:10px"><button class="btn btn-p btn-sm" id="cdSave" type="button">Versuch speichern</button></div>
+      </section>
+      <section class="card">
+        <h3>Versuche &amp; Vergleich</h3>
+        <div style="overflow-x:auto"><table class="splits" id="cdTrials"></table></div>
+        <div id="cdSummary" style="margin-top:10px"></div>
+        <div class="row" style="margin-top:10px"><button class="btn btn-sm" id="cdCsv" type="button">CSV exportieren</button><button class="btn btn-sm" id="cdClrT" type="button">Alle Versuche löschen</button></div>
+        <p class="hint">Versuche bleiben gespeichert, wenn du das nächste Video öffnest. So lassen sich Anläufe und Seiten über mehrere Videos vergleichen.</p>
+      </section>
+    </div>
+
     <!-- KINOGRAMM -->
     <div data-panel="kino" style="display:contents" hidden>
       <section class="card">
         <h3>Positionen</h3>
+        <p class="hint" style="margin:0 0 8px">Das Kinogramm nutzt das Video aus dem Reiter „Videoanalyse“.</p>
         <label class="fld"><span>Vorlage für Bezeichnungen</span>
           <select class="in" id="kTpl">
             <option value="altis">ALTIS Sprint · 5 Positionen</option>
@@ -419,7 +484,6 @@ canvas.chart{width:100%;height:190px;display:block;background:var(--bg);border-r
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
-<video id="vid" muted playsinline preload="auto"></video>
 
 <script>
 'use strict';
@@ -598,63 +662,67 @@ const KINO_TPL = {
   free: []
 };
 
-/* ---------- State ---------- */
-const S = {
-  src: null, frame: 0, nFrames: 1, fileFps: 30, capFps: 30, capManual: false,
-  mode: 'analyse', tool: 'select', color: COLORS[0], width: 3, grid: false, playing: false, rate: 1,
-  view: { z: 1, x: 0, y: 0, fit: true },
-  annos: [], sel: null, calLen: 1, trackStep: 4, chrono: null,
-  sprint: { start: null, dists: [5, 10, 15, 20, 30, 40], splits: {}, ath: { name: '', m: 75, h: 1.8 }, env: { T: 20, Pb: 760, vw: 0 } },
-  kino: { tpl: 'altis', shots: [], cropW: null, cropH: null, cur: null, active: null, layout: 'row', cols: 3, cellH: 520, bg: 'dark', title: '', annos: true, labels: true, rel: true, thr: 40, fade: true }
-};
-let undoStack = [];
-let lastProfile = null;
+/* ---------- State: ein Arbeitsbereich (eigenes Video + Daten) pro Reiter ---------- */
+const S = { mode: 'analyse', ws: 'main', tool: 'select', color: COLORS[0], width: 3, grid: false, playing: false, rate: 1 };
+const WS_KEYS = ['src', 'frame', 'nFrames', 'fileFps', 'capFps', 'capManual', 'view', 'annos', 'sel', 'calLen', 'trackStep', 'chrono', 'kino', 'sprint', 'cod', 'undo', 'trackId', 'lastProfile', 'visited'];
+function newWs() {
+  return {
+    src: null, frame: 0, nFrames: 1, fileFps: 30, capFps: 30, capManual: false, view: { z: 1, x: 0, y: 0, fit: true },
+    annos: [], sel: null, calLen: 1, trackStep: 4, chrono: null, undo: [], trackId: null, lastProfile: null, visited: false,
+    sprint: { start: null, dists: [5, 10, 15, 20, 30, 40], splits: {}, ath: { name: '', m: 75, h: 1.8 }, env: { T: 20, Pb: 760, vw: 0 } },
+    kino: { tpl: 'altis', shots: [], cropW: null, cropH: null, cur: null, active: null, layout: 'row', cols: 3, cellH: 520, bg: 'dark', title: '', annos: true, labels: true, rel: true, thr: 40, fade: true },
+    cod: { tpl: '505-15', approach: 15, gate: 5, side: 'L', name: '', label: '', marks: {}, t10: null }
+  };
+}
+const WS = { main: newWs(), sprint: newWs(), cod: newWs() };
+const MODE_WS = { analyse: 'main', kino: 'main', sprint: 'sprint', cod: 'cod' };
+const WS_NAME = { main: 'Videoanalyse', sprint: 'Sprint-Profil', cod: 'Richtungswechsel' };
+Object.assign(S, WS.main);
+let codTrials = (() => { try { return JSON.parse(localStorage.getItem('sprintlab:cod-trials')) || []; } catch { return []; } })();
+function stashWs() { const w = WS[S.ws]; for (const k of WS_KEYS) w[k] = S[k]; }
+function loadWs(id) { S.ws = id; const w = WS[id]; for (const k of WS_KEYS) S[k] = w[k]; }
 
 /* ---------- Sources ---------- */
-const vid = $('#vid');
 class VideoSource {
-  constructor(file) { this.kind = 'video'; this.file = file; this.name = file.name; this.size = file.size; this.cur = -1; this.url = URL.createObjectURL(file); }
+  constructor(file) {
+    this.kind = 'video'; this.file = file; this.name = file.name; this.size = file.size; this.cur = -1; this.url = URL.createObjectURL(file);
+    const v = this.v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'auto'; v.className = 'vid-el'; document.body.appendChild(v);
+  }
+  dispose() { this.v.pause(); this.v.removeAttribute('src'); this.v.load(); this.v.remove(); URL.revokeObjectURL(this.url); }
   init() {
     return new Promise((res, rej) => {
-      const ok = () => { cleanup(); this.w = vid.videoWidth; this.h = vid.videoHeight; this.duration = vid.duration; res(); };
+      const ok = () => { cleanup(); this.w = this.v.videoWidth; this.h = this.v.videoHeight; this.duration = this.v.duration; res(); };
       const bad = () => { cleanup(); rej(new Error('Video kann in diesem Browser nicht gelesen werden.')); };
-      const cleanup = () => { vid.removeEventListener('loadeddata', ok); vid.removeEventListener('error', bad); };
-      vid.addEventListener('loadeddata', ok); vid.addEventListener('error', bad);
-      vid.src = this.url; vid.load();
+      const cleanup = () => { this.v.removeEventListener('loadeddata', ok); this.v.removeEventListener('error', bad); };
+      this.v.addEventListener('loadeddata', ok); this.v.addEventListener('error', bad);
+      this.v.src = this.url; this.v.load();
     });
   }
   frameCount(fps) { return Math.max(1, Math.floor(this.duration * fps + 1e-6)); }
   seek(n, fps) {
     return new Promise(res => {
       const t = Math.min((n + 0.5) / fps, this.duration - 1e-4);
-      if (Math.abs(vid.currentTime - t) < 1e-7 && vid.readyState >= 2) { this.cur = n; return res(); }
+      if (Math.abs(this.v.currentTime - t) < 1e-7 && this.v.readyState >= 2) { this.cur = n; return res(); }
       let to;
-      const done = () => { vid.removeEventListener('seeked', done); clearTimeout(to); this.cur = n; res(); };
+      const done = () => { this.v.removeEventListener('seeked', done); clearTimeout(to); this.cur = n; res(); };
       to = setTimeout(done, 2000);
-      vid.addEventListener('seeked', done);
-      vid.currentTime = t;
+      this.v.addEventListener('seeked', done);
+      this.v.currentTime = t;
     });
   }
-  draw(ctx) { if (vid.readyState >= 2) ctx.drawImage(vid, 0, 0, this.w, this.h); }
+  draw(ctx) { if (this.v.readyState >= 2) ctx.drawImage(this.v, 0, 0, this.w, this.h); }
 }
 
-/* Synthetischer Demo-Sprint: mono-exponentiell (vmax 9 m/s, τ 1,15 s), Start bei Frame 120, 240 fps */
-const DEMO = { fps: 240, start: 120, vmax: 9, tau: 1.15, n: 1620, W: 1920, H: 1080 };
-const dX = x => 60 + x * 45, dY = y => 905 - y * 45;
-function demoPhi(t) { t = Math.max(0, t); return 2 * Math.PI * (2.3 * t - 0.48 * (1 - Math.exp(-t / 0.8))); }
-function demoPose(t) {
-  const tt = Math.max(0, t);
-  const x = t <= 0 ? 0 : Engine.xOfT(t, DEMO.vmax, DEMO.tau);
-  const ph = demoPhi(tt);
-  const lean = (5 + 40 * Math.exp(-tt / 0.9)) * D2R;
-  const hy = 0.95 - 0.13 * Math.exp(-tt / 0.8) + 0.025 * Math.sin(2 * ph);
-  const hip = { x, y: hy };
-  const sh = { x: x + 0.55 * Math.sin(lean), y: hy + 0.55 * Math.cos(lean) };
+/* ---------- Synthetische Demo-Videos (Vektorgrafik, frei skalierbar) ---------- */
+// Figur in lokalen Koordinaten: Hüfte bei x = 0, Blickrichtung +x, y = Höhe über Boden (m)
+function localPose(ph, lean, hy) {
+  const hip = { x: 0, y: hy };
+  const sh = { x: 0.55 * Math.sin(lean), y: hy + 0.55 * Math.cos(lean) };
   const head = { x: sh.x + 0.18 * Math.sin(lean), y: sh.y + 0.18 * Math.cos(lean) };
   const leg = p => {
     const th = (20 + 45 * Math.sin(p)) * D2R;
     const kf = (15 + 110 * Math.max(0, Math.sin(p + 0.9)) ** 2) * D2R;
-    const knee = { x: hip.x + 0.46 * Math.sin(th), y: hip.y - 0.46 * Math.cos(th) };
+    const knee = { x: 0.46 * Math.sin(th), y: hy - 0.46 * Math.cos(th) };
     const sa = th - kf;
     const ank = { x: knee.x + 0.45 * Math.sin(sa), y: Math.max(0.07, knee.y - 0.45 * Math.cos(sa)) };
     const toe = { x: ank.x + 0.2 * Math.cos(sa), y: Math.max(0.02, ank.y + 0.2 * Math.sin(sa)) };
@@ -667,12 +735,46 @@ function demoPose(t) {
   };
   return { hip, sh, head, lean, nearLeg: leg(ph), farLeg: leg(ph + Math.PI), nearArm: arm(ph + Math.PI), farArm: arm(ph) };
 }
-class DemoSource {
-  constructor() { this.kind = 'demo'; this.name = 'Demo-Sprint (synthetisch, 240 fps)'; this.w = DEMO.W; this.h = DEMO.H; this.cur = 0; }
-  init() { return Promise.resolve(); }
-  frameCount() { return DEMO.n; }
-  seek(n) { this.cur = n; return Promise.resolve(); }
-  draw(ctx) { drawDemo(ctx, this.cur); }
+function placePose(lp, x, dir) {
+  const m = q => ({ x: x + dir * q.x, y: q.y });
+  const L = l => ({ knee: m(l.knee), ank: m(l.ank), toe: m(l.toe) });
+  return { dir, lean: lp.lean, hip: m(lp.hip), sh: m(lp.sh), head: m(lp.head), nearLeg: L(lp.nearLeg), farLeg: L(lp.farLeg),
+    nearArm: { el: m(lp.nearArm.el), wr: m(lp.nearArm.wr) }, farArm: { el: m(lp.farArm.el), wr: m(lp.farArm.wr) } };
+}
+function ikLeg(hip, foot, side) {
+  const L1 = 0.46, L2 = 0.45, dx = foot.x - hip.x, dy = foot.y - hip.y;
+  const d = Math.min(Math.hypot(dx, dy), L1 + L2 - 0.005), a = Math.atan2(dy, dx);
+  const off = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+  const k1 = { x: hip.x + L1 * Math.cos(a + off), y: hip.y + L1 * Math.sin(a + off) }, k2 = { x: hip.x + L1 * Math.cos(a - off), y: hip.y + L1 * Math.sin(a - off) };
+  const knee = (k1.x - k2.x) * side > 0 ? k1 : k2;
+  const ank = { x: hip.x + d * Math.cos(a), y: hip.y + d * Math.sin(a) };
+  return { knee, ank, toe: { x: ank.x + 0.2 * side, y: 0.03 } };
+}
+function drawFigure(ctx, p, X, Y, ppm) {
+  const dir = p.dir || 1, P = q => [X(q.x), Y(q.y)];
+  const seg = (a, b, w, c) => { ctx.strokeStyle = c; ctx.lineWidth = w * ppm; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(...P(a)); ctx.lineTo(...P(b)); ctx.stroke(); };
+  ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(X(p.hip.x + 0.1 * dir), Y(0), 0.55 * ppm, 0.07 * ppm, 0, 0, 7); ctx.fill();
+  const far = '#8C96A0', farSkin = '#7A5A48', near = '#F4F4F4', skin = '#C08A6C';
+  seg(p.sh, p.farArm.el, 0.08, farSkin); seg(p.farArm.el, p.farArm.wr, 0.07, farSkin);
+  seg(p.hip, p.farLeg.knee, 0.14, far); seg(p.farLeg.knee, p.farLeg.ank, 0.1, farSkin); seg(p.farLeg.ank, p.farLeg.toe, 0.08, '#8E1A20');
+  seg(p.hip, p.sh, 0.26, '#1E66D0');
+  seg(p.hip, { x: p.hip.x + 0.02 * dir, y: p.hip.y - 0.12 }, 0.24, '#14243A');
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(...P(p.head), 0.115 * ppm, 0, 7); ctx.fill();
+  seg(p.hip, p.nearLeg.knee, 0.15, near); seg(p.nearLeg.knee, p.nearLeg.ank, 0.11, skin); seg(p.nearLeg.ank, p.nearLeg.toe, 0.09, '#E0262E');
+  seg(p.sh, p.nearArm.el, 0.09, skin); seg(p.nearArm.el, p.nearArm.wr, 0.075, skin);
+  ctx.fillStyle = '#14243A';
+  for (const j of [p.hip, p.nearLeg.knee, p.nearLeg.ank]) { ctx.beginPath(); ctx.arc(...P(j), 0.035 * ppm, 0, 7); ctx.fill(); }
+}
+
+/* Demo 1 – Sprint: mono-exponentiell (vmax 9 m/s, τ 1,15 s), Start bei Frame 120, 240 fps, Kamera seitlich fix */
+const DEMO = { fps: 240, start: 120, vmax: 9, tau: 1.15, n: 1620, W: 1920, H: 1080 };
+const dX = x => 60 + x * 45, dY = y => 905 - y * 45;
+function demoPhi(t) { t = Math.max(0, t); return 2 * Math.PI * (2.3 * t - 0.48 * (1 - Math.exp(-t / 0.8))); }
+function demoPose(t) {
+  const tt = Math.max(0, t), x = t <= 0 ? 0 : Engine.xOfT(t, DEMO.vmax, DEMO.tau), ph = demoPhi(tt);
+  const lean = (5 + 40 * Math.exp(-tt / 0.9)) * D2R;
+  const hy = 0.95 - 0.13 * Math.exp(-tt / 0.8) + 0.025 * Math.sin(2 * ph);
+  return placePose(localPose(ph, lean, hy), x, 1);
 }
 function drawDemo(ctx, n) {
   const t = (n - DEMO.start) / DEMO.fps;
@@ -692,7 +794,7 @@ function drawDemo(ctx, n) {
   for (let m = 0; m <= 41; m++) {
     const x = dX(m); ctx.fillStyle = 'rgba(255,255,255,.75)';
     ctx.fillRect(x - 1, 1052, 2, m % 5 === 0 ? 18 : 9);
-    if (m % 5 === 0) ctx.fillText(m + ' m', x, 1050 - 26 < 0 ? 0 : 1018);
+    if (m % 5 === 0) ctx.fillText(m + ' m', x, 1018);
   }
   for (const d of [5, 10, 15, 20, 30, 40]) {
     const x = dX(d), y0 = dY(-0.6), h = 2.6 * 45;
@@ -700,21 +802,87 @@ function drawDemo(ctx, n) {
     ctx.fillStyle = '#fff'; ctx.font = '700 24px Inter, Arial, sans-serif'; ctx.textBaseline = 'bottom';
     ctx.fillText(d + ' m', x, y0 - h - 6);
   }
-  const p = demoPose(t);
-  const P = q => [dX(q.x), dY(q.y)];
-  const seg = (a, b, w, c) => { ctx.strokeStyle = c; ctx.lineWidth = w * 45; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(...P(a)); ctx.lineTo(...P(b)); ctx.stroke(); };
-  ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(dX(p.hip.x + 0.1), dY(0), 0.55 * 45, 0.07 * 45, 0, 0, 7); ctx.fill();
-  const far = '#8C96A0', farSkin = '#7A5A48', near = '#F4F4F4', skin = '#C08A6C';
-  seg(p.sh, p.farArm.el, 0.08, farSkin); seg(p.farArm.el, p.farArm.wr, 0.07, farSkin);
-  seg(p.hip, p.farLeg.knee, 0.14, far); seg(p.farLeg.knee, p.farLeg.ank, 0.1, farSkin); seg(p.farLeg.ank, p.farLeg.toe, 0.08, '#8E1A20');
-  seg(p.hip, p.sh, 0.26, '#1E66D0');
-  seg(p.hip, { x: p.hip.x + 0.02, y: p.hip.y - 0.12 }, 0.24, '#14243A');
-  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(...P(p.head), 0.115 * 45, 0, 7); ctx.fill();
-  seg(p.hip, p.nearLeg.knee, 0.15, near); seg(p.nearLeg.knee, p.nearLeg.ank, 0.11, skin); seg(p.nearLeg.ank, p.nearLeg.toe, 0.09, '#E0262E');
-  seg(p.sh, p.nearArm.el, 0.09, skin); seg(p.nearArm.el, p.nearArm.wr, 0.075, skin);
-  ctx.fillStyle = '#14243A';
-  for (const j of [p.hip, p.nearLeg.knee, p.nearLeg.ank]) { ctx.beginPath(); ctx.arc(...P(j), 1.6, 0, 7); ctx.fill(); }
+  drawFigure(ctx, demoPose(t), dX, dY, 45);
   ctx.restore();
+}
+
+/* Demo 2 – 5-0-5 mit 15 m Anlauf: Beschleunigen, Abbremsen, 180°-Wende an der Linie, Re-Akzeleration */
+const COD = { fps: 240, start: 120, line: 20, gate: 15, startX: 5, v1: 7.6, tau1: 0.95, xb: 17.0, xp: 19.4, tc: 0.32, v2: 7.2, tau2: 0.85, W: 1920, H: 1080 };
+(() => {
+  const c = COD;
+  c.tA = Engine.tOfX(c.xb - c.startX, c.v1, c.tau1); c.vA = Engine.vOfT(c.tA, c.v1, c.tau1);
+  c.aB = c.vA ** 2 / (2 * (c.xp - c.xb)); c.tB = c.vA / c.aB;
+  c.tTD = c.tA + c.tB; c.tTO = c.tTD + c.tc; c.tPen = c.tTD - 0.21;
+  c.tGateIn = Engine.tOfX(c.gate - c.startX, c.v1, c.tau1);
+  c.tGateOut = c.tTO + Engine.tOfX(c.xp - c.gate, c.v2, c.tau2);
+  c.n = Math.ceil(c.start + (c.tTO + Engine.tOfX(c.xp - 2.6, c.v2, c.tau2)) * c.fps);
+})();
+const cX = x => 50 + (x - 3.5) * 100, cY = y => 900 - y * 100;
+function codPose(t) {
+  const c = COD, cad = tt => 2 * Math.PI * 2.2 * tt;
+  if (t <= 0) return placePose(localPose(0, 30 * D2R, 0.84), c.startX, 1);
+  if (t < c.tA) {
+    const x = c.startX + Engine.xOfT(t, c.v1, c.tau1), ph = cad(t);
+    return placePose(localPose(ph, (6 + 28 * Math.exp(-t / 0.8)) * D2R, 0.95 - 0.1 * Math.exp(-t / 0.8) + 0.025 * Math.sin(2 * ph)), x, 1);
+  }
+  if (t < c.tTD) {
+    const s = t - c.tA, f = s / c.tB, x = c.xb + c.vA * s - c.aB * s * s / 2, ph = cad(t);
+    const l0 = 6 + 28 * Math.exp(-c.tA / 0.8);
+    return placePose(localPose(ph, (l0 + (-18 - l0) * f) * D2R, 0.93 - 0.13 * f + 0.02 * Math.sin(2 * ph)), x, 1);
+  }
+  if (t < c.tTO) {
+    const f = (t - c.tTD) / c.tc, dir = f < 0.5 ? 1 : -1, hx = c.xp + 0.12 * Math.sin(Math.PI * f), hy = 0.8 - 0.05 * Math.sin(Math.PI * f);
+    const lean = f < 0.5 ? -18 + 20 * f : -8 + 60 * (f - 0.5);
+    const p = placePose(localPose(1.2, lean * D2R, hy), hx, dir);
+    p.nearLeg = ikLeg(p.hip, { x: c.line - 0.15, y: 0.08 }, dir);
+    p.farLeg = ikLeg(p.hip, { x: c.xp - 0.45, y: 0.08 }, dir);
+    return p;
+  }
+  const s = t - c.tTO, x = c.xp - Engine.xOfT(s, c.v2, c.tau2), ph = cad(t);
+  return placePose(localPose(ph, (6 + 28 * Math.exp(-s / 0.8)) * D2R, 0.95 - 0.12 * Math.exp(-s / 0.6) + 0.025 * Math.sin(2 * ph)), x, -1);
+}
+function drawCodDemo(ctx, n) {
+  const t = (n - COD.start) / COD.fps;
+  ctx.save();
+  let g = ctx.createLinearGradient(0, 0, 0, 640);
+  g.addColorStop(0, '#222B36'); g.addColorStop(1, '#3A4552');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 1920, 640);
+  ctx.fillStyle = 'rgba(255,255,255,.05)';
+  for (let x = 0; x < 1920; x += 160) ctx.fillRect(x, 0, 6, 640);
+  g = ctx.createLinearGradient(0, 640, 0, 1080);
+  g.addColorStop(0, '#7A5232'); g.addColorStop(1, '#B98551');
+  ctx.fillStyle = g; ctx.fillRect(0, 640, 1920, 440);
+  ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 2;
+  for (let y = 660; y < 1080; y += 18) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1920, y); ctx.stroke(); }
+  const floorLine = (x, w, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(cX(x) - w * 0.5, 820); ctx.lineTo(cX(x) + w * 0.5, 820); ctx.lineTo(cX(x) + w * 1.4, 1000); ctx.lineTo(cX(x) - w * 1.4, 1000); ctx.closePath(); ctx.fill(); };
+  floorLine(COD.startX, 8, 'rgba(255,255,255,.9)');
+  floorLine(COD.line, 12, '#F2F2F2');
+  floorLine(COD.gate, 6, 'rgba(255,214,10,.85)');
+  // Lichtschranke (hinterer Pfosten, Reflektor auf Hüfthöhe)
+  ctx.fillStyle = '#20252B'; ctx.fillRect(cX(COD.gate) - 5, 735, 10, 95);
+  ctx.fillStyle = '#E0262E'; ctx.fillRect(cX(COD.gate) - 14, 742, 28, 22);
+  ctx.strokeStyle = 'rgba(224,38,46,.4)'; ctx.lineWidth = 3; ctx.setLineDash([10, 8]);
+  ctx.beginPath(); ctx.moveTo(cX(COD.gate), 764); ctx.lineTo(cX(COD.gate), 1000); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#E8ECEF'; ctx.font = '700 26px Inter, Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('START', cX(COD.startX), 610); ctx.fillText('LICHTSCHRANKE', cX(COD.gate), 610); ctx.fillText('WENDELINIE', cX(COD.line), 610);
+  ctx.font = '600 20px Inter, Arial, sans-serif'; ctx.textBaseline = 'top';
+  for (let m = 4; m <= 21; m++) {
+    const x = cX(m); ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.fillRect(x - 1, 1040, 2, m % 5 === 0 ? 20 : 10);
+    if (m % 5 === 0) ctx.fillText((m - COD.line === 0 ? '0' : '−' + (COD.line - m)) + ' m', x, 1060);
+  }
+  drawFigure(ctx, codPose(t), cX, cY, 100);
+  ctx.restore();
+}
+class DemoSource {
+  constructor(variant = 'sprint') {
+    this.kind = 'demo'; this.variant = variant; this.cur = 0; this.w = 1920; this.h = 1080;
+    this.name = variant === 'cod' ? 'Demo 5-0-5, 15 m Anlauf (synthetisch, 240 fps)' : 'Demo-Sprint (synthetisch, 240 fps)';
+  }
+  init() { return Promise.resolve(); }
+  frameCount() { return this.variant === 'cod' ? COD.n : DEMO.n; }
+  seek(n) { this.cur = n; return Promise.resolve(); }
+  draw(ctx) { this.variant === 'cod' ? drawCodDemo(ctx, this.cur) : drawDemo(ctx, this.cur); }
 }
 
 /* ---------- Canvas / View ---------- */
@@ -988,9 +1156,9 @@ function cropHit(sp) {
 }
 
 /* ---------- Undo ---------- */
-function pushUndo() { undoStack.push(JSON.stringify({ annos: S.annos, kino: { shots: S.kino.shots, cropW: S.kino.cropW, cropH: S.kino.cropH } })); if (undoStack.length > 80) undoStack.shift(); }
+function pushUndo() { S.undo.push(JSON.stringify({ annos: S.annos, kino: { shots: S.kino.shots, cropW: S.kino.cropW, cropH: S.kino.cropH } })); if (S.undo.length > 80) S.undo.shift(); }
 function undo() {
-  const s = undoStack.pop(); if (!s) { toast('Nichts rückgängig zu machen'); return; }
+  const s = S.undo.pop(); if (!s) { toast('Nichts rückgängig zu machen'); return; }
   const o = JSON.parse(s); S.annos = o.annos; Object.assign(S.kino, o.kino); S.sel = null; changed('all');
 }
 
@@ -1026,23 +1194,22 @@ cv.addEventListener('pointerdown', e => {
     gesture = { kind: 'pan', sp, view: { ...S.view } }; return;
   }
   if (tool === 'crop') { gesture = { kind: 'newcrop', start: vp, cur: vp }; return; }
-  if (tool === 'text') { pushUndo(); const a = newAnno('text', [vp]); S.annos.push(a); S.sel = a.id; setTool('select'); changed('annos'); setTimeout(() => { setMode('analyse'); $('#selText').focus(); $('#selText').select(); }, 0); return; }
+  if (tool === 'text') { pushUndo(); const a = newAnno('text', [vp]); S.annos.push(a); S.sel = a.id; setTool('select'); changed('annos'); setTimeout(() => { $('#selText').focus(); $('#selText').select(); }, 0); return; }
   if (tool === 'angle3') {
     if (!drawing) { drawing = newAnno('angle3', [vp, { ...vp }]); }
     else { drawing.pts[drawing.pts.length - 1] = vp; if (drawing.pts.length === 3) { pushUndo(); S.annos.push(drawing); S.sel = drawing.id; drawing = null; changed('annos'); return; } drawing.pts.push({ ...vp }); }
     render(); return;
   }
   if (tool === 'track') {
-    let a = S.annos.find(x => x.id === trackId);
+    let a = S.annos.find(x => x.id === S.trackId);
     pushUndo();
-    if (!a) { a = newAnno('track', []); S.annos.push(a); trackId = a.id; }
+    if (!a) { a = newAnno('track', []); S.annos.push(a); S.trackId = a.id; }
     a.pts = a.pts.filter(p => p.f !== S.frame); a.pts.push({ x: vp.x, y: vp.y, f: S.frame }); a.pts.sort((p, q) => p.f - q.f);
     S.sel = a.id; changed('annos'); goTo(S.frame + S.trackStep); return;
   }
   if (tool === 'free') { drawing = newAnno('free', [vp]); gesture = { kind: 'draw' }; render(); return; }
   drawing = newAnno(tool, [vp, { ...vp }]); gesture = { kind: 'draw' }; render();
 });
-let trackId = null;
 cv.addEventListener('pointermove', e => {
   if (!S.src) return;
   const sp = scrPt(e);
@@ -1091,7 +1258,7 @@ function endPointer(e) {
       pushUndo();
       if (drawing.type === 'calib') S.annos = S.annos.filter(a => a.type !== 'calib');
       S.annos.push(drawing); S.sel = drawing.id;
-      if (drawing.type === 'calib') { setTimeout(() => { setMode('analyse'); $('#calLen').focus(); $('#calLen').select(); }, 0); toast('Kalibrierlänge im Panel eintragen'); }
+      if (drawing.type === 'calib') { setTimeout(() => { $('#selCal').focus(); $('#selCal').select(); }, 0); toast('Kalibrierlänge im Panel „Auswahl“ eintragen'); }
     }
     drawing = null; changed('annos'); return;
   }
@@ -1102,12 +1269,12 @@ cv.addEventListener('pointerup', endPointer);
 cv.addEventListener('pointercancel', endPointer);
 cv.addEventListener('wheel', e => { if (!S.src) return; e.preventDefault(); const sp = scrPt(e); zoomAt(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), sp.x, sp.y); }, { passive: false });
 cv.addEventListener('dblclick', () => { if (S.tool === 'track') endTrack(); });
-function endTrack() { if (trackId) { trackId = null; toast('Bahn beendet'); } }
+function endTrack() { if (S.trackId) { S.trackId = null; toast('Bahn beendet'); } }
 
 /* ---------- Werkzeuge ---------- */
 function setTool(t) {
   if (t === 'crop' && S.mode !== 'kino') setMode('kino');
-  if (S.tool === 'track' && t !== 'track') trackId = null;
+  if (S.tool === 'track' && t !== 'track') S.trackId = null;
   S.tool = t; drawing = null;
   $$('.tool[data-tool]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tool === t)));
   cv.style.cursor = t === 'pan' || t === 'select' ? 'grab' : 'crosshair';
@@ -1131,7 +1298,7 @@ function toggleChrono(force) {
 }
 function delSel() {
   if (!S.sel) return; pushUndo();
-  if (S.sel === trackId) trackId = null;
+  if (S.sel === S.trackId) S.trackId = null;
   S.annos = S.annos.filter(a => a.id !== S.sel); S.sel = null; changed('annos');
 }
 
@@ -1160,16 +1327,16 @@ function play() {
   if (S.frame >= S.nFrames - 1) { S.frame = 0; }
   S.playing = true; $('#bPlay').innerHTML = svg('pause');
   if (S.src.kind === 'video') {
-    lockSource(async () => { await S.src.seek(S.frame, S.fileFps); vid.playbackRate = S.rate; try { await vid.play(); } catch { pause(); } });
+    lockSource(async () => { await S.src.seek(S.frame, S.fileFps); S.src.v.playbackRate = S.rate; try { await S.src.v.play(); } catch { pause(); } });
   }
   lastTs = performance.now(); acc = 0; rafId = requestAnimationFrame(tick);
 }
 function tick(ts) {
   if (!S.playing) return;
   if (S.src.kind === 'video') {
-    if (!vid.paused) S.frame = clamp(Math.floor(vid.currentTime * S.fileFps + 1e-4), 0, S.nFrames - 1);
+    if (!S.src.v.paused) S.frame = clamp(Math.floor(S.src.v.currentTime * S.fileFps + 1e-4), 0, S.nFrames - 1);
     S.src.cur = S.frame;
-    if (vid.ended) { pause(); return; }
+    if (S.src.v.ended) { pause(); return; }
   } else {
     acc += (ts - lastTs) / 1000 * S.fileFps * S.rate;
     const adv = Math.floor(acc); acc -= adv;
@@ -1182,7 +1349,7 @@ function tick(ts) {
 function pause() {
   if (!S.playing) return;
   S.playing = false; cancelAnimationFrame(rafId); $('#bPlay').innerHTML = svg('play');
-  if (S.src && S.src.kind === 'video') { vid.pause(); S.frame = clamp(Math.floor(vid.currentTime * S.fileFps + 1e-4), 0, S.nFrames - 1); S.src.cur = -1; }
+  if (S.src && S.src.kind === 'video') { S.src.v.pause(); S.frame = clamp(Math.floor(S.src.v.currentTime * S.fileFps + 1e-4), 0, S.nFrames - 1); S.src.cur = -1; }
   updateTransport(); syncSource();
 }
 $('#bPlay').addEventListener('click', () => S.playing ? pause() : play());
@@ -1191,7 +1358,7 @@ $('#bM1').addEventListener('click', () => goTo(S.frame - 1));
 $('#bP1').addEventListener('click', () => goTo(S.frame + 1));
 $('#bM10').addEventListener('click', () => goTo(S.frame - 10));
 $('#bP10').addEventListener('click', () => goTo(S.frame + 10));
-$('#rate').addEventListener('change', e => { S.rate = +e.target.value; if (S.src && S.src.kind === 'video') vid.playbackRate = S.rate; });
+$('#rate').addEventListener('change', e => { S.rate = +e.target.value; if (S.src && S.src.kind === 'video') S.src.v.playbackRate = S.rate; });
 $('#scrub').addEventListener('input', e => goTo(+e.target.value));
 $('#zIn').addEventListener('click', () => { const r = stage.getBoundingClientRect(); zoomAt(1.25, r.width / 2, r.height / 2); });
 $('#zOut').addEventListener('click', () => { const r = stage.getBoundingClientRect(); zoomAt(0.8, r.width / 2, r.height / 2); });
@@ -1211,36 +1378,41 @@ function updateTicks() {
   if (S.sprint.start != null) add(S.sprint.start, '#FF3B47');
   for (const d of S.sprint.dists) { const s = S.sprint.splits[d]; if (s && s.frame != null) add(s.frame, '#FF3B47'); }
   for (const s of S.kino.shots) add(s.frame, '#34C6E0');
+  for (const k in S.cod.marks) if (S.cod.marks[k] != null) add(S.cod.marks[k], '#FF9F1C');
   $('#ticks').innerHTML = out.join('');
 }
 
 /* ---------- Laden von Quellen ---------- */
 async function loadSource(src, restore = true) {
+  const wsId = S.ws;
   pause();
-  if (S.src && S.src.url) URL.revokeObjectURL(S.src.url);
-  S.src = null;
-  try { await src.init(); } catch (err) { toast(err.message || 'Video konnte nicht geladen werden'); return; }
-  S.src = src;
-  S.annos = []; S.sel = null; S.chrono = null; trackId = null; undoStack = [];
+  try { await src.init(); } catch (err) { if (src.dispose) src.dispose(); toast(err.message || 'Video konnte nicht geladen werden'); return; }
+  if (S.ws !== wsId) setMode(Object.keys(MODE_WS).find(m => MODE_WS[m] === wsId));
+  if (S.src && S.src.dispose) S.src.dispose();
+  S.src = src; S.visited = true;
+  S.annos = []; S.sel = null; S.chrono = null; S.trackId = null; S.undo = []; drawing = null;
   S.sprint.start = null; S.sprint.splits = {};
   Object.assign(S.kino, { shots: [], cropW: null, cropH: null, cur: null, active: null });
-  if (src.kind === 'demo') { S.fileFps = DEMO.fps; S.capFps = DEMO.fps; S.capManual = false; }
+  S.cod.marks = {};
+  if (src.kind === 'demo') { S.fileFps = 240; S.capFps = 240; S.capManual = false; }
   else { S.fileFps = 30; S.capFps = 30; S.capManual = false; }
   S.nFrames = src.frameCount(S.fileFps);
   S.frame = 0; src.cur = -1;
-  $('#drop').innerHTML = '';
-  $('#hudSrc').textContent = src.name;
   let restored = false;
   if (restore && src.kind === 'video') {
     const saved = store.get(storeKey());
     if (saved) { applyProject(saved, true); restored = true; toast('Gespeicherte Analyse zu diesem Video wiederhergestellt'); }
   }
   if (src.kind === 'demo') seedDemo();
-  fitView(); changed('all'); syncSource();
+  updateDrop(); fitView(); changed('all'); syncSource();
   if (src.kind === 'video' && !restored) detectFps(true);
 }
+function updateDrop() {
+  $('#hudSrc').textContent = S.src ? S.src.name : '';
+  $('#drop').innerHTML = S.src ? '' : `<div><div style="font-family:var(--disp);font-size:22px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg)">Video für ${WS_NAME[S.ws]} hierher ziehen</div><div>oder oben „Video öffnen“ · 120–240 fps empfohlen</div></div>`;
+}
 $('#fileIn').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadSource(new VideoSource(f)); e.target.value = ''; });
-$('#btnDemo').addEventListener('click', () => loadSource(new DemoSource()));
+$('#btnDemo').addEventListener('click', () => loadSource(new DemoSource(S.ws === 'cod' ? 'cod' : 'sprint')));
 stage.addEventListener('dragover', e => { e.preventDefault(); $('#drop').classList.add('over'); });
 stage.addEventListener('dragleave', () => $('#drop').classList.remove('over'));
 stage.addEventListener('drop', e => {
@@ -1249,31 +1421,33 @@ stage.addEventListener('drop', e => {
   if (f) loadSource(new VideoSource(f)); else toast('Bitte eine Videodatei ablegen');
 });
 
-function storeKey() { return S.src ? 'sprintlab:' + S.src.name + ':' + (S.src.size || 0) : null; }
+function storeKey() { return S.src ? 'sprintlab:' + S.ws + ':' + S.src.name + ':' + (S.src.size || 0) : null; }
 
 /* fps-Erkennung über requestVideoFrameCallback (Wiedergabe mit 0,25× damit jeder Frame präsentiert wird) */
 async function detectFps(auto) {
   if (!S.src || S.src.kind !== 'video') { toast('fps-Erkennung nur für Videodateien'); return; }
   if (!('requestVideoFrameCallback' in HTMLVideoElement.prototype)) { if (!auto) toast('Browser unterstützt keine fps-Erkennung – bitte manuell eintragen'); return; }
   toast('fps werden ermittelt …');
+  const src = S.src, ws = S.ws;
   const res = await lockSource(() => new Promise(resolve => {
     const times = []; let stop = false;
-    const start = Math.min(0.3, S.src.duration * 0.2);
-    const finish = () => { if (stop) return; stop = true; vid.pause(); resolve(times); };
-    const cb = (now, md) => { times.push(md.mediaTime); if (times.length < 45 && !stop) vid.requestVideoFrameCallback(cb); else finish(); };
-    vid.currentTime = start; vid.playbackRate = 0.25;
-    vid.requestVideoFrameCallback(cb);
-    vid.play().catch(finish);
+    const start = Math.min(0.3, src.duration * 0.2);
+    const finish = () => { if (stop) return; stop = true; src.v.pause(); resolve(times); };
+    const cb = (now, md) => { times.push(md.mediaTime); if (times.length < 45 && !stop) src.v.requestVideoFrameCallback(cb); else finish(); };
+    src.v.currentTime = start; src.v.playbackRate = 0.25;
+    src.v.requestVideoFrameCallback(cb);
+    src.v.play().catch(finish);
     setTimeout(finish, 4000);
   }));
-  S.src.cur = -1;
+  src.cur = -1;
+  if (S.src !== src || S.ws !== ws) return;
   const d = []; for (let i = 1; i < res.length; i++) { const x = res[i] - res[i - 1]; if (x > 1e-4) d.push(x); }
   if (d.length < 5) { if (!auto) toast('fps konnten nicht ermittelt werden'); syncSource(); return; }
   d.sort((a, b) => a - b);
-  const base = d[Math.floor(d.length * 0.1)];
+  const base = d[Math.floor(d.length * 0.5)];
   let fps = 1 / base;
   const known = [23.976, 24, 25, 29.97, 30, 48, 50, 59.94, 60, 90, 100, 119.88, 120, 180, 239.76, 240, 480, 960];
-  const near = known.find(k => Math.abs(k - fps) / k < 0.04); if (near) fps = near;
+  const near = known.reduce((best, k) => Math.abs(k - fps) < Math.abs(best - fps) ? k : best, known[0]); if (Math.abs(near - fps) / near < 0.06) fps = near;
   setFps(Math.round(fps * 1000) / 1000);
   toast('Erkannt: ' + fmt(fps, 2) + ' fps (Datei). Bei Zeitlupen-Export Aufnahme-fps anpassen.');
 }
@@ -1293,9 +1467,31 @@ $('#capFps').addEventListener('change', e => { const v = +e.target.value; if (v 
 /* ---------- Demo-Daten (als Beispiel markiert) ---------- */
 function demoFrameAt(t) { return DEMO.start + Math.round(t * DEMO.fps); }
 function seedDemo() {
-  S.sprint.start = DEMO.start;
-  for (const d of S.sprint.dists) S.sprint.splits[d] = { frame: demoFrameAt(Engine.tOfX(d, DEMO.vmax, DEMO.tau)), time: null, manual: false };
-  // Kinogramm: 5 ALTIS-Positionen in einem Schrittzyklus bei ~4,2 s
+  const Pp = (q, X = dX, Y = dY) => ({ x: X(q.x), y: Y(q.y) });
+  if (S.ws === 'sprint') {
+    S.sprint.start = DEMO.start;
+    for (const d of S.sprint.dists) S.sprint.splits[d] = { frame: demoFrameAt(Engine.tOfX(d, DEMO.vmax, DEMO.tau)), time: null, manual: false };
+    S.annos.push({ id: uid(), type: 'calib', pts: [{ x: dX(0), y: 1062 }, { x: dX(10), y: 1062 }], frame: 0, bound: false, color: '#7CF06B', width: 2 });
+    S.calLen = 10; S.frame = DEMO.start; return;
+  }
+  if (S.ws === 'cod') {
+    const c = COD, F = t => c.start + Math.round(t * c.fps);
+    S.cod.marks = { start: c.start, gateIn: F(c.tGateIn), penult: F(c.tPen), plantTD: F(c.tTD), plantTO: F(c.tTO), gateOut: F(c.tGateOut) };
+    Object.assign(S.cod, { tpl: '505-15', approach: 15, gate: 5, side: 'R', label: 'Demo' });
+    const tp = codPose(c.tTD + 0.05);
+    const P2 = q => Pp(q, cX, cY);
+    S.annos.push({ id: uid(), type: 'angle3', pts: [P2(tp.hip), P2(tp.nearLeg.knee), P2(tp.nearLeg.ank)], frame: F(c.tTD + 0.05), bound: true, color: '#FFD60A', width: 2 });
+    S.annos.push({ id: uid(), type: 'angleV', pts: [P2(tp.hip), P2(tp.sh)], frame: F(c.tTD + 0.05), bound: true, color: '#34C6E0', width: 2 });
+    S.annos.push({ id: uid(), type: 'calib', pts: [{ x: cX(c.gate), y: 1050 }, { x: cX(c.line), y: 1050 }], frame: 0, bound: false, color: '#7CF06B', width: 2 });
+    S.calLen = 5; S.frame = F(c.tTD + 0.05);
+    if (!codTrials.length) codTrials = [
+      { id: uid(), ex: true, label: 'Beispiel', side: 'L', approach: 10, gate: 5, t505: 2.412, ct: 0.355, entry: 0.79, exit: 1.27, deficit: 0.61, angles: [] },
+      { id: uid(), ex: true, label: 'Beispiel', side: 'R', approach: 10, gate: 5, t505: 2.338, ct: 0.318, entry: 0.77, exit: 1.24, deficit: 0.54, angles: [] },
+      { id: uid(), ex: true, label: 'Beispiel', side: 'L', approach: 15, gate: 5, t505: 2.468, ct: 0.372, entry: 0.76, exit: 1.34, deficit: 0.67, angles: [] }
+    ];
+    return;
+  }
+  // Videoanalyse/Kinogramm: 5 ALTIS-Positionen in einem Schrittzyklus bei ~4,2 s
   const t0 = 4.2, ph0 = demoPhi(t0);
   const targets = [4.71, 5.45, 6.25, 6.7, 7.4];
   let base = Math.floor(ph0 / (2 * Math.PI)) * 2 * Math.PI; if (base + targets[0] < ph0) base += 2 * Math.PI;
@@ -1307,9 +1503,7 @@ function seedDemo() {
     return { id: uid(), frame: n, label: KINO_TPL.altis[i], cx: dX(p.hip.x + 0.15), cy: dY(0.85) };
   });
   S.kino.cur = { cx: S.kino.shots[0].cx, cy: S.kino.shots[0].cy };
-  // Beispiel-Winkel: Kniewinkel und Unterschenkel zur Vertikalen am Touch-Down
-  const td = S.kino.shots[3], tp = demoPose((td.frame - DEMO.start) / DEMO.fps);
-  const L = tp.farLeg, Pp = q => ({ x: dX(q.x), y: dY(q.y) });
+  const td = S.kino.shots[3], tp = demoPose((td.frame - DEMO.start) / DEMO.fps), L = tp.farLeg;
   S.annos.push({ id: uid(), type: 'angle3', pts: [Pp(tp.hip), Pp(L.knee), Pp(L.ank)], frame: td.frame, bound: true, color: '#FFD60A', width: 2 });
   S.annos.push({ id: uid(), type: 'angleV', pts: [Pp(L.ank), Pp(L.knee)], frame: td.frame, bound: true, color: '#34C6E0', width: 2 });
   S.annos.push({ id: uid(), type: 'calib', pts: [{ x: dX(0), y: 1062 }, { x: dX(10), y: 1062 }], frame: 0, bound: false, color: '#7CF06B', width: 2 });
@@ -1319,13 +1513,19 @@ function seedDemo() {
 
 /* ---------- Modus ---------- */
 function setMode(m) {
+  const ws = MODE_WS[m];
+  if (ws !== S.ws) { pause(); drawing = null; stashWs(); loadWs(ws); }
   S.mode = m;
   $$('.mode').forEach(b => b.setAttribute('aria-selected', String(b.dataset.mode === m)));
-  $$('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== m);
+  $$('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== 'shared' && p.dataset.panel !== m);
+  $('.tool[data-tool="crop"]').hidden = m !== 'kino';
   if (m !== 'kino' && S.tool === 'crop') setTool('select');
-  if (m === 'sprint') renderSprint();
-  if (m === 'kino') { updateShotList(); schedulePreview(); }
-  render();
+  if (!S.src && !S.visited) { S.visited = true; loadSource(new DemoSource(ws === 'cod' ? 'cod' : 'sprint')); }
+  S.visited = true;
+  updateDrop(); writeSprintInputs(); writeCodInputs(); syncKinoOpts();
+  $('#tChrono').setAttribute('aria-pressed', String(S.chrono != null));
+  if (S.view.fit) fitView();
+  changed('all'); syncSource();
 }
 $$('.mode').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 
@@ -1337,10 +1537,12 @@ function changed(what) {
   if (what === 'annoLive') { updateSel(); return; }
   updateAnalysePanel();
   if (S.mode === 'sprint' || what === 'all') renderSprint();
+  if (S.mode === 'cod' || what === 'all') renderCod();
   if (what === 'all' || what === 'kino' || what === 'annos' || what === 'chrono') { updateShotList(); schedulePreview(); }
 }
 function updateAnalysePanel() {
   $('#vName').textContent = S.src ? S.src.name : '–';
+  $('#wsName').textContent = WS_NAME[S.ws];
   $('#vInfo').textContent = S.src ? `${S.src.w}×${S.src.h} · ${S.nFrames}` : '–';
   if (document.activeElement !== $('#fileFps')) $('#fileFps').value = S.fileFps;
   if (document.activeElement !== $('#capFps')) $('#capFps').value = S.capFps;
@@ -1360,6 +1562,8 @@ function updateSel() {
   $('#selType').textContent = TYPE_NAME[a.type];
   $('#selVal').textContent = annoValue(a);
   $('#selTextWrap').hidden = a.type !== 'text';
+  $('#selCalWrap').hidden = a.type !== 'calib';
+  if (a.type === 'calib' && document.activeElement !== $('#selCal')) $('#selCal').value = S.calLen;
   if (a.type === 'text' && document.activeElement !== $('#selText')) $('#selText').value = a.text;
   $('#selBound').checked = !!a.bound; $('#selBound').disabled = a.type === 'track' || a.type === 'calib';
   const li = $(`#alist li[data-id="${a.id}"] .val`); if (li) li.textContent = annoValue(a);
@@ -1372,10 +1576,12 @@ $('#alist').addEventListener('click', e => {
 });
 $('#selText').addEventListener('input', e => { const a = S.annos.find(x => x.id === S.sel); if (a) { a.text = e.target.value; changed('annoLive'); } });
 $('#selText').addEventListener('change', () => changed('annos'));
+$('#selCal').addEventListener('input', e => { const v = +e.target.value; if (v > 0) { S.calLen = v; changed('annoLive'); render(); } });
+$('#selCal').addEventListener('change', () => changed('annos'));
 $('#selBound').addEventListener('change', e => { const a = S.annos.find(x => x.id === S.sel); if (a) { pushUndo(); a.bound = e.target.checked; a.frame = e.target.checked ? S.frame : a.frame; changed('annos'); } });
 $('#selJump').addEventListener('click', () => { const a = S.annos.find(x => x.id === S.sel); if (a) goTo(a.type === 'track' && a.pts.length ? a.pts[0].f : a.frame); });
 $('#selDel').addEventListener('click', delSel);
-$('#btnClearAnn').addEventListener('click', () => { if (!S.annos.length) return; pushUndo(); S.annos = []; S.sel = null; trackId = null; changed('annos'); toast('Alle Zeichnungen gelöscht · Strg+Z stellt sie wieder her'); });
+$('#btnClearAnn').addEventListener('click', () => { if (!S.annos.length) return; pushUndo(); S.annos = []; S.sel = null; S.trackId = null; changed('annos'); toast('Alle Zeichnungen gelöscht · Strg+Z stellt sie wieder her'); });
 $('#calLen').addEventListener('input', e => { const v = +e.target.value; if (v > 0) { S.calLen = v; changed('annoLive'); render(); } });
 $('#calLen').addEventListener('change', () => changed('annos'));
 $('#trackStep').addEventListener('change', e => { S.trackStep = Math.max(1, Math.round(+e.target.value || 1)); });
@@ -1445,12 +1651,12 @@ $('#spBody').addEventListener('change', e => {
 function renderSprint() {
   const sp = S.sprint;
   const valid = sp.dists.map(d => ({ d, t: splitTime(d) })).filter(x => x.t != null && x.t > 0);
-  lastProfile = null;
+  S.lastProfile = null;
   if (valid.length >= 3) {
-    try { lastProfile = Engine.profile(valid.map(x => x.d), valid.map(x => x.t), { m: sp.ath.m, h: sp.ath.h, T: sp.env.T, Pb: sp.env.Pb, vw: sp.env.vw }); }
-    catch { lastProfile = null; }
+    try { S.lastProfile = Engine.profile(valid.map(x => x.d), valid.map(x => x.t), { m: sp.ath.m, h: sp.ath.h, T: sp.env.T, Pb: sp.env.Pb, vw: sp.env.vw }); }
+    catch { S.lastProfile = null; }
   }
-  const resid = {}; if (lastProfile) valid.forEach((x, i) => resid[x.d] = lastProfile.resid[i]);
+  const resid = {}; if (S.lastProfile) valid.forEach((x, i) => resid[x.d] = S.lastProfile.resid[i]);
   const nextD = sp.start == null ? 'start' : sp.dists.find(d => { const s = sp.splits[d]; return !s || (s.frame == null && !s.manual); });
   const row = (key, name, frame, time, manual, r) => `<tr class="${String(nextD) === String(key) ? 'next' : ''}"><td><b>${name}</b></td>
     <td>${frame != null ? `<button class="fbtn" data-act="jump" data-d="${key}" title="Zum Frame">F ${frame}</button>` : '<span style="color:var(--muted)">–</span>'}</td>
@@ -1460,7 +1666,7 @@ function renderSprint() {
   let html = row('start', 'Start', sp.start, 0, false, null);
   for (const d of sp.dists) { const s = sp.splits[d] || {}; html += row(d, fmt(d, d % 1 ? 1 : 0) + ' m', s.frame ?? null, splitTime(d), !!s.manual, resid[d] ?? null); }
   $('#spBody').innerHTML = html;
-  const P = lastProfile, q = $('#spQual');
+  const P = S.lastProfile, q = $('#spQual');
   if (!P) {
     q.innerHTML = `<i style="background:var(--muted)"></i>${valid.length}/3 Zeiten`;
     $('#spMetrics').innerHTML = `<div class="empty" style="grid-column:1/-1">Mindestens 3 Zwischenzeiten setzen (empfohlen 5–6). Start-Frame wählen, dann mit ⏎ jede Distanz markieren.</div>`;
@@ -1483,7 +1689,7 @@ function renderParallax() {
 }
 ['#pxD', '#pxL', '#pxC'].forEach(s => $(s).addEventListener('input', renderParallax));
 function renderSled() {
-  const P = lastProfile;
+  const P = S.lastProfile;
   if (!P) { $('#slOut').innerHTML = '<div class="empty">Erst ein gültiges Profil erstellen.</div>'; return; }
   const th = +$('#slTh').value || 0, r = Engine.sledOpt(P.F0, P.V0, P.k, th);
   $('#slOut').innerHTML = `<div class="kv"><span>v<sub>opt</sub> = V0/2</span><b>${fmt(r.vopt, 2)} m/s</b></div><div class="kv"><span>μ<sub>k</sub>(v<sub>opt</sub>)</span><b>${fmt(r.mu, 3)}</b></div><div class="kv"><span>Luftwiderstand</span><b>${fmt(r.Faero, 1)} N</b></div><div class="kv"><span>Optimale Schlittenmasse</span><b style="color:var(--accent-hi)">${fmt(r.mass, 1)} kg · ${fmt(r.mass / P.m * 100, 0)} % KM</b></div>`;
@@ -1544,7 +1750,7 @@ function drawCharts(P, valid) {
   h.textAlign = 'right'; h.fillText('V0 ' + fmt(P.V0, 2), bx.X(P.V0) - 4, bx.Y(0) - 8);
 }
 $('#spCsv').addEventListener('click', () => {
-  const sp = S.sprint, P = lastProfile, L = [];
+  const sp = S.sprint, P = S.lastProfile, L = [];
   L.push('SprintLab Export;' + new Date().toLocaleString('de-AT'));
   L.push('Athlet;' + (sp.ath.name || '') + ';Masse kg;' + sp.ath.m + ';Größe m;' + sp.ath.h);
   L.push('Temp °C;' + sp.env.T + ';Luftdruck mmHg;' + sp.env.Pb + ';Wind m/s;' + sp.env.vw);
@@ -1560,6 +1766,158 @@ $('#spCsv').addEventListener('click', () => {
       .forEach(([k, v, u]) => L.push(k + ';' + v.toFixed(4).replace('.', ',') + ';' + u));
   }
   saveText('﻿' + L.join('\r\n'), (sp.ath.name || 'sprint').replace(/\W+/g, '_') + '_profil.csv', 'text/csv');
+});
+
+/* ---------- Richtungswechsel (5-0-5 & Varianten) ---------- */
+const COD_MARKS = [['start', 'Start (Anlauf)'], ['gateIn', 'Schranke hin'], ['penult', 'Vorletzter Kontakt'], ['plantTD', 'Wende-Kontakt'], ['plantTO', 'Wende-Abdruck'], ['gateOut', 'Schranke zurück']];
+const COD_TPL = { '505-10': [10, 5], '505-15': [15, 5], '505-mod': [5, 5] };
+const codHasStart = c => c.approach > c.gate + 0.01;
+const codName = c => `${fmt(c.gate, c.gate % 1 ? 1 : 0)}-0-${fmt(c.gate, c.gate % 1 ? 1 : 0)}`;
+function codResult(c = S.cod, fps = S.capFps) {
+  const m = c.marks, d = (a, b) => (m[a] != null && m[b] != null && m[b] > m[a]) ? (m[b] - m[a]) / fps : null;
+  const r = { t505: d('gateIn', 'gateOut'), ct: d('plantTD', 'plantTO'), entry: d('gateIn', 'plantTD'), exit: d('plantTO', 'gateOut'), pen: d('penult', 'plantTD'), app: d('start', 'gateIn'), total: d('start', 'gateOut') };
+  r.appV = r.app ? (c.approach - c.gate) / r.app : null;
+  r.entryV = r.entry ? c.gate / r.entry : null;
+  r.exitV = r.exit ? c.gate / r.exit : null;
+  r.deficit = r.t505 != null && c.t10 > 0 ? r.t505 - c.t10 : null;
+  return r;
+}
+function writeCodInputs() {
+  const c = S.cod;
+  $('#cdName').value = c.name || ''; $('#cdTpl').value = c.tpl; $('#cdApp').value = c.approach; $('#cdGate').value = c.gate;
+  $('#cdLabel').value = c.label || ''; $('#cdT10').value = c.t10 ?? '';
+  $$('#cdSide button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === c.side)));
+}
+$('#cdTpl').addEventListener('change', e => { const c = S.cod; c.tpl = e.target.value; if (COD_TPL[c.tpl]) [c.approach, c.gate] = COD_TPL[c.tpl]; writeCodInputs(); changed('cod'); });
+$('#cdApp').addEventListener('change', e => { S.cod.approach = Math.max(0, +e.target.value || 0); S.cod.tpl = 'free'; writeCodInputs(); changed('cod'); });
+$('#cdGate').addEventListener('change', e => { S.cod.gate = Math.max(0.5, +e.target.value || 5); S.cod.tpl = 'free'; writeCodInputs(); changed('cod'); });
+$('#cdName').addEventListener('input', e => { S.cod.name = e.target.value; });
+$('#cdLabel').addEventListener('input', e => { S.cod.label = e.target.value; });
+$('#cdT10').addEventListener('input', e => { const v = parseFloat(e.target.value); S.cod.t10 = v > 0 ? v : null; renderCod(); });
+$$('#cdSide button').forEach(b => b.addEventListener('click', () => { S.cod.side = b.dataset.v; writeCodInputs(); renderCod(); }));
+$('#cdT10Sp').addEventListener('click', () => {
+  const w = S.ws === 'sprint' ? S : WS.sprint, sp = w.sprint;
+  const tOf = d => { const s = sp.splits[d]; if (!s) return null; if (s.manual && s.time != null) return s.time; return s.frame != null && sp.start != null ? (s.frame - sp.start) / w.capFps : null; };
+  const v = sp.dists.map(d => ({ d, t: tOf(d) })).filter(x => x.t > 0);
+  if (v.length < 3) { toast('Im Reiter Sprint-Profil fehlen noch Zwischenzeiten (mind. 3)'); return; }
+  const P = Engine.profile(v.map(x => x.d), v.map(x => x.t), { m: sp.ath.m, h: sp.ath.h, T: sp.env.T, Pb: sp.env.Pb, vw: sp.env.vw });
+  S.cod.t10 = Math.round(Engine.tOfX(10, P.vmax, P.tau) * 1000) / 1000;
+  writeCodInputs(); renderCod(); toast('10-m-Zeit aus dem Sprint-Profil: ' + fmt(S.cod.t10, 3) + ' s (Modellwert)');
+});
+function nextCodMark() {
+  const c = S.cod, order = COD_MARKS.map(m => m[0]).filter(k => k !== 'start' || codHasStart(c));
+  const k = order.find(k => c.marks[k] == null);
+  if (!k) { toast('Alle Marken gesetzt'); return; }
+  const prev = order.slice(0, order.indexOf(k)).map(x => c.marks[x]).filter(x => x != null);
+  if (prev.length && S.frame <= Math.max(...prev)) { toast('Marke muss nach der vorherigen liegen'); return; }
+  c.marks[k] = S.frame; toast(COD_MARKS.find(m => m[0] === k)[1] + ': F ' + S.frame); changed('cod');
+}
+$('#cdNext').addEventListener('click', nextCodMark);
+$('#cdClear').addEventListener('click', () => { S.cod.marks = {}; changed('cod'); });
+$('#cdBody').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const k = b.dataset.k, m = S.cod.marks;
+  if (b.dataset.act === 'jump' && m[k] != null) goTo(m[k]);
+  if (b.dataset.act === 'set') { m[k] = S.frame; changed('cod'); }
+  if (b.dataset.act === 'clr') { delete m[k]; changed('cod'); }
+});
+function codAngles() {
+  const m = S.cod.marks, lo = m.start ?? m.gateIn, hi = m.gateOut;
+  if (lo == null || hi == null) return [];
+  const near = f => { let best = null; for (const [k, n] of COD_MARKS) if (m[k] != null && (best == null || Math.abs(m[k] - f) < Math.abs(m[best[0]] - f))) best = [k, n]; return best ? (m[best[0]] === f ? '@ ' : '≈ ') + best[1] : ''; };
+  return S.annos.filter(a => a.bound && /^angle/.test(a.type) && a.frame >= lo && a.frame <= hi).sort((a, b) => a.frame - b.frame)
+    .map(a => ({ type: TYPE_NAME[a.type], deg: angleInfo(a)?.deg ?? null, frame: a.frame, at: near(a.frame) }));
+}
+function renderCod() {
+  const c = S.cod, m = c.marks, r = codResult();
+  const ref = m.start ?? m.gateIn;
+  const order = COD_MARKS.filter(([k]) => k !== 'start' || codHasStart(c));
+  const nextK = (order.find(([k]) => m[k] == null) || [])[0];
+  $('#cdBody').innerHTML = order.map(([k, n]) => `<tr class="${k === nextK ? 'next' : ''}"><td><b>${n}</b>${k === 'gateIn' || k === 'gateOut' ? '' : '<span class="chip">optional</span>'}</td>
+    <td>${m[k] != null ? `<button class="fbtn" data-act="jump" data-k="${k}">F ${m[k]}</button>` : '<span style="color:var(--muted)">–</span>'}</td>
+    <td class="res">${m[k] != null && ref != null ? fmt((m[k] - ref) / S.capFps, 3) : '–'}</td>
+    <td style="white-space:nowrap;text-align:right"><button class="btn btn-sm" data-act="set" data-k="${k}">Setzen</button> <button class="btn btn-sm" data-act="clr" data-k="${k}" aria-label="Löschen">×</button></td></tr>`).join('');
+  const pill = $('#cdPill');
+  if (r.t505 == null) pill.innerHTML = `<i style="background:var(--muted)"></i>Schranke hin + zurück fehlt`;
+  else pill.innerHTML = `<i style="background:var(--ok)"></i>${codName(c)} · ${c.side === 'L' ? 'links' : 'rechts'} · ${fmt(c.approach, c.approach % 1 ? 1 : 0)} m Anlauf`;
+  const mt = (lab, val, sub) => `<div class="metric"><span>${lab}</span><b>${val}</b><small>${sub || '&nbsp;'}</small></div>`;
+  $('#cdMetrics').innerHTML =
+    mt(codName(c) + '-Zeit', fmt(r.t505, 3), 's · Schranke → Schranke') +
+    mt('COD-Defizit', r.deficit != null ? fmt(r.deficit, 3) : '–', r.deficit != null ? 's über 10-m-Sprint' : '10-m-Zeit eintragen') +
+    mt('Bodenkontakt', r.ct != null ? fmt(r.ct * 1000, 0) : '–', 'ms Wendeschritt') +
+    mt('Einlauf', fmt(r.entry, 3), r.entryV ? 's · ⌀ ' + fmt(r.entryV, 2) + ' m/s' : 's · Schranke → Kontakt') +
+    mt('Auslauf', fmt(r.exit, 3), r.exitV ? 's · ⌀ ' + fmt(r.exitV, 2) + ' m/s' : 's · Abdruck → Schranke') +
+    (codHasStart(c) ? mt('Anlauf', fmt(r.app, 3), r.appV ? 's · ⌀ ' + fmt(r.appV, 2) + ' m/s' : 's · Start → Schranke') : mt('Vorletzter → Wende', r.pen != null ? fmt(r.pen * 1000, 0) : '–', 'ms'));
+  const ang = codAngles();
+  $('#cdAngles').innerHTML = ang.length ? '<div style="font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Winkel in diesem Versuch</div>' +
+    ang.map(a => `<div class="kv"><span>${a.type} <span class="chip">${escapeHtml(a.at)}</span></span><b>${fmt(a.deg, 1)}°</b></div>`).join('')
+    : '<div class="empty">Winkel (z. B. Knie, Rumpf) mit den Zeichenwerkzeugen im Wendeschritt einzeichnen. Sie erscheinen hier und werden beim Speichern übernommen.</div>';
+  drawCodPhases(r);
+  renderTrials();
+}
+function drawCodPhases(r) {
+  const cnv = $('#chCod'); if (!cnv.offsetParent) return;
+  const { g, W, H } = setupChart(cnv), m = S.cod.marks;
+  const keys = COD_MARKS.map(x => x[0]).filter(k => m[k] != null);
+  if (keys.length < 2) { g.fillStyle = css('--muted'); g.font = '12px Inter, Arial, sans-serif'; g.textAlign = 'center'; g.fillText('Phasen erscheinen, sobald Marken gesetzt sind', W / 2, H / 2); return; }
+  const f0 = m[keys[0]], f1 = m[keys[keys.length - 1]], X = f => 8 + (f - f0) / (f1 - f0) * (W - 16);
+  const segs = [['start', 'gateIn', 'Anlauf', '#3A4654'], ['gateIn', 'plantTD', 'Einlauf', '#5B6B7C'], ['plantTD', 'plantTO', 'Kontakt', '#E0262E'], ['plantTO', 'gateOut', 'Auslauf', '#5B6B7C']];
+  const y = 26, h = 26; let below = 0;
+  g.font = '600 11px Inter, Arial, sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'center';
+  for (const [a, b, lab, col] of segs) {
+    if (m[a] == null || m[b] == null) continue;
+    const x0 = X(m[a]), x1 = X(m[b]);
+    g.fillStyle = col; g.fillRect(x0, y, Math.max(1, x1 - x0), h);
+    const dur = (m[b] - m[a]) / S.capFps, txt = lab + ' ' + (dur < 1 ? fmt(dur * 1000, 0) + ' ms' : fmt(dur, 2) + ' s');
+    g.fillStyle = '#fff'; if (g.measureText(txt).width < x1 - x0 - 4) g.fillText(txt, (x0 + x1) / 2, y + h / 2 + 1);
+    else { g.fillStyle = css('--fg'); g.textAlign = 'center'; const tw = g.measureText(txt).width, cx = clamp((x0 + x1) / 2, tw / 2 + 2, W - tw / 2 - 2); g.fillText(txt, cx, y + h + 16 + 16 * (below++ % 2)); }
+  }
+  g.fillStyle = css('--muted'); g.font = '10px Inter, Arial, sans-serif';
+  for (const k of keys) { const x = X(m[k]); g.fillRect(x - 0.5, y - 8, 1, h + 8); }
+  if (m.gateIn != null && m.gateOut != null) {
+    g.strokeStyle = css('--accent-hi'); g.lineWidth = 1.5; const a = X(m.gateIn), b = X(m.gateOut);
+    g.beginPath(); g.moveTo(a, 12); g.lineTo(b, 12); g.moveTo(a, 8); g.lineTo(a, 16); g.moveTo(b, 8); g.lineTo(b, 16); g.stroke();
+    g.fillStyle = css('--accent-hi'); g.fillText(codName(S.cod) + ' ' + fmt(r.t505, 3) + ' s', (a + b) / 2, 5);
+  }
+  if (m.penult != null) { const x = X(m.penult); g.fillStyle = css('--cyan'); g.beginPath(); g.moveTo(x, y + h + 2); g.lineTo(x - 4, y + h + 9); g.lineTo(x + 4, y + h + 9); g.fill(); }
+}
+$('#cdSave').addEventListener('click', () => {
+  const c = S.cod, r = codResult();
+  if (r.t505 == null) { toast('Mindestens „Schranke hin“ und „Schranke zurück“ setzen'); return; }
+  codTrials = codTrials.filter(t => !t.ex);
+  const n = codTrials.length + 1;
+  codTrials.push({ id: uid(), label: c.label || 'V' + n, name: c.name || '', side: c.side, approach: c.approach, gate: c.gate, t505: r.t505, ct: r.ct, entry: r.entry, exit: r.exit, pen: r.pen, appV: r.appV, t10: c.t10, deficit: r.deficit,
+    angles: codAngles(), video: S.src ? S.src.name : '', date: new Date().toISOString().slice(0, 10) });
+  saveTrials(); c.label = ''; writeCodInputs(); renderCod(); toast('Versuch ' + n + ' gespeichert');
+});
+function saveTrials() { try { localStorage.setItem('sprintlab:cod-trials', JSON.stringify(codTrials.filter(t => !t.ex))); } catch { } }
+$('#cdTrials').addEventListener('click', e => { const b = e.target.closest('button[data-del]'); if (!b) return; codTrials = codTrials.filter(t => t.id !== b.dataset.del); saveTrials(); renderCod(); });
+$('#cdClrT').addEventListener('click', () => { if (!codTrials.length) return; codTrials = []; saveTrials(); renderCod(); toast('Alle Versuche gelöscht'); });
+function renderTrials() {
+  const T = codTrials, tb = $('#cdTrials');
+  if (!T.length) { tb.innerHTML = '<tbody><tr><td class="empty">Noch keine Versuche gespeichert.</td></tr></tbody>'; $('#cdSummary').innerHTML = ''; return; }
+  const bestKey = t => t.side + '|' + t.approach + '|' + t.gate;
+  const best = {}; for (const t of T) if (!best[bestKey(t)] || t.t505 < best[bestKey(t)].t505) best[bestKey(t)] = t;
+  tb.innerHTML = `<thead><tr><th>Versuch</th><th>Seite</th><th>Anlauf</th><th>Zeit (s)</th><th>BK (ms)</th><th>Defizit</th><th></th></tr></thead><tbody>` +
+    T.map(t => `<tr class="${best[bestKey(t)] === t ? 'best' : ''}" title="${escapeHtml(t.video || '')}${t.angles && t.angles.length ? ' · ' + t.angles.map(a => a.type + ' ' + fmt(a.deg, 1) + '°').join(', ') : ''}"><td>${escapeHtml(t.label)}${t.ex ? '<span class="chip">Beispiel</span>' : ''}</td><td>${t.side === 'L' ? 'Links' : 'Rechts'}</td><td>${fmt(t.approach, t.approach % 1 ? 1 : 0)} m</td><td class="res">${fmt(t.t505, 3)}</td><td class="res">${t.ct != null ? fmt(t.ct * 1000, 0) : '–'}</td><td class="res">${t.deficit != null ? fmt(t.deficit, 3) : '–'}</td><td><button class="btn btn-sm" data-del="${t.id}" aria-label="Versuch löschen">×</button></td></tr>`).join('') + '</tbody>';
+  // Vergleich: Bestzeit je Anlauf und Seite + Seitenunterschied
+  const apps = [...new Set(T.map(t => t.approach + '|' + t.gate))].sort((a, b) => parseFloat(a) - parseFloat(b));
+  const rows = apps.map(k => {
+    const [ap, gt] = k.split('|').map(Number);
+    const bl = best['L|' + ap + '|' + gt], br = best['R|' + ap + '|' + gt];
+    let asym = '–';
+    if (bl && br) { const d = Math.abs(bl.t505 - br.t505) / Math.min(bl.t505, br.t505) * 100; asym = fmt(d, 1) + ' % ' + (bl.t505 < br.t505 ? '(L schneller)' : bl.t505 > br.t505 ? '(R schneller)' : ''); }
+    const ct = b => b && b.ct != null ? ' · ' + fmt(b.ct * 1000, 0) + ' ms' : '';
+    return `<tr><td>${fmt(ap, ap % 1 ? 1 : 0)} m${gt !== 5 ? ' (' + gt + '-0-' + gt + ')' : ''}</td><td>${bl ? fmt(bl.t505, 3) + ct(bl) : '–'}</td><td>${br ? fmt(br.t505, 3) + ct(br) : '–'}</td><td>${asym}</td></tr>`;
+  });
+  $('#cdSummary').innerHTML = `<div style="font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Bestzeit je Anlauf und Wendebein</div><div style="overflow-x:auto"><table class="mx"><thead><tr><th>Anlauf</th><th>Links</th><th>Rechts</th><th>Seitenunterschied</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+}
+$('#cdCsv').addEventListener('click', () => {
+  const L = ['SprintLab Richtungswechsel;' + new Date().toLocaleString('de-AT'), '', 'Versuch;Athlet;Datum;Video;Wendebein;Anlauf m;Schranke m;Zeit s;Bodenkontakt ms;Einlauf s;Auslauf s;Vorletzter→Wende ms;Anlauf m/s;10-m-Zeit s;COD-Defizit s;Winkel'];
+  const n = (v, d) => v == null ? '' : v.toFixed(d).replace('.', ',');
+  for (const t of codTrials) L.push([t.label, t.name || '', t.date || '', t.video || '', t.side, n(t.approach, 1), n(t.gate, 1), n(t.t505, 3), t.ct != null ? n(t.ct * 1000, 0) : '', n(t.entry, 3), n(t.exit, 3), t.pen != null ? n(t.pen * 1000, 0) : '', n(t.appV, 2), n(t.t10, 3), n(t.deficit, 3),
+    (t.angles || []).map(a => a.type + ' ' + n(a.deg, 1) + '° ' + a.at).join(' | ')].join(';'));
+  saveText('﻿' + L.join('\r\n'), 'richtungswechsel_versuche.csv', 'text/csv');
 });
 
 /* ---------- Kinogramm ---------- */
@@ -1787,7 +2145,7 @@ function projectData() {
   const k = S.kino;
   return { app: 'SprintLab', version: 1, saved: new Date().toISOString(), source: S.src ? { name: S.src.name, size: S.src.size || 0, kind: S.src.kind } : null,
     fileFps: S.fileFps, capFps: S.capFps, frame: S.frame, annos: S.annos.map(a => { const { _bbox, ...r } = a; return r; }), calLen: S.calLen, chrono: S.chrono,
-    sprint: S.sprint, kino: { tpl: k.tpl, shots: k.shots, cropW: k.cropW, cropH: k.cropH, layout: k.layout, cols: k.cols, cellH: k.cellH, bg: k.bg, title: k.title, annos: k.annos, labels: k.labels, rel: k.rel, thr: k.thr, fade: k.fade } };
+    ws: S.ws, cod: { ...S.cod }, sprint: S.sprint, kino: { tpl: k.tpl, shots: k.shots, cropW: k.cropW, cropH: k.cropH, layout: k.layout, cols: k.cols, cellH: k.cellH, bg: k.bg, title: k.title, annos: k.annos, labels: k.labels, rel: k.rel, thr: k.thr, fade: k.fade } };
 }
 function applyProject(p, quiet) {
   if (!p || p.app !== 'SprintLab') { toast('Keine SprintLab-Projektdatei'); return; }
@@ -1796,6 +2154,8 @@ function applyProject(p, quiet) {
   S.annos = p.annos || []; S.calLen = p.calLen || 1; S.chrono = p.chrono ?? null;
   if (p.sprint) S.sprint = Object.assign(S.sprint, p.sprint);
   if (p.kino) Object.assign(S.kino, p.kino, { active: null, cur: null });
+  if (p.cod) Object.assign(S.cod, p.cod);
+  writeCodInputs();
   S.frame = clamp(p.frame || 0, 0, S.nFrames - 1);
   writeSprintInputs(); syncKinoOpts();
   $('#tChrono').setAttribute('aria-pressed', String(S.chrono != null));
@@ -1803,7 +2163,7 @@ function applyProject(p, quiet) {
 }
 function autosave() { const k = storeKey(); if (k && S.src.kind === 'video') store.set(k, projectData()); }
 $('#btnSave').addEventListener('click', () => {
-  const name = (S.sprint.ath.name || (S.src ? S.src.name.replace(/\.[^.]+$/, '') : 'projekt')).replace(/[^\wäöüÄÖÜß-]+/g, '_') + '.sprintlab.json';
+  const name = ((S.ws === 'cod' ? S.cod.name : S.sprint.ath.name) || (S.src ? S.src.name.replace(/\.[^.]+$/, '') : 'projekt')).replace(/[^\wäöüÄÖÜß-]+/g, '_') + '.sprintlab.json';
   saveText(JSON.stringify(projectData(), null, 1), name, 'application/json');
 });
 $('#projIn').addEventListener('change', async e => {
@@ -1815,7 +2175,7 @@ $('#projIn').addEventListener('change', async e => {
 /* ---------- Hilfe & Tastatur ---------- */
 $('#btnHelp').addEventListener('click', () => openModal('Tastenkürzel', `<div class="keys">
 <kbd>Leertaste</kbd><span>Abspielen / Pause</span><kbd>← →</kbd><span>1 Frame zurück / vor</span><kbd>Shift + ← →</kbd><span>10 Frames</span><kbd>Pos1 / Ende</kbd><span>Anfang / Ende</span>
-<kbd>⏎</kbd><span>Sprint: nächste Marke setzen · Kinogramm: Frame aufnehmen</span>
+<kbd>⏎</kbd><span>Sprint / Richtungswechsel: nächste Marke setzen · Kinogramm: Frame aufnehmen</span>
 <kbd>V L R A H J C F T</kbd><span>Auswahl, Linie, Pfeil, Winkel, ∠ Horizontale, ∠ Vertikale, Kreis, Freihand, Text</span>
 <kbd>K M B X</kbd><span>Kalibrieren, Distanz, Bahn, Kinogramm-Ausschnitt</span>
 <kbd>G</kbd><span>Raster</span><kbd>Z</kbd><span>Stoppuhr ab aktuellem Frame</span>
@@ -1825,7 +2185,7 @@ $('#btnHelp').addEventListener('click', () => openModal('Tastenkürzel', `<div c
 const KEYTOOL = { v: 'select', l: 'line', r: 'arrow', a: 'angle3', h: 'angleH', j: 'angleV', c: 'circle', f: 'free', t: 'text', k: 'calib', m: 'dist', b: 'track', x: 'crop' };
 document.addEventListener('keydown', e => {
   const tag = (e.target.tagName || '').toLowerCase();
-  if (e.key === 'Escape') { if (!$('#modal').hidden) { closeModal(); return; } if (drawing) { drawing = null; render(); return; } if (trackId) { endTrack(); return; } if (S.sel) { S.sel = null; changed('sel'); } return; }
+  if (e.key === 'Escape') { if (!$('#modal').hidden) { closeModal(); return; } if (drawing) { drawing = null; render(); return; } if (S.trackId) { endTrack(); return; } if (S.sel) { S.sel = null; changed('sel'); } return; }
   if (tag === 'input' || tag === 'textarea' || tag === 'select' || !$('#modal').hidden) return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -1836,7 +2196,7 @@ document.addEventListener('keydown', e => {
   if (k === 'Home') { goTo(0); return; }
   if (k === 'End') { goTo(S.nFrames - 1); return; }
   if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); delSel(); return; }
-  if (k === 'Enter') { if (S.mode === 'sprint') nextMark(); else if (S.mode === 'kino') $('#kAdd').click(); return; }
+  if (k === 'Enter') { if (S.mode === 'sprint') nextMark(); else if (S.mode === 'cod') nextCodMark(); else if (S.mode === 'kino') $('#kAdd').click(); return; }
   if (k === '+' || k === '=') { $('#zIn').click(); return; }
   if (k === '-') { $('#zOut').click(); return; }
   if (k === '0') { fitView(); return; }
@@ -1846,10 +2206,11 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- Start ---------- */
-new ResizeObserver(() => { resizeCanvas(); if (S.mode === 'sprint') drawCharts(lastProfile, S.sprint.dists.map(d => ({ d, t: splitTime(d) })).filter(x => x.t > 0)); }).observe(stage);
+new ResizeObserver(() => { resizeCanvas(); if (S.mode === 'sprint') drawCharts(S.lastProfile, S.sprint.dists.map(d => ({ d, t: splitTime(d) })).filter(x => x.t > 0)); }).observe(stage);
 $('#drop').innerHTML = '<div><div style="font-family:var(--disp);font-size:22px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg)">Video hierher ziehen</div><div>oder oben „Video öffnen“ · 120–240 fps empfohlen</div></div>';
-writeSprintInputs(); syncKinoOpts(); setTool('select'); resizeCanvas(); updateTransport();
-loadSource(new DemoSource());
+writeSprintInputs(); writeCodInputs(); syncKinoOpts(); setTool('select'); resizeCanvas(); updateTransport();
+S.visited = true; $('.tool[data-tool="crop"]').hidden = true;
+loadSource(new DemoSource('sprint'));
 </script>
 </body>
 </html>
