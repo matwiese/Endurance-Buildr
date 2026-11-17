@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SprintLab Videoanalyse</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: Werkzeugleiste links · Videobühne mit Transport mittig · Kontext-Panel rechts (mobil gestapelt). Bewusst dunkel (Videoanalyse). */
+:root{
+  --bg:#0C0F12; --panel:#13171C; --panel-2:#1A1F26; --line:#28303A; --line-2:#36404C;
+  --fg:#E8ECEF; --muted:#8A96A2; --accent:#E0262E; --accent-hi:#FF4850;
+  --ok:#3DB577; --warn:#E3A21A; --bad:#E0262E; --cyan:#34C6E0; --draw:#FFD60A;
+  --disp:"Barlow Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:13.5px;line-height:1.45;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+h3{font-family:var(--disp);font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin:0 0 10px;color:var(--fg)}
+.num{font-variant-numeric:tabular-nums}
+
+/* Header */
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--panel);border-bottom:3px solid var(--accent);flex:0 0 auto}
+.brand{display:flex;align-items:center;gap:10px;margin-right:6px}
+.logo{width:34px;height:34px;display:grid;place-items:center;background:var(--accent);color:#fff;font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.02em;border-radius:3px}
+.brand b{font-family:var(--disp);font-size:22px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;display:block;line-height:1}
+.brand small{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.modes{display:flex;gap:2px}
+.mode{white-space:nowrap;background:transparent;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:8px 14px;font-family:var(--disp);font-size:16px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:-11px}
+.mode:hover{color:var(--fg)}
+.mode[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg)}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line-2);border-radius:3px;padding:7px 11px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;user-select:none}
+.btn:hover{border-color:var(--muted)}
+.btn-p{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-hi);border-color:var(--accent-hi)}
+.btn-sm{padding:4px 8px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* App grid */
+.app{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:52px minmax(0,1fr) 370px;grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"tools stage panel" "tools transport panel"}
+.tools{grid-area:tools;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;overflow-y:auto}
+.tool{width:38px;height:36px;display:grid;place-items:center;background:transparent;border:1px solid transparent;border-radius:3px;color:var(--muted);flex:0 0 auto}
+.tool:hover{color:var(--fg);background:var(--panel-2)}
+.tool[aria-pressed="true"]{color:#fff;background:var(--accent);border-color:var(--accent)}
+.tool svg{width:20px;height:20px}
+.sep{width:28px;height:1px;background:var(--line);margin:5px 0;flex:0 0 auto}
+.swatches{display:grid;grid-template-columns:1fr 1fr;gap:4px;flex:0 0 auto}
+.sw{width:16px;height:16px;border-radius:50%;border:2px solid transparent;padding:0}
+.sw[aria-pressed="true"]{border-color:#fff}
+.wsel{width:40px;background:var(--panel-2);border:1px solid var(--line-2);border-radius:3px;font-size:11px;padding:2px;flex:0 0 auto}
+
+.stage{grid-area:stage;position:relative;background:#050607;overflow:hidden;min-height:0;touch-action:none}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hud{position:absolute;left:10px;bottom:8px;right:10px;pointer-events:none;color:var(--muted);font-size:12px;text-shadow:0 1px 2px #000;display:flex;justify-content:space-between;gap:10px}
+.hud .src{color:var(--fg);opacity:.75}
+.drop{position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none;color:var(--muted)}
+.drop.over{background:rgba(52,198,224,.08);outline:2px dashed var(--cyan);outline-offset:-12px}
+
+.transport{grid-area:transport;background:var(--panel);border-top:1px solid var(--line);padding:6px 12px 8px}
+.scrub{position:relative;height:30px}
+.ticks{position:absolute;left:8px;right:8px;top:0;height:10px;pointer-events:none}
+.ticks i{position:absolute;top:0;width:2px;height:10px;transform:translateX(-1px)}
+#scrub{position:absolute;left:0;right:0;bottom:0;width:100%;margin:0;accent-color:var(--accent)}
+.tbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tb{height:32px;min-width:34px;display:inline-grid;place-items:center;background:var(--panel-2);border:1px solid var(--line-2);border-radius:3px;padding:0 8px;font-size:12px;font-weight:600}
+.tb:hover{border-color:var(--muted)}
+.tb svg{width:18px;height:18px}
+.tb.play{background:var(--accent);border-color:var(--accent);color:#fff;min-width:46px}
+.tc{display:flex;gap:12px;font-family:var(--mono);font-size:13px;margin-left:6px;font-variant-numeric:tabular-nums}
+.tc .chr{color:var(--draw)}
+.zoom{display:flex;align-items:center;gap:4px;margin-left:auto}
+.zoom span{font-family:var(--mono);font-size:12px;min-width:44px;text-align:center;color:var(--muted)}
+select.tb{padding:0 4px}
+
+/* Panel */
+.panel{grid-area:panel;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:12px}
+details.card>summary{cursor:pointer;font-family:var(--disp);font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;list-style:none}
+details.card>summary::before{content:"+ ";color:var(--muted)}
+details.card[open]>summary::before{content:"– "}
+details.card[open]>summary{margin-bottom:10px}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px}
+.form.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.fld{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fld.wide{grid-column:1/-1}
+.fld>span{font-size:11px;color:var(--muted);letter-spacing:.04em}
+.in{width:100%;background:var(--bg);border:1px solid var(--line-2);border-radius:3px;padding:6px 8px;font-size:13px;min-width:0}
+.in:focus{border-color:var(--cyan);outline:none}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.hint{color:var(--muted);font-size:12px;margin:8px 0 0}
+.chk{display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer}
+.chk input{accent-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:3px;overflow:hidden}
+.seg button{background:transparent;border:0;padding:6px 10px;font-size:12px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.kv{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0;border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:0}
+.kv b{font-family:var(--mono);font-weight:500;font-variant-numeric:tabular-nums}
+
+.alist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;max-height:230px;overflow-y:auto}
+.alist li{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:3px;background:var(--bg);cursor:pointer;font-size:12.5px;border:1px solid transparent}
+.alist li:hover{border-color:var(--line-2)}
+.alist li.sel{border-color:var(--cyan)}
+.alist .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.alist .val{margin-left:auto;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.alist .fr{color:var(--muted);font-family:var(--mono);font-size:11px}
+.empty{color:var(--muted);font-size:12px;padding:6px 2px}
+
+table.splits{width:100%;border-collapse:collapse;font-size:12.5px}
+table.splits th{font-weight:600;color:var(--muted);text-align:left;font-size:11px;padding:4px 3px;border-bottom:1px solid var(--line-2)}
+table.splits td{padding:3px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+table.splits tr.next td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+table.splits .fbtn{background:none;border:0;color:var(--cyan);font-family:var(--mono);padding:0;font-size:12px}
+table.splits input{width:64px;background:var(--bg);border:1px solid var(--line-2);border-radius:3px;padding:3px 5px;font-family:var(--mono);font-size:12px}
+table.splits input.manual{border-color:var(--warn)}
+.res{font-family:var(--mono);font-size:11.5px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.metric{background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:7px 8px;min-width:0}
+.metric span{display:block;font-size:10.5px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.metric b{display:block;font-family:var(--disp);font-size:22px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.metric small{color:var(--muted);font-size:11px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--bg);border:1px solid var(--line-2)}
+.pill i{width:9px;height:9px;border-radius:50%}
+canvas.chart{width:100%;height:190px;display:block;background:var(--bg);border-radius:3px;margin-top:8px}
+
+.shots{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.shot{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:5px;cursor:pointer}
+.shot.act{border-color:var(--cyan)}
+.shot canvas{width:58px;height:58px;background:#000;border-radius:2px;flex:0 0 auto}
+.shot .meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.shot .meta input{background:transparent;border:1px solid transparent;border-radius:2px;padding:2px 4px;font-weight:600;font-size:13px;width:100%}
+.shot .meta input:hover,.shot .meta input:focus{border-color:var(--line-2);outline:none}
+.shot .meta small{color:var(--muted);font-family:var(--mono);font-size:11px;padding-left:5px}
+.shot .no{font-family:var(--disp);font-size:20px;font-weight:700;color:var(--cyan);width:18px;text-align:center}
+.shot .sb{display:flex;flex-direction:column;gap:2px}
+.shot .sb button{background:var(--panel-2);border:1px solid var(--line-2);border-radius:2px;width:24px;height:18px;font-size:11px;line-height:1;padding:0;color:var(--muted)}
+.shot .sb button:hover{color:var(--fg)}
+#kinoPrev{width:100%;display:block;background:#000;border-radius:3px;min-height:60px}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:50;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.mbox{background:var(--panel);border:1px solid var(--line-2);border-radius:6px;max-width:min(1400px,100%);max-height:100%;display:flex;flex-direction:column;min-width:0}
+.mhead{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.mhead h3{margin:0}
+.mhead .x{margin-left:auto}
+.mbody{padding:14px;overflow:auto;min-height:0}
+.mbody img{max-width:100%;display:block;margin:0 auto;background:#000}
+.mbody textarea{width:min(760px,80vw);height:50vh;background:var(--bg);border:1px solid var(--line-2);font-family:var(--mono);font-size:12px;padding:8px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:5px 16px;font-size:13px}
+.keys kbd{font-family:var(--mono);background:var(--bg);border:1px solid var(--line-2);border-radius:3px;padding:1px 6px;font-size:12px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:4px;font-weight:600;font-size:13px;z-index:60;max-width:calc(100% - 32px);box-shadow:0 8px 30px rgba(0,0,0,.5)}
+#vid{position:fixed;left:-10px;top:-10px;width:2px;height:2px;opacity:0;pointer-events:none}
+
+@media (max-width:980px){
+  body{overflow:auto;height:auto;min-height:100%}
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto auto;grid-template-areas:"stage" "transport" "tools" "panel"}
+  .stage{height:min(62vw,70vh);min-height:220px}
+  .tools{flex-direction:row;flex-wrap:wrap;justify-content:flex-start;border-right:0;border-top:1px solid var(--line);padding:6px max(10px,env(safe-area-inset-left,0px))}
+  .sep{width:1px;height:26px;margin:0 4px}
+  .swatches{grid-template-columns:repeat(6,1fr)}
+  .panel{border-left:0;overflow:visible;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+  .mode{padding:8px 7px;font-size:14px;letter-spacing:.06em}
+  .zoom{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">SL</span><div><b>SprintLab</b><small>Videoanalyse · Prototyp</small></div></div>
+  <nav class="modes" role="tablist" aria-label="Modus">
+    <button class="mode" role="tab" data-mode="analyse" aria-selected="true">Analyse</button>
+    <button class="mode" role="tab" data-mode="sprint" aria-selected="false">Sprint-Profil</button>
+    <button class="mode" role="tab" data-mode="kino" aria-selected="false">Kinogramm</button>
+  </nav>
+  <div class="actions">
+    <label class="btn btn-p" for="fileIn">Video öffnen</label>
+    <input type="file" id="fileIn" accept="video/*,.mov,.mp4,.m4v" hidden>
+    <button class="btn" id="btnDemo" type="button">Demo laden</button>
+    <button class="btn" id="btnSave" type="button">Projekt speichern</button>
+    <label class="btn" for="projIn">Projekt laden</label>
+    <input type="file" id="projIn" accept=".json,application/json" hidden>
+    <button class="btn" id="btnSnap" type="button">Standbild PNG</button>
+    <button class="btn" id="btnHelp" type="button" aria-label="Tastenkürzel">?</button>
+  </div>
+</header>
+
+<main class="app">
+  <aside class="tools" id="tools" aria-label="Werkzeuge">
+    <button class="tool" data-tool="select" title="Auswählen / Verschieben (V)"></button>
+    <button class="tool" data-tool="pan" title="Bild verschieben (Hand)"></button>
+    <div class="sep"></div>
+    <button class="tool" data-tool="line" title="Linie (L)"></button>
+    <button class="tool" data-tool="arrow" title="Pfeil (R)"></button>
+    <button class="tool" data-tool="angle3" title="Winkel, 3 Punkte (A)"></button>
+    <button class="tool" data-tool="angleH" title="Winkel zur Horizontalen (H)"></button>
+    <button class="tool" data-tool="angleV" title="Winkel zur Vertikalen (J)"></button>
+    <button class="tool" data-tool="circle" title="Kreis (C)"></button>
+    <button class="tool" data-tool="free" title="Freihand (F)"></button>
+    <button class="tool" data-tool="text" title="Text (T)"></button>
+    <div class="sep"></div>
+    <button class="tool" data-tool="calib" title="Kalibrieren – bekannte Länge (K)"></button>
+    <button class="tool" data-tool="dist" title="Distanz messen (M)"></button>
+    <button class="tool" data-tool="track" title="Bahn / Punkt-Tracking (B)"></button>
+    <button class="tool" data-tool="crop" title="Kinogramm-Ausschnitt (X)"></button>
+    <div class="sep"></div>
+    <div class="swatches" id="swatches"></div>
+    <select class="wsel" id="wsel" title="Linienstärke" aria-label="Linienstärke">
+      <option value="2">2</option><option value="3" selected>3</option><option value="5">5</option><option value="8">8</option>
+    </select>
+    <div class="sep"></div>
+    <button class="tool" id="tGrid" data-act="grid" title="Raster ein/aus (G)"></button>
+    <button class="tool" id="tChrono" data-act="chrono" title="Stoppuhr: Start = aktueller Frame (Z)"></button>
+    <button class="tool" id="tUndo" data-act="undo" title="Rückgängig (Strg+Z)"></button>
+    <button class="tool" id="tDel" data-act="del" title="Auswahl löschen (Entf)"></button>
+  </aside>
+
+  <section class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="drop" id="drop"></div>
+    <div class="hud"><span id="hudHint"></span><span class="src" id="hudSrc"></span></div>
+  </section>
+
+  <div class="transport">
+    <div class="scrub"><div class="ticks" id="ticks"></div><input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Zeitleiste"></div>
+    <div class="tbar">
+      <button class="tb" id="bHome" title="Zum Anfang (Pos1)" data-icon="skip"></button>
+      <button class="tb" id="bM10" title="10 Frames zurück (Shift+←)">−10</button>
+      <button class="tb" id="bM1" title="1 Frame zurück (←)" data-icon="prev"></button>
+      <button class="tb play" id="bPlay" title="Abspielen / Pause (Leertaste)" data-icon="play"></button>
+      <button class="tb" id="bP1" title="1 Frame vor (→)" data-icon="next"></button>
+      <button class="tb" id="bP10" title="10 Frames vor (Shift+→)">+10</button>
+      <select class="tb" id="rate" title="Wiedergabetempo" aria-label="Wiedergabetempo">
+        <option value="0.1">0,1×</option><option value="0.25">0,25×</option><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="2">2×</option>
+      </select>
+      <div class="tc"><span id="tcFrame">F 0</span><span id="tcTime">0,000 s</span><span class="chr" id="tcChrono"></span></div>
+      <div class="zoom">
+        <button class="tb" id="zOut" title="Verkleinern (−)">−</button><span id="zLbl">100%</span><button class="tb" id="zIn" title="Vergrößern (+)">+</button>
+        <button class="tb" id="zFit" title="Einpassen (0)">Einpassen</button>
+      </div>
+    </div>
+  </div>
+
+  <aside class="panel" id="panel">
+    <!-- ANALYSE -->
+    <div data-panel="analyse" style="display:contents">
+      <section class="card">
+        <h3>Video</h3>
+        <div class="kv"><span>Quelle</span><b id="vName">–</b></div>
+        <div class="kv"><span>Auflösung · Frames</span><b id="vInfo">–</b></div>
+        <div class="form" style="margin-top:10px">
+          <label class="fld"><span>Datei-fps (Frame-Schritt)</span><input class="in" id="fileFps" type="number" min="1" max="1000" step="any"></label>
+          <label class="fld"><span>Aufnahme-fps (Echtzeit)</span><input class="in" id="capFps" type="number" min="1" max="2000" step="any"></label>
+        </div>
+        <div class="row" style="margin-top:8px"><button class="btn btn-sm" id="btnDetect" type="button">fps automatisch erkennen</button></div>
+        <p class="hint">Zeitlupen-Export (z. B. 240 fps aufgenommen, als 30 fps gespeichert): Datei-fps 30, Aufnahme-fps 240. Zeiten werden immer mit der Aufnahme-fps gerechnet.</p>
+      </section>
+      <section class="card" id="selCard" hidden>
+        <h3>Auswahl</h3>
+        <div class="kv"><span id="selType">–</span><b id="selVal">–</b></div>
+        <div class="form" style="margin-top:8px">
+          <label class="fld wide" id="selTextWrap"><span>Text</span><input class="in" id="selText" type="text"></label>
+          <label class="chk fld wide"><input type="checkbox" id="selBound"> Nur im eigenen Frame zeigen</label>
+        </div>
+        <div class="row" style="margin-top:8px"><button class="btn btn-sm" id="selJump" type="button">Zum Frame</button><button class="btn btn-sm" id="selDel" type="button">Löschen</button></div>
+      </section>
+      <section class="card">
+        <h3>Zeichnungen</h3>
+        <label class="chk"><input type="checkbox" id="bindNew" checked> Neue Zeichnungen an den aktuellen Frame binden</label>
+        <ul class="alist" id="alist" style="margin-top:8px"></ul>
+        <div class="row" style="margin-top:8px"><button class="btn btn-sm" id="btnClearAnn" type="button">Alle löschen</button></div>
+      </section>
+      <section class="card">
+        <h3>Kalibrierung &amp; Tracking</h3>
+        <div class="form">
+          <label class="fld"><span>Kalibrierlänge (m)</span><input class="in" id="calLen" type="number" min="0.01" step="0.01" value="1"></label>
+          <label class="fld"><span>Bahn: Frames pro Klick</span><input class="in" id="trackStep" type="number" min="1" step="1" value="4"></label>
+        </div>
+        <div class="kv" style="margin-top:8px"><span>Maßstab</span><b id="calInfo">nicht kalibriert</b></div>
+        <p class="hint">Mit „Kalibrieren“ eine bekannte Strecke im Bild nachziehen (z. B. 10 m zwischen zwei Stangen). Danach zeigen „Distanz“ und „Bahn“ Meter bzw. m/s.</p>
+      </section>
+      <section class="card">
+        <h3>Stoppuhr</h3>
+        <div class="kv"><span>Start-Frame</span><b id="chrInfo">–</b></div>
+        <div class="row" style="margin-top:8px"><button class="btn btn-sm" id="chrSet" type="button">Start = aktueller Frame</button><button class="btn btn-sm" id="chrOff" type="button">Aus</button></div>
+      </section>
+    </div>
+
+    <!-- SPRINT -->
+    <div data-panel="sprint" style="display:contents" hidden>
+      <section class="card">
+        <h3>Athlet &amp; Bedingungen</h3>
+        <div class="form three">
+          <label class="fld wide"><span>Name</span><input class="in" id="spName" type="text" placeholder="Athlet"></label>
+          <label class="fld"><span>Masse (kg)</span><input class="in" id="spM" type="number" step="0.1" value="75"></label>
+          <label class="fld"><span>Größe (m)</span><input class="in" id="spH" type="number" step="0.01" value="1.80"></label>
+          <label class="fld"><span>Wind (m/s)</span><input class="in" id="spW" type="number" step="0.1" value="0"></label>
+          <label class="fld"><span>Temp. (°C)</span><input class="in" id="spT" type="number" step="0.5" value="20"></label>
+          <label class="fld"><span>Luftdruck (mmHg)</span><input class="in" id="spP" type="number" step="1" value="760"></label>
+        </div>
+        <p class="hint">Wind: Gegenwind negativ.</p>
+      </section>
+      <section class="card">
+        <h3>Zwischenzeiten</h3>
+        <label class="fld"><span>Distanzen (m), mit Komma oder Leerzeichen getrennt</span><input class="in" id="spDists" type="text" value="5 10 15 20 30 40"></label>
+        <table class="splits" style="margin-top:10px">
+          <thead><tr><th>Marke</th><th>Frame</th><th>Zeit (s)</th><th>Δ Modell</th><th></th></tr></thead>
+          <tbody id="spBody"></tbody>
+        </table>
+        <div class="row" style="margin-top:10px">
+          <button class="btn btn-p btn-sm" id="spNext" type="button">Nächste Marke setzen ⏎</button>
+          <button class="btn btn-sm" id="spClear" type="button">Zurücksetzen</button>
+          <button class="btn btn-sm" id="spTest" type="button">Testvektor</button>
+        </div>
+        <p class="hint">Start: Frame, in dem die Hand den Boden verlässt. Durchgang: Frame, in dem die Hüfte mit der Stange fluchtet. Zeiten sind editierbar (gelb = manuell, z. B. Lichtschranke).</p>
+      </section>
+      <section class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px"><h3 style="margin:0">Profil</h3><span class="pill" id="spQual"><i></i>–</span></div>
+        <div class="metrics" id="spMetrics"></div>
+        <canvas class="chart" id="chVT" aria-label="Geschwindigkeit über Zeit"></canvas>
+        <canvas class="chart" id="chFV" aria-label="Kraft- und Leistungs-Geschwindigkeits-Profil"></canvas>
+        <div class="row" style="margin-top:10px"><button class="btn btn-sm" id="spCsv" type="button">CSV exportieren</button></div>
+      </section>
+      <details class="card">
+        <summary>Aufbau · Stangen-Parallaxe</summary>
+        <div class="form three">
+          <label class="fld"><span>Kamera-Abstand D (m)</span><input class="in" id="pxD" type="number" step="0.5" value="18"></label>
+          <label class="fld"><span>Stangen hinter Spur L (m)</span><input class="in" id="pxL" type="number" step="0.1" value="2"></label>
+          <label class="fld"><span>Kamera auf Höhe (m)</span><input class="in" id="pxC" type="number" step="0.5" value="20"></label>
+        </div>
+        <div id="pxOut" style="margin-top:8px"></div>
+        <p class="hint">x<sub>Stange</sub> = x + (x − x<sub>Kamera</sub>) · L / D. Stangen vor der Spur: L negativ.</p>
+      </details>
+      <details class="card">
+        <summary>Schlitten-Optimallast</summary>
+        <div class="form three">
+          <label class="fld"><span>Zugwinkel θ (°)</span><input class="in" id="slTh" type="number" step="1" value="0"></label>
+          <label class="fld"><span>Hüfthöhe (m)</span><input class="in" id="slHip" type="number" step="0.01" value="0.95"></label>
+          <label class="fld"><span>Seillänge (m)</span><input class="in" id="slRope" type="number" step="0.1" value="3"></label>
+        </div>
+        <div class="row" style="margin-top:8px"><button class="btn btn-sm" id="slCalc" type="button">θ aus Hüfthöhe/Seil</button></div>
+        <div id="slOut" style="margin-top:8px"></div>
+        <p class="hint">Einzelsprint-Methode, μ-Kurve für Kunststoffbahn (Cross et al. 2017). Andere Untergründe brauchen eigene Koeffizienten.</p>
+      </details>
+    </div>
+
+    <!-- KINOGRAMM -->
+    <div data-panel="kino" style="display:contents" hidden>
+      <section class="card">
+        <h3>Positionen</h3>
+        <label class="fld"><span>Vorlage für Bezeichnungen</span>
+          <select class="in" id="kTpl">
+            <option value="altis">ALTIS Sprint · 5 Positionen</option>
+            <option value="start">Start / Beschleunigung</option>
+            <option value="jump">Absprung</option>
+            <option value="hurdle">Hürde</option>
+            <option value="free">Frei nummeriert</option>
+          </select>
+        </label>
+        <div class="row" style="margin-top:10px"><button class="btn btn-p btn-sm" id="kAdd" type="button">+ Aktuellen Frame aufnehmen ⏎</button></div>
+        <div class="row" style="margin-top:8px">
+          <span style="color:var(--muted);font-size:12px">Serie:</span>
+          <input class="in" id="kSerN" type="number" min="2" max="40" value="6" style="width:58px" aria-label="Anzahl Bilder">
+          <span style="color:var(--muted);font-size:12px">Bilder, alle</span>
+          <input class="in" id="kSerK" type="number" min="1" value="10" style="width:58px" aria-label="Frame-Abstand">
+          <span style="color:var(--muted);font-size:12px">Frames</span>
+          <button class="btn btn-sm" id="kSer" type="button">Hinzufügen</button>
+        </div>
+        <ol class="shots" id="shots"></ol>
+        <div class="row" style="margin-top:8px"><button class="btn btn-sm" id="kClear" type="button">Alle entfernen</button><button class="btn btn-sm" id="kFull" type="button">Ganzes Bild statt Ausschnitt</button></div>
+        <p class="hint">Ausschnitt mit dem Werkzeug „Ausschnitt“ (X) aufziehen. Bild in der Liste wählen und den Rahmen im Video auf den Athleten schieben. Die Rahmengröße gilt für alle Bilder.</p>
+      </section>
+      <section class="card">
+        <h3>Layout</h3>
+        <div class="seg" id="kLayout" role="group" aria-label="Anordnung">
+          <button type="button" data-v="row" aria-pressed="true">Reihe</button>
+          <button type="button" data-v="grid" aria-pressed="false">Raster</button>
+          <button type="button" data-v="overlay" aria-pressed="false">Überlagerung</button>
+        </div>
+        <div class="form" style="margin-top:10px">
+          <label class="fld" id="kColsW"><span>Spalten (Raster)</span><input class="in" id="kCols" type="number" min="1" max="12" value="3"></label>
+          <label class="fld"><span>Bildhöhe (px)</span><input class="in" id="kCellH" type="number" min="120" max="2000" step="20" value="520"></label>
+          <label class="fld"><span>Hintergrund</span><select class="in" id="kBg"><option value="dark">Dunkel</option><option value="light">Hell</option></select></label>
+          <label class="fld"><span>Titel</span><input class="in" id="kTitle" type="text" placeholder="z. B. Name · Datum"></label>
+          <label class="fld wide" id="kThrW"><span>Überlagerung: Freistell-Schwelle <b id="kThrV" class="num">40</b></span><input id="kThr" type="range" min="8" max="120" value="40"></label>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">
+          <label class="chk"><input type="checkbox" id="kAnn" checked> Zeichnungen (Winkel, Linien) einbrennen</label>
+          <label class="chk"><input type="checkbox" id="kLbl" checked> Beschriftung und Zeit</label>
+          <label class="chk"><input type="checkbox" id="kRel" checked> Zeit relativ zum ersten Bild</label>
+          <label class="chk" id="kFadeW"><input type="checkbox" id="kFade" checked> Überlagerung: frühere Bilder blasser</label>
+        </div>
+      </section>
+      <section class="card">
+        <h3>Vorschau</h3>
+        <canvas id="kinoPrev"></canvas>
+        <div class="row" style="margin-top:8px">
+          <button class="btn btn-sm" id="kPrev" type="button">Aktualisieren</button>
+          <button class="btn btn-sm" id="kBig" type="button">Großansicht</button>
+          <button class="btn btn-p btn-sm" id="kPng" type="button">PNG exportieren</button>
+        </div>
+      </section>
+    </div>
+  </aside>
+</main>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="mbox">
+    <div class="mhead"><h3 id="mTitle">–</h3><span id="mExtra"></span><button class="btn btn-sm x" id="mClose" type="button">Schließen</button></div>
+    <div class="mbody" id="mBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<video id="vid" muted playsinline preload="auto"></video>
+
+<script>
+'use strict';
+/* =====================================================================
+   ENGINE – Samozino „Simple Method“ (siehe Dossier Kap. 4–6, Anhang A)
+   ===================================================================== */
+// ENGINE-START
+const Engine = (() => {
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  // Lambert W, Hauptast, für z in [-1/e, 0]
+  function lambertW0(z) {
+    if (z === 0) return 0;
+    const em1 = -1 / Math.E;
+    if (z <= em1) return -1;
+    let w;
+    if (z < -0.25) { const p = Math.sqrt(2 * (Math.E * z + 1)); w = -1 + p - p * p / 3 + 11 / 72 * p * p * p; }
+    else w = z - z * z;
+    for (let i = 0; i < 60; i++) {
+      const ew = Math.exp(w), f = w * ew - z, wp1 = w + 1;
+      if (Math.abs(wp1) < 1e-14) break;
+      const dw = f / (ew * wp1 - (w + 2) * f / (2 * wp1));
+      w -= dw;
+      if (Math.abs(dw) < 1e-15 * (1 + Math.abs(w))) break;
+    }
+    return w;
+  }
+  const xOfT = (t, vmax, tau) => vmax * (t + tau * Math.exp(-t / tau)) - vmax * tau;          // Gl. (2)
+  const vOfT = (t, vmax, tau) => vmax * (1 - Math.exp(-t / tau));                             // Gl. (1)
+  const aOfT = (t, vmax, tau) => vmax / tau * Math.exp(-t / tau);                             // Gl. (3)
+  function tOfX(x, vmax, tau) {                                                               // Gl. (2) invertiert
+    if (x <= 0) return 0;
+    const c = x / (vmax * tau) + 1;
+    return tau * (c + lambertW0(-Math.exp(-c)));
+  }
+  // Levenberg-Marquardt im Zeitraum, Grenzen 3–13 m/s, 0,2–3 s
+  function fit(dist, times) {
+    const lo = [3, 0.2], hi = [13, 3];
+    let p = [9, 1.2];
+    const res = q => dist.map((d, i) => tOfX(d, q[0], q[1]) - times[i]);
+    const sse = r => r.reduce((s, v) => s + v * v, 0);
+    let r = res(p), cost = sse(r), lam = 1e-3;
+    for (let it = 0; it < 300; it++) {
+      const J = dist.map(() => [0, 0]);
+      for (let k = 0; k < 2; k++) {
+        const h = 1e-7 * Math.max(1, Math.abs(p[k]));
+        const pp = p.slice(), pm = p.slice(); pp[k] += h; pm[k] -= h;
+        const rp = res(pp), rm = res(pm);
+        for (let i = 0; i < dist.length; i++) J[i][k] = (rp[i] - rm[i]) / (2 * h);
+      }
+      let a = 0, b = 0, c = 0, g0 = 0, g1 = 0;
+      for (let i = 0; i < dist.length; i++) {
+        a += J[i][0] ** 2; b += J[i][0] * J[i][1]; c += J[i][1] ** 2;
+        g0 += J[i][0] * r[i]; g1 += J[i][1] * r[i];
+      }
+      let improved = false, done = false;
+      for (let tries = 0; tries < 30; tries++) {
+        const A = a * (1 + lam) + 1e-18, C = c * (1 + lam) + 1e-18, det = A * C - b * b;
+        const d0 = -(C * g0 - b * g1) / det, d1 = -(-b * g0 + A * g1) / det;
+        const q = [clamp(p[0] + d0, lo[0], hi[0]), clamp(p[1] + d1, lo[1], hi[1])];
+        const rq = res(q), cq = sse(rq);
+        if (cq < cost) {
+          if (cost - cq < 1e-20) done = true;
+          p = q; r = rq; cost = cq; lam = Math.max(lam / 10, 1e-15); improved = true; break;
+        }
+        lam *= 10;
+      }
+      if (!improved || done) break;
+    }
+    return { vmax: p[0], tau: p[1], resid: r, rmse: Math.sqrt(cost / dist.length) };
+  }
+  function linreg(x, y) {
+    const n = x.length; let sx = 0, sy = 0, sxx = 0, sxy = 0;
+    for (let i = 0; i < n; i++) { sx += x[i]; sy += y[i]; sxx += x[i] * x[i]; sxy += x[i] * y[i]; }
+    const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+    return { slope, icpt: (sy - slope * sx) / n };
+  }
+  function profile(dist, times, o) {
+    const { m, h, T = 20, Pb = 760, vw = 0 } = o;
+    const f = fit(dist, times), { vmax, tau } = f;
+    const rho = 1.293 * (Pb / 760) * (273 / (273 + T));                                     // Gl. (6)
+    const Af = 0.2025 * Math.pow(h, 0.725) * Math.pow(m, 0.425) * 0.266;                     // Gl. (7)
+    const k = 0.5 * rho * Af * 0.9;                                                          // Gl. (5)
+    const t = [], v = [], FH = [], RFt = [], RFv = [];
+    for (let i = 0; i * 0.01 < 6 * tau; i++) {
+      const ti = i * 0.01, vi = vOfT(ti, vmax, tau), ai = aOfT(ti, vmax, tau);
+      const F = m * ai + k * (vi - vw) ** 2;                                                // Gl. (4)
+      t.push(ti); v.push(vi); FH.push(F);
+      if (ti >= 0.3) { RFt.push(F / Math.sqrt(F * F + (m * 9.81) ** 2)); RFv.push(vi); }     // Gl. (8)
+    }
+    const lr = linreg(v, FH), F0 = lr.icpt, V0 = -F0 / lr.slope;                              // Gl. (10)
+    const Pmax = F0 * V0 / 4;                                                                // Gl. (11)
+    const DRF = linreg(RFv, RFt).slope;                                                      // Gl. (12)
+    const RFmax = Math.max(...RFt);
+    return { vmax, tau, rmse: f.rmse, resid: f.resid, rho, Af, k, F0, V0, Pmax, SFv: -F0 / V0,
+      F0rel: F0 / m, Pmaxrel: Pmax / m, SFvRel: -F0 / V0 / m, RFmax, DRF, vopt: V0 / 2, Fopt: F0 / 2, m };
+  }
+  function sledOpt(F0, V0, k, thetaDeg = 0, g = 9.81) {                                      // Gl. (13)–(15)
+    const vopt = V0 / 2, mu = -0.0052 * vopt ** 2 + 0.0559 * vopt + 0.3184, th = thetaDeg * Math.PI / 180;
+    const Faero = k * vopt ** 2;
+    return { vopt, mu, Faero, mass: (F0 / 2 - Faero) * (Math.cos(th) + mu * Math.sin(th)) / (mu * g) };
+  }
+  const poleX = (xt, xc, D, L) => xt + (xt - xc) * L / D;                                     // Kap. 2.1
+  return { lambertW0, tOfX, xOfT, vOfT, aOfT, fit, profile, sledOpt, poleX, linreg };
+})();
+// ENGINE-END
+if (typeof module !== 'undefined') module.exports = Engine;
+</script>
+
+<script>
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const D2R = Math.PI / 180;
+const fmt = (v, d = 2) => (v == null || !isFinite(v)) ? '–' : v.toFixed(d).replace('.', ',');
+const fmtS = (v, d = 2) => (v == null || !isFinite(v)) ? '–' : (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(d).replace('.', ',');
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const store = {
+  get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } }
+};
+
+/* ---------- Icons ---------- */
+const ICONS = {
+  select: '<path d="M5 3l14 8-6 1.5L10 19z"/>',
+  pan: '<path d="M8 12V6a1.5 1.5 0 013 0v5M11 11V4.5a1.5 1.5 0 013 0V11M14 11V6a1.5 1.5 0 013 0v7c0 4-2.5 7-6 7-2.5 0-4-1.2-5.5-3.5L3.5 13a1.5 1.5 0 012.5-1.5L8 14"/>',
+  line: '<path d="M4 20L20 4"/><circle cx="4" cy="20" r="1.6"/><circle cx="20" cy="4" r="1.6"/>',
+  arrow: '<path d="M4 20L19 5M11 5h8v8"/>',
+  angle3: '<path d="M4 4l6 16 10-6"/><path d="M8.6 16.2a4.5 4.5 0 004.4-.6" stroke-dasharray="2 1.5"/>',
+  angleH: '<path d="M4 19h16M4 19l13-11"/><path d="M11 19a7 7 0 00-1.6-4.6"/>',
+  angleV: '<path d="M8 3v18M8 3l9 14"/><path d="M8 10a7 7 0 003.6-1.2"/>',
+  circle: '<circle cx="12" cy="12" r="8"/>',
+  free: '<path d="M3 17c3-6 5 2 8-3s4-8 7-6 1 6 3 7"/>',
+  text: '<path d="M5 5h14M12 5v15M9 20h6"/>',
+  calib: '<path d="M3 15l12-12 6 6-12 12z"/><path d="M7 11l2 2M10 8l2 2M13 5l2 2"/>',
+  dist: '<path d="M4 12h16M4 8v8M20 8v8"/><path d="M7 12l2-2M7 12l2 2M17 12l-2-2M17 12l-2 2"/>',
+  track: '<circle cx="5" cy="18" r="1.8"/><circle cx="11" cy="11" r="1.8"/><circle cx="19" cy="6" r="1.8"/><path d="M6.4 16.6l3.2-4.2M12.6 10l4.8-3" stroke-dasharray="2 1.5"/>',
+  crop: '<path d="M6 2v16h16M2 6h16v16"/>',
+  grid: '<path d="M4 4h16v16H4zM4 9.3h16M4 14.6h16M9.3 4v16M14.6 4v16"/>',
+  chrono: '<circle cx="12" cy="13" r="7.5"/><path d="M12 13V9M10 2h4M12 2v3"/>',
+  undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>',
+  del: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  play: '<path d="M7 4l13 8-13 8z" fill="currentColor"/>',
+  pause: '<path d="M7 4h3.5v16H7zM13.5 4H17v16h-3.5z" fill="currentColor"/>',
+  prev: '<path d="M15 5l-7 7 7 7"/>',
+  next: '<path d="M9 5l7 7-7 7"/>',
+  skip: '<path d="M6 5v14M18 5l-9 7 9 7z"/>'
+};
+const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]}</svg>`;
+$$('.tool[data-tool]').forEach(b => b.innerHTML = svg(b.dataset.tool));
+$$('.tool[data-act]').forEach(b => b.innerHTML = svg(b.dataset.act));
+$$('[data-icon]').forEach(b => b.innerHTML = svg(b.dataset.icon));
+
+const TOOL_HINT = {
+  select: 'Auswählen: Zeichnung anklicken, Punkte ziehen · leere Fläche ziehen = Bild verschieben · Mausrad = Zoom',
+  pan: 'Bild verschieben · Mausrad / zwei Finger = Zoom',
+  line: 'Linie: ziehen', arrow: 'Pfeil: ziehen',
+  angle3: 'Winkel: 3 Punkte klicken – Ende, Scheitel, Ende',
+  angleH: 'Winkel zur Horizontalen: Segment ziehen (vom Gelenk aus)',
+  angleV: 'Winkel zur Vertikalen: Segment ziehen (vom Gelenk aus)',
+  circle: 'Kreis: vom Mittelpunkt aus ziehen', free: 'Freihand zeichnen',
+  text: 'Text: klicken, dann Text im Panel bearbeiten',
+  calib: 'Kalibrieren: bekannte Strecke nachziehen, Länge im Panel eintragen',
+  dist: 'Distanz: ziehen (zuerst kalibrieren)',
+  track: 'Bahn: Punkt klicken, Video springt weiter · Esc beendet die Bahn',
+  crop: 'Kinogramm-Ausschnitt aufziehen'
+};
+const TYPE_NAME = { line: 'Linie', arrow: 'Pfeil', angle3: 'Winkel', angleH: 'Winkel ↔ Horizontale', angleV: 'Winkel ↕ Vertikale', circle: 'Kreis', free: 'Freihand', text: 'Text', calib: 'Kalibrierung', dist: 'Distanz', track: 'Bahn' };
+const COLORS = ['#FFD60A', '#FF3B47', '#34C6E0', '#7CF06B', '#FFFFFF', '#FF5FD2'];
+const KINO_TPL = {
+  altis: ['Toe-Off', 'Max. vert. Projektion', 'Strike', 'Touch-Down', 'Full Support'],
+  start: ['Set-Position', 'Blockverlassen', '1. Kontakt', '1. Toe-Off', '2. Kontakt', '2. Toe-Off'],
+  jump: ['Vorletzter Kontakt', 'Letzter Kontakt', 'Absprung', 'Flug'],
+  hurdle: ['Angriff', 'Über der Hürde', 'Landung', '1. Schritt'],
+  free: []
+};
+
+/* ---------- State ---------- */
+const S = {
+  src: null, frame: 0, nFrames: 1, fileFps: 30, capFps: 30, capManual: false,
+  mode: 'analyse', tool: 'select', color: COLORS[0], width: 3, grid: false, playing: false, rate: 1,
+  view: { z: 1, x: 0, y: 0, fit: true },
+  annos: [], sel: null, calLen: 1, trackStep: 4, chrono: null,
+  sprint: { start: null, dists: [5, 10, 15, 20, 30, 40], splits: {}, ath: { name: '', m: 75, h: 1.8 }, env: { T: 20, Pb: 760, vw: 0 } },
+  kino: { tpl: 'altis', shots: [], cropW: null, cropH: null, cur: null, active: null, layout: 'row', cols: 3, cellH: 520, bg: 'dark', title: '', annos: true, labels: true, rel: true, thr: 40, fade: true }
+};
+let undoStack = [];
+let lastProfile = null;
+
+/* ---------- Sources ---------- */
+const vid = $('#vid');
+class VideoSource {
+  constructor(file) { this.kind = 'video'; this.file = file; this.name = file.name; this.size = file.size; this.cur = -1; this.url = URL.createObjectURL(file); }
+  init() {
+    return new Promise((res, rej) => {
+      const ok = () => { cleanup(); this.w = vid.videoWidth; this.h = vid.videoHeight; this.duration = vid.duration; res(); };
+      const bad = () => { cleanup(); rej(new Error('Video kann in diesem Browser nicht gelesen werden.')); };
+      const cleanup = () => { vid.removeEventListener('loadeddata', ok); vid.removeEventListener('error', bad); };
+      vid.addEventListener('loadeddata', ok); vid.addEventListener('error', bad);
+      vid.src = this.url; vid.load();
+    });
+  }
+  frameCount(fps) { return Math.max(1, Math.floor(this.duration * fps + 1e-6)); }
+  seek(n, fps) {
+    return new Promise(res => {
+      const t = Math.min((n + 0.5) / fps, this.duration - 1e-4);
+      if (Math.abs(vid.currentTime - t) < 1e-7 && vid.readyState >= 2) { this.cur = n; return res(); }
+      let to;
+      const done = () => { vid.removeEventListener('seeked', done); clearTimeout(to); this.cur = n; res(); };
+      to = setTimeout(done, 2000);
+      vid.addEventListener('seeked', done);
+      vid.currentTime = t;
+    });
+  }
+  draw(ctx) { if (vid.readyState >= 2) ctx.drawImage(vid, 0, 0, this.w, this.h); }
+}
+
+/* Synthetischer Demo-Sprint: mono-exponentiell (vmax 9 m/s, τ 1,15 s), Start bei Frame 120, 240 fps */
+const DEMO = { fps: 240, start: 120, vmax: 9, tau: 1.15, n: 1620, W: 1920, H: 1080 };
+const dX = x => 60 + x * 45, dY = y => 905 - y * 45;
+function demoPhi(t) { t = Math.max(0, t); return 2 * Math.PI * (2.3 * t - 0.48 * (1 - Math.exp(-t / 0.8))); }
+function demoPose(t) {
+  const tt = Math.max(0, t);
+  const x = t <= 0 ? 0 : Engine.xOfT(t, DEMO.vmax, DEMO.tau);
+  const ph = demoPhi(tt);
+  const lean = (5 + 40 * Math.exp(-tt / 0.9)) * D2R;
+  const hy = 0.95 - 0.13 * Math.exp(-tt / 0.8) + 0.025 * Math.sin(2 * ph);
+  const hip = { x, y: hy };
+  const sh = { x: x + 0.55 * Math.sin(lean), y: hy + 0.55 * Math.cos(lean) };
+  const head = { x: sh.x + 0.18 * Math.sin(lean), y: sh.y + 0.18 * Math.cos(lean) };
+  const leg = p => {
+    const th = (20 + 45 * Math.sin(p)) * D2R;
+    const kf = (15 + 110 * Math.max(0, Math.sin(p + 0.9)) ** 2) * D2R;
+    const knee = { x: hip.x + 0.46 * Math.sin(th), y: hip.y - 0.46 * Math.cos(th) };
+    const sa = th - kf;
+    const ank = { x: knee.x + 0.45 * Math.sin(sa), y: Math.max(0.07, knee.y - 0.45 * Math.cos(sa)) };
+    const toe = { x: ank.x + 0.2 * Math.cos(sa), y: Math.max(0.02, ank.y + 0.2 * Math.sin(sa)) };
+    return { knee, ank, toe };
+  };
+  const arm = p => {
+    const ua = (-10 + 50 * Math.sin(p)) * D2R, fa = ua + 85 * D2R;
+    const el = { x: sh.x + 0.3 * Math.sin(ua), y: sh.y - 0.3 * Math.cos(ua) };
+    return { el, wr: { x: el.x + 0.27 * Math.sin(fa), y: el.y - 0.27 * Math.cos(fa) } };
+  };
+  return { hip, sh, head, lean, nearLeg: leg(ph), farLeg: leg(ph + Math.PI), nearArm: arm(ph + Math.PI), farArm: arm(ph) };
+}
+class DemoSource {
+  constructor() { this.kind = 'demo'; this.name = 'Demo-Sprint (synthetisch, 240 fps)'; this.w = DEMO.W; this.h = DEMO.H; this.cur = 0; }
+  init() { return Promise.resolve(); }
+  frameCount() { return DEMO.n; }
+  seek(n) { this.cur = n; return Promise.resolve(); }
+  draw(ctx) { drawDemo(ctx, this.cur); }
+}
+function drawDemo(ctx, n) {
+  const t = (n - DEMO.start) / DEMO.fps;
+  ctx.save();
+  let g = ctx.createLinearGradient(0, 0, 0, 600);
+  g.addColorStop(0, '#1C2A33'); g.addColorStop(1, '#30434E');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 1920, 600);
+  ctx.fillStyle = '#26323B'; ctx.fillRect(0, 470, 1920, 130);
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 2;
+  for (let y = 490; y < 600; y += 22) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1920, y); ctx.stroke(); }
+  ctx.fillStyle = '#2C5739'; ctx.fillRect(0, 600, 1920, 220);
+  ctx.fillStyle = '#8E3A2C'; ctx.fillRect(0, 820, 1920, 260);
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 3;
+  for (const y of [850, 950, 1050]) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1920, y); ctx.stroke(); }
+  ctx.fillStyle = '#fff'; ctx.fillRect(dX(0) - 2, 850, 5, 100);
+  ctx.font = '600 20px Inter, Arial, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let m = 0; m <= 41; m++) {
+    const x = dX(m); ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.fillRect(x - 1, 1052, 2, m % 5 === 0 ? 18 : 9);
+    if (m % 5 === 0) ctx.fillText(m + ' m', x, 1050 - 26 < 0 ? 0 : 1018);
+  }
+  for (const d of [5, 10, 15, 20, 30, 40]) {
+    const x = dX(d), y0 = dY(-0.6), h = 2.6 * 45;
+    for (let i = 0; i < 8; i++) { ctx.fillStyle = i % 2 ? '#F2F2F2' : '#D8232A'; ctx.fillRect(x - 3, y0 - h + i * h / 8, 6, h / 8); }
+    ctx.fillStyle = '#fff'; ctx.font = '700 24px Inter, Arial, sans-serif'; ctx.textBaseline = 'bottom';
+    ctx.fillText(d + ' m', x, y0 - h - 6);
+  }
+  const p = demoPose(t);
+  const P = q => [dX(q.x), dY(q.y)];
+  const seg = (a, b, w, c) => { ctx.strokeStyle = c; ctx.lineWidth = w * 45; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(...P(a)); ctx.lineTo(...P(b)); ctx.stroke(); };
+  ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(dX(p.hip.x + 0.1), dY(0), 0.55 * 45, 0.07 * 45, 0, 0, 7); ctx.fill();
+  const far = '#8C96A0', farSkin = '#7A5A48', near = '#F4F4F4', skin = '#C08A6C';
+  seg(p.sh, p.farArm.el, 0.08, farSkin); seg(p.farArm.el, p.farArm.wr, 0.07, farSkin);
+  seg(p.hip, p.farLeg.knee, 0.14, far); seg(p.farLeg.knee, p.farLeg.ank, 0.1, farSkin); seg(p.farLeg.ank, p.farLeg.toe, 0.08, '#8E1A20');
+  seg(p.hip, p.sh, 0.26, '#1E66D0');
+  seg(p.hip, { x: p.hip.x + 0.02, y: p.hip.y - 0.12 }, 0.24, '#14243A');
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(...P(p.head), 0.115 * 45, 0, 7); ctx.fill();
+  seg(p.hip, p.nearLeg.knee, 0.15, near); seg(p.nearLeg.knee, p.nearLeg.ank, 0.11, skin); seg(p.nearLeg.ank, p.nearLeg.toe, 0.09, '#E0262E');
+  seg(p.sh, p.nearArm.el, 0.09, skin); seg(p.nearArm.el, p.nearArm.wr, 0.075, skin);
+  ctx.fillStyle = '#14243A';
+  for (const j of [p.hip, p.nearLeg.knee, p.nearLeg.ank]) { ctx.beginPath(); ctx.arc(...P(j), 1.6, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+
+/* ---------- Canvas / View ---------- */
+const stage = $('#stage'), cv = $('#cv'), ctx = cv.getContext('2d');
+let dpr = window.devicePixelRatio || 1;
+function resizeCanvas() {
+  dpr = window.devicePixelRatio || 1;
+  const r = stage.getBoundingClientRect();
+  cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));
+  if (S.view.fit) fitView(); else render();
+}
+function fitView() {
+  if (!S.src) { render(); return; }
+  const r = stage.getBoundingClientRect();
+  const z = Math.min(r.width / S.src.w, r.height / S.src.h) * 0.98;
+  S.view = { z, x: (r.width - S.src.w * z) / 2, y: (r.height - S.src.h * z) / 2, fit: true };
+  render(); $('#zLbl').textContent = Math.round(z * 100) + '%';
+}
+function zoomAt(f, sx, sy) {
+  const v = S.view, nz = clamp(v.z * f, 0.05, 40);
+  v.x = sx - (sx - v.x) * nz / v.z; v.y = sy - (sy - v.y) * nz / v.z; v.z = nz; v.fit = false;
+  render(); $('#zLbl').textContent = Math.round(nz * 100) + '%';
+}
+const toVid = (sx, sy) => ({ x: (sx - S.view.x) / S.view.z, y: (sy - S.view.y) / S.view.z });
+const toScr = p => ({ x: p.x * S.view.z + S.view.x, y: p.y * S.view.z + S.view.y });
+
+/* ---------- Annotation geometry ---------- */
+const U = () => 1 / S.view.z; // Zeichengröße konstant auf dem Bildschirm (wie Dartfish)
+const dist2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const pxPerM = () => { const c = S.annos.find(a => a.type === 'calib'); return c ? dist2(c.pts[0], c.pts[1]) / S.calLen : null; };
+const normAng = a => { while (a <= -Math.PI) a += 2 * Math.PI; while (a > Math.PI) a -= 2 * Math.PI; return a; };
+function angleInfo(a) {
+  const [p0, p1, p2] = a.pts;
+  if (a.type === 'angle3') {
+    if (!p2) return null;
+    const a1 = Math.atan2(p0.y - p1.y, p0.x - p1.x), a2 = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+    const diff = normAng(a2 - a1);
+    return { vertex: p1, a1, diff, deg: Math.abs(diff) / D2R };
+  }
+  const dx = p1.x - p0.x, dy = p1.y - p0.y;
+  const ref = a.type === 'angleH' ? (dx >= 0 ? 0 : Math.PI) : (dy >= 0 ? Math.PI / 2 : -Math.PI / 2);
+  const diff = normAng(Math.atan2(dy, dx) - ref);
+  return { vertex: p0, a1: ref, diff, deg: Math.abs(diff) / D2R };
+}
+function annoValue(a) {
+  if (a.type === 'angle3' || a.type === 'angleH' || a.type === 'angleV') { const i = angleInfo(a); return i ? fmt(i.deg, 1) + '°' : '–'; }
+  if (a.type === 'dist') { const k = pxPerM(), L = dist2(a.pts[0], a.pts[1]); return k ? fmt(L / k, 2) + ' m' : Math.round(L) + ' px'; }
+  if (a.type === 'calib') return fmt(S.calLen, 2) + ' m';
+  if (a.type === 'text') return a.text;
+  if (a.type === 'track') { const v = trackSpeed(a, Infinity); return v != null ? fmt(v, 2) + ' m/s' : a.pts.length + ' Pkt.'; }
+  if (a.type === 'circle') return 'r ' + Math.round(dist2(a.pts[0], a.pts[1])) + ' px';
+  return '';
+}
+function trackSpeed(a, f) {
+  const k = pxPerM(); const pts = a.pts.filter(p => p.f <= f);
+  if (!k || pts.length < 2) return null;
+  const p = pts[pts.length - 2], q = pts[pts.length - 1];
+  const dt = (q.f - p.f) / S.capFps; return dt > 0 ? dist2(p, q) / k / dt : null;
+}
+const isVisible = (a, f) => a.type === 'track' || !a.bound || a.frame === f;
+
+function label(c, text, x, y, color, u, align = 'center') {
+  c.save();
+  c.font = `600 ${Math.round(17 * u)}px Inter, Arial, sans-serif`;
+  const w = c.measureText(text).width, h = 24 * u, pad = 6 * u;
+  let bx = align === 'center' ? x - w / 2 - pad : x - pad;
+  c.fillStyle = 'rgba(8,10,12,.78)';
+  c.beginPath(); c.roundRect ? c.roundRect(bx, y - h / 2, w + 2 * pad, h, 4 * u) : c.rect(bx, y - h / 2, w + 2 * pad, h); c.fill();
+  c.fillStyle = color; c.textBaseline = 'middle'; c.textAlign = 'left';
+  c.fillText(text, bx + pad, y + 1 * u);
+  c.restore();
+}
+function drawAnno(c, a, f, u) {
+  const lw = a.width * u, col = a.color, P = a.pts;
+  c.save(); c.strokeStyle = col; c.fillStyle = col; c.lineWidth = lw; c.lineCap = 'round'; c.lineJoin = 'round';
+  const line = (p, q) => { c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(q.x, q.y); c.stroke(); };
+  const dot = (p, r = 3.2) => { c.beginPath(); c.arc(p.x, p.y, r * u, 0, 7); c.fill(); };
+  switch (a.type) {
+    case 'line': line(P[0], P[1]); dot(P[0]); dot(P[1]); break;
+    case 'arrow': {
+      line(P[0], P[1]);
+      const ang = Math.atan2(P[1].y - P[0].y, P[1].x - P[0].x), s = Math.max(12 * u, lw * 3.6);
+      c.beginPath(); c.moveTo(P[1].x, P[1].y);
+      c.lineTo(P[1].x - s * Math.cos(ang - 0.42), P[1].y - s * Math.sin(ang - 0.42));
+      c.lineTo(P[1].x - s * Math.cos(ang + 0.42), P[1].y - s * Math.sin(ang + 0.42)); c.closePath(); c.fill();
+      break;
+    }
+    case 'angle3': case 'angleH': case 'angleV': {
+      if (a.type === 'angle3') { line(P[0], P[1]); if (P[2]) line(P[1], P[2]); }
+      else {
+        line(P[0], P[1]);
+        const info0 = angleInfo(a), L = Math.max(dist2(P[0], P[1]), 40 * u);
+        c.save(); c.setLineDash([7 * u, 6 * u]); c.lineWidth = Math.max(1, lw * 0.6); c.globalAlpha = 0.85;
+        line(P[0], { x: P[0].x + L * Math.cos(info0.a1), y: P[0].y + L * Math.sin(info0.a1) }); c.restore();
+      }
+      P.forEach(p => p && dot(p));
+      const i = angleInfo(a);
+      if (i) {
+        const segL = a.type === 'angle3' ? Math.min(dist2(P[0], P[1]), dist2(P[1], P[2])) : dist2(P[0], P[1]);
+        const r = Math.max(8 * u, Math.min(34 * u, segL * 0.6));
+        c.save(); c.globalAlpha = 0.28; c.beginPath(); c.moveTo(i.vertex.x, i.vertex.y);
+        c.arc(i.vertex.x, i.vertex.y, r, i.a1, i.a1 + i.diff, i.diff < 0); c.closePath(); c.fill(); c.restore();
+        c.beginPath(); c.arc(i.vertex.x, i.vertex.y, r, i.a1, i.a1 + i.diff, i.diff < 0); c.lineWidth = Math.max(1.5, lw * 0.7); c.stroke();
+        const mid = i.a1 + i.diff / 2, lr = r + 30 * u;
+        label(c, fmt(i.deg, 1) + '°', i.vertex.x + lr * Math.cos(mid), i.vertex.y + lr * Math.sin(mid), col, u);
+      }
+      break;
+    }
+    case 'circle': c.beginPath(); c.arc(P[0].x, P[0].y, dist2(P[0], P[1]), 0, 7); c.stroke(); dot(P[0], 2.2); break;
+    case 'free': c.beginPath(); P.forEach((p, k) => k ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.stroke(); break;
+    case 'text': {
+      c.font = `700 ${Math.round(26 * u)}px Inter, Arial, sans-serif`; c.textBaseline = 'top';
+      const w = c.measureText(a.text).width, pad = 7 * u;
+      c.fillStyle = 'rgba(8,10,12,.72)'; c.fillRect(P[0].x - pad, P[0].y - pad, w + 2 * pad, 26 * u + 2 * pad);
+      c.fillStyle = col; c.fillText(a.text, P[0].x, P[0].y);
+      a._bbox = { x: P[0].x - pad, y: P[0].y - pad, w: w + 2 * pad, h: 26 * u + 2 * pad };
+      break;
+    }
+    case 'dist': case 'calib': {
+      line(P[0], P[1]);
+      const ang = Math.atan2(P[1].y - P[0].y, P[1].x - P[0].x) + Math.PI / 2, t = 9 * u;
+      for (const p of P) line({ x: p.x - t * Math.cos(ang), y: p.y - t * Math.sin(ang) }, { x: p.x + t * Math.cos(ang), y: p.y + t * Math.sin(ang) });
+      const m = { x: (P[0].x + P[1].x) / 2, y: (P[0].y + P[1].y) / 2 };
+      label(c, (a.type === 'calib' ? 'Ref ' : '') + annoValue(a), m.x + 26 * u * Math.cos(ang), m.y + 26 * u * Math.sin(ang), col, u);
+      break;
+    }
+    case 'track': {
+      const vis = P.filter(p => p.f <= f);
+      c.save(); c.globalAlpha = 0.3; c.setLineDash([5 * u, 5 * u]);
+      c.beginPath(); P.forEach((p, k) => k ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.stroke(); c.restore();
+      if (vis.length) {
+        c.beginPath(); vis.forEach((p, k) => k ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.stroke();
+        vis.forEach(p => dot(p, 3));
+        const last = vis[vis.length - 1];
+        c.beginPath(); c.arc(last.x, last.y, 8 * u, 0, 7); c.lineWidth = 2 * u; c.stroke();
+        const v = trackSpeed(a, f);
+        if (v != null) label(c, fmt(v, 2) + ' m/s', last.x, last.y - 26 * u, col, u);
+      }
+      break;
+    }
+  }
+  c.restore();
+}
+function drawChrono(c, f, u) {
+  if (S.chrono == null) return;
+  const t = (f - S.chrono) / S.capFps;
+  c.save();
+  c.font = `700 ${Math.round(30 * u)}px ui-monospace, Menlo, Consolas, monospace`;
+  const txt = (t < 0 ? '−' : '') + Math.abs(t).toFixed(3).replace('.', ',') + ' s';
+  const w = c.measureText(txt).width;
+  c.fillStyle = 'rgba(8,10,12,.75)'; c.fillRect(18 * u, 18 * u, w + 28 * u, 46 * u);
+  c.fillStyle = '#FFD60A'; c.textBaseline = 'middle'; c.fillText(txt, 32 * u, 42 * u);
+  c.restore();
+}
+function drawAnnos(c, f, extra, u = U()) {
+  for (const a of S.annos) if (isVisible(a, f)) drawAnno(c, a, f, u);
+  if (extra) drawAnno(c, extra, f, u);
+  drawChrono(c, f, u);
+}
+function drawGrid(c) {
+  const { w, h } = S.src, u = U();
+  c.save(); c.strokeStyle = 'rgba(255,255,255,.22)'; c.lineWidth = 1 * u;
+  const step = h / 8;
+  for (let x = w / 2 % step; x < w; x += step) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); }
+  for (let y = step; y < h; y += step) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
+  c.strokeStyle = 'rgba(52,198,224,.55)'; c.lineWidth = 1.5 * u;
+  c.beginPath(); c.moveTo(w / 2, 0); c.lineTo(w / 2, h); c.moveTo(0, h / 2); c.lineTo(w, h / 2); c.stroke();
+  c.restore();
+}
+
+/* ---------- Kinogramm-Ausschnitt ---------- */
+function cropCenterTarget() {
+  const k = S.kino, sh = k.shots.find(s => s.id === k.active);
+  if (sh && sh.frame === S.frame) return sh;
+  if (!k.cur) k.cur = { cx: S.src.w / 2, cy: S.src.h / 2 };
+  return k.cur;
+}
+function cropRectOf(ctr) {
+  const k = S.kino, w = k.cropW || S.src.w, h = k.cropH || S.src.h;
+  const c = ctr || { cx: S.src.w / 2, cy: S.src.h / 2 };
+  return { x: c.cx - w / 2, y: c.cy - h / 2, w, h };
+}
+function drawCropOverlay(c) {
+  if (!S.kino.cropW) return;
+  const r = cropRectOf(cropCenterTarget()), u = U();
+  c.save();
+  c.fillStyle = 'rgba(0,0,0,.55)';
+  c.beginPath(); c.rect(-1e5, -1e5, 2e5, 2e5); c.rect(r.x, r.y, r.w, r.h); c.fill('evenodd');
+  c.strokeStyle = '#34C6E0'; c.lineWidth = 2 / S.view.z; c.setLineDash([8 / S.view.z, 6 / S.view.z]);
+  c.strokeRect(r.x, r.y, r.w, r.h);
+  c.restore();
+  const sh = S.kino.shots.find(s => s.id === S.kino.active && s.frame === S.frame);
+  if (sh) label(c, (S.kino.shots.indexOf(sh) + 1) + ' · ' + sh.label, r.x + 6 * u, r.y - 18 * u, '#34C6E0', u, 'left');
+}
+
+/* ---------- Render ---------- */
+let drawing = null; // temporäre Zeichnung
+function render() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#050607'; ctx.fillRect(0, 0, cv.width, cv.height);
+  if (!S.src) return;
+  const v = S.view;
+  ctx.setTransform(dpr * v.z, 0, 0, dpr * v.z, dpr * v.x, dpr * v.y);
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, S.src.w, S.src.h);
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, S.src.w, S.src.h); ctx.clip(); S.src.draw(ctx); ctx.restore();
+  if (S.grid) drawGrid(ctx);
+  drawAnnos(ctx, S.frame, drawing);
+  if (S.mode === 'kino') drawCropOverlay(ctx);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawHandles();
+}
+function handlesOf(a) { return a.type === 'text' ? [a.pts[0]] : a.type === 'free' ? [] : a.pts; }
+function drawHandles() {
+  const a = S.annos.find(x => x.id === S.sel);
+  if (a && isVisible(a, S.frame)) {
+    for (const p of handlesOf(a)) {
+      if (a.type === 'track' && p.f > S.frame) continue;
+      const s = toScr(p);
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = '#34C6E0'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(s.x, s.y, 6, 0, 7); ctx.fill(); ctx.stroke();
+    }
+    if (a.type === 'free' || a.type === 'text') {
+      const xs = a.type === 'text' && a._bbox ? [a._bbox.x, a._bbox.x + a._bbox.w] : a.pts.map(p => p.x);
+      const ys = a.type === 'text' && a._bbox ? [a._bbox.y, a._bbox.y + a._bbox.h] : a.pts.map(p => p.y);
+      const p0 = toScr({ x: Math.min(...xs), y: Math.min(...ys) }), p1 = toScr({ x: Math.max(...xs), y: Math.max(...ys) });
+      ctx.strokeStyle = '#34C6E0'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.strokeRect(p0.x - 5, p0.y - 5, p1.x - p0.x + 10, p1.y - p0.y + 10); ctx.setLineDash([]);
+    }
+  }
+  if (S.mode === 'kino' && S.kino.cropW) {
+    const r = cropRectOf(cropCenterTarget());
+    for (const q of [{ x: r.x, y: r.y }, { x: r.x + r.w, y: r.y }, { x: r.x, y: r.y + r.h }, { x: r.x + r.w, y: r.y + r.h }]) {
+      const s = toScr(q); ctx.fillStyle = '#34C6E0'; ctx.fillRect(s.x - 5, s.y - 5, 10, 10);
+    }
+  }
+}
+
+/* ---------- Hit-Tests ---------- */
+function segDist(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+  const t = l2 ? clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / l2, 0, 1) : 0;
+  return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
+}
+function hitTest(sp) {
+  const vp = toVid(sp.x, sp.y), tol = 9 / S.view.z;
+  const vis = S.annos.filter(a => isVisible(a, S.frame));
+  const ordered = [...vis].sort((a, b) => (a.id === S.sel ? -1 : 0) - (b.id === S.sel ? -1 : 0));
+  for (const a of ordered) {
+    const hs = handlesOf(a);
+    for (let i = 0; i < hs.length; i++) {
+      if (a.type === 'track' && hs[i].f > S.frame) continue;
+      if (dist2(toScr(hs[i]), sp) < 10) return { anno: a, h: i };
+    }
+  }
+  for (const a of [...vis].reverse()) {
+    const P = a.pts; let d = Infinity;
+    if (a.type === 'text' && a._bbox) { const b = a._bbox; if (vp.x >= b.x && vp.x <= b.x + b.w && vp.y >= b.y && vp.y <= b.y + b.h) d = 0; }
+    else if (a.type === 'circle') d = Math.abs(dist2(vp, P[0]) - dist2(P[0], P[1]));
+    else for (let i = 1; i < P.length; i++) d = Math.min(d, segDist(vp, P[i - 1], P[i]));
+    if (d < tol + a.width * U() / 2) return { anno: a, h: -1 };
+  }
+  return null;
+}
+function cropHit(sp) {
+  if (S.mode !== 'kino' || !S.kino.cropW || !S.src) return null;
+  const r = cropRectOf(cropCenterTarget());
+  const cs = [[r.x, r.y], [r.x + r.w, r.y], [r.x, r.y + r.h], [r.x + r.w, r.y + r.h]];
+  for (let i = 0; i < 4; i++) { const s = toScr({ x: cs[i][0], y: cs[i][1] }); if (Math.abs(s.x - sp.x) < 10 && Math.abs(s.y - sp.y) < 10) return { corner: i, r }; }
+  const vp = toVid(sp.x, sp.y);
+  if (vp.x > r.x && vp.x < r.x + r.w && vp.y > r.y && vp.y < r.y + r.h) return { corner: -1, r };
+  return null;
+}
+
+/* ---------- Undo ---------- */
+function pushUndo() { undoStack.push(JSON.stringify({ annos: S.annos, kino: { shots: S.kino.shots, cropW: S.kino.cropW, cropH: S.kino.cropH } })); if (undoStack.length > 80) undoStack.shift(); }
+function undo() {
+  const s = undoStack.pop(); if (!s) { toast('Nichts rückgängig zu machen'); return; }
+  const o = JSON.parse(s); S.annos = o.annos; Object.assign(S.kino, o.kino); S.sel = null; changed('all');
+}
+
+/* ---------- Pointer-Interaktion ---------- */
+const pointers = new Map();
+let gesture = null, pinch = null, spaceDown = false;
+const scrPt = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+function newAnno(type, pts) { return { id: uid(), type, pts, frame: S.frame, bound: type === 'track' || type === 'calib' ? false : $('#bindNew').checked, color: S.color, width: S.width, text: type === 'text' ? 'Text' : undefined }; }
+
+cv.addEventListener('pointerdown', e => {
+  if (!S.src) return;
+  cv.setPointerCapture(e.pointerId);
+  const sp = scrPt(e); pointers.set(e.pointerId, sp);
+  if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    pinch = { d: dist2(a, b), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
+    if (drawing && drawing.type !== 'angle3') drawing = null;
+    gesture = null; render(); return;
+  }
+  if (S.playing) pause();
+  const vp = toVid(sp.x, sp.y), tool = S.tool;
+  if (e.button === 1 || spaceDown || tool === 'pan') { gesture = { kind: 'pan', sp, view: { ...S.view } }; return; }
+  if (tool === 'select') {
+    const h = hitTest(sp);
+    if (h) {
+      pushUndo(); S.sel = h.anno.id;
+      gesture = { kind: h.h >= 0 ? 'handle' : 'move', anno: h.anno, h: h.h, start: vp, orig: JSON.parse(JSON.stringify(h.anno.pts)) };
+      changed('sel'); return;
+    }
+    const ch = cropHit(sp);
+    if (ch) { pushUndo(); gesture = { kind: 'crop', corner: ch.corner, r: ch.r, start: vp, tgt: cropCenterTarget(), orig: { ...cropCenterTarget() } }; return; }
+    if (S.sel) { S.sel = null; changed('sel'); }
+    gesture = { kind: 'pan', sp, view: { ...S.view } }; return;
+  }
+  if (tool === 'crop') { gesture = { kind: 'newcrop', start: vp, cur: vp }; return; }
+  if (tool === 'text') { pushUndo(); const a = newAnno('text', [vp]); S.annos.push(a); S.sel = a.id; setTool('select'); changed('annos'); setTimeout(() => { setMode('analyse'); $('#selText').focus(); $('#selText').select(); }, 0); return; }
+  if (tool === 'angle3') {
+    if (!drawing) { drawing = newAnno('angle3', [vp, { ...vp }]); }
+    else { drawing.pts[drawing.pts.length - 1] = vp; if (drawing.pts.length === 3) { pushUndo(); S.annos.push(drawing); S.sel = drawing.id; drawing = null; changed('annos'); return; } drawing.pts.push({ ...vp }); }
+    render(); return;
+  }
+  if (tool === 'track') {
+    let a = S.annos.find(x => x.id === trackId);
+    pushUndo();
+    if (!a) { a = newAnno('track', []); S.annos.push(a); trackId = a.id; }
+    a.pts = a.pts.filter(p => p.f !== S.frame); a.pts.push({ x: vp.x, y: vp.y, f: S.frame }); a.pts.sort((p, q) => p.f - q.f);
+    S.sel = a.id; changed('annos'); goTo(S.frame + S.trackStep); return;
+  }
+  if (tool === 'free') { drawing = newAnno('free', [vp]); gesture = { kind: 'draw' }; render(); return; }
+  drawing = newAnno(tool, [vp, { ...vp }]); gesture = { kind: 'draw' }; render();
+});
+let trackId = null;
+cv.addEventListener('pointermove', e => {
+  if (!S.src) return;
+  const sp = scrPt(e);
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, sp);
+  if (pinch && pointers.size === 2) {
+    const [a, b] = [...pointers.values()], d = dist2(a, b), mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    S.view.x += mid.x - pinch.mid.x; S.view.y += mid.y - pinch.mid.y;
+    zoomAt(d / pinch.d, mid.x, mid.y); pinch = { d, mid }; return;
+  }
+  const vp = toVid(sp.x, sp.y);
+  if (!gesture) {
+    if (drawing && S.tool === 'angle3') { drawing.pts[drawing.pts.length - 1] = vp; render(); }
+    if (S.tool === 'select') cv.style.cursor = hitTest(sp) || cropHit(sp) ? 'move' : 'grab';
+    return;
+  }
+  const g = gesture;
+  if (g.kind === 'pan') { S.view.x = g.view.x + sp.x - g.sp.x; S.view.y = g.view.y + sp.y - g.sp.y; S.view.fit = false; render(); return; }
+  if (g.kind === 'handle') { const p = g.anno.pts[g.h]; p.x = vp.x; p.y = vp.y; changed('annoLive'); return; }
+  if (g.kind === 'move') { const dx = vp.x - g.start.x, dy = vp.y - g.start.y; g.anno.pts.forEach((p, i) => { p.x = g.orig[i].x + dx; p.y = g.orig[i].y + dy; }); changed('annoLive'); return; }
+  if (g.kind === 'crop') {
+    const k = S.kino, dx = vp.x - g.start.x, dy = vp.y - g.start.y;
+    if (g.corner < 0) { g.tgt.cx = g.orig.cx + dx; g.tgt.cy = g.orig.cy + dy; }
+    else {
+      const r = g.r, fx = (g.corner % 2) ? r.x : r.x + r.w, fy = g.corner < 2 ? r.y + r.h : r.y;
+      const w = Math.max(20, Math.abs(vp.x - fx)), h = Math.max(20, Math.abs(vp.y - fy));
+      k.cropW = Math.round(w); k.cropH = Math.round(h);
+      g.tgt.cx = (vp.x + fx) / 2; g.tgt.cy = (vp.y + fy) / 2;
+    }
+    render(); return;
+  }
+  if (g.kind === 'newcrop') { g.cur = vp; const k = S.kino, t = cropCenterTarget(); k.cropW = Math.max(20, Math.round(Math.abs(vp.x - g.start.x))); k.cropH = Math.max(20, Math.round(Math.abs(vp.y - g.start.y))); t.cx = (vp.x + g.start.x) / 2; t.cy = (vp.y + g.start.y) / 2; render(); return; }
+  if (g.kind === 'draw' && drawing) {
+    if (drawing.type === 'free') { const l = drawing.pts[drawing.pts.length - 1]; if (dist2(l, vp) * S.view.z > 2) drawing.pts.push(vp); }
+    else drawing.pts[1] = vp;
+    render();
+  }
+});
+function endPointer(e) {
+  pointers.delete(e.pointerId);
+  if (pinch) { if (pointers.size < 2) pinch = null; return; }
+  const g = gesture; gesture = null;
+  if (!g) return;
+  if (g.kind === 'draw' && drawing) {
+    const P = drawing.pts, long = drawing.type === 'free' ? P.length > 2 : dist2(P[0], P[1]) * S.view.z > 4;
+    if (long) {
+      pushUndo();
+      if (drawing.type === 'calib') S.annos = S.annos.filter(a => a.type !== 'calib');
+      S.annos.push(drawing); S.sel = drawing.id;
+      if (drawing.type === 'calib') { setTimeout(() => { setMode('analyse'); $('#calLen').focus(); $('#calLen').select(); }, 0); toast('Kalibrierlänge im Panel eintragen'); }
+    }
+    drawing = null; changed('annos'); return;
+  }
+  if (g.kind === 'handle' || g.kind === 'move') { changed('annos'); return; }
+  if (g.kind === 'crop' || g.kind === 'newcrop') { if (g.kind === 'newcrop') pushUndo(); changed('kino'); return; }
+}
+cv.addEventListener('pointerup', endPointer);
+cv.addEventListener('pointercancel', endPointer);
+cv.addEventListener('wheel', e => { if (!S.src) return; e.preventDefault(); const sp = scrPt(e); zoomAt(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), sp.x, sp.y); }, { passive: false });
+cv.addEventListener('dblclick', () => { if (S.tool === 'track') endTrack(); });
+function endTrack() { if (trackId) { trackId = null; toast('Bahn beendet'); } }
+
+/* ---------- Werkzeuge ---------- */
+function setTool(t) {
+  if (t === 'crop' && S.mode !== 'kino') setMode('kino');
+  if (S.tool === 'track' && t !== 'track') trackId = null;
+  S.tool = t; drawing = null;
+  $$('.tool[data-tool]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tool === t)));
+  cv.style.cursor = t === 'pan' || t === 'select' ? 'grab' : 'crosshair';
+  $('#hudHint').textContent = TOOL_HINT[t] || '';
+  render();
+}
+$$('.tool[data-tool]').forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
+$('#swatches').innerHTML = COLORS.map(c => `<button class="sw" type="button" style="background:${c}" data-c="${c}" aria-label="Farbe ${c}" aria-pressed="${c === S.color}"></button>`).join('');
+$$('.sw').forEach(b => b.addEventListener('click', () => {
+  S.color = b.dataset.c; $$('.sw').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  const a = S.annos.find(x => x.id === S.sel); if (a) { pushUndo(); a.color = S.color; changed('annos'); }
+}));
+$('#wsel').addEventListener('change', e => { S.width = +e.target.value; const a = S.annos.find(x => x.id === S.sel); if (a) { pushUndo(); a.width = S.width; changed('annos'); } });
+$('#tGrid').addEventListener('click', () => { S.grid = !S.grid; $('#tGrid').setAttribute('aria-pressed', String(S.grid)); render(); });
+$('#tChrono').addEventListener('click', () => toggleChrono());
+$('#tUndo').addEventListener('click', undo);
+$('#tDel').addEventListener('click', delSel);
+function toggleChrono(force) {
+  S.chrono = (force === undefined ? S.chrono == null : force) ? S.frame : null;
+  $('#tChrono').setAttribute('aria-pressed', String(S.chrono != null)); changed('chrono');
+}
+function delSel() {
+  if (!S.sel) return; pushUndo();
+  if (S.sel === trackId) trackId = null;
+  S.annos = S.annos.filter(a => a.id !== S.sel); S.sel = null; changed('annos');
+}
+
+/* ---------- Navigation ---------- */
+let wantFrame = 0, seeking = false, srcLock = Promise.resolve();
+function lockSource(fn) { const p = srcLock.then(fn); srcLock = p.catch(() => { }); return p; }
+function goTo(n) {
+  if (!S.src) return;
+  if (S.playing) pause();
+  S.frame = clamp(Math.round(n), 0, S.nFrames - 1);
+  if (S.kino.active) { const sh = S.kino.shots.find(s => s.id === S.kino.active); if (!sh || sh.frame !== S.frame) { S.kino.active = null; updateShotList(); } }
+  updateTransport(); syncSource();
+}
+function syncSource() {
+  wantFrame = S.frame;
+  if (seeking) return;
+  seeking = true;
+  lockSource(async () => {
+    while (S.src && S.src.cur !== wantFrame) await S.src.seek(wantFrame, S.fileFps);
+  }).finally(() => { seeking = false; if (S.src && S.src.cur !== S.frame) syncSource(); else render(); });
+  render();
+}
+let rafId = 0, lastTs = 0, acc = 0;
+function play() {
+  if (!S.src || S.playing) return;
+  if (S.frame >= S.nFrames - 1) { S.frame = 0; }
+  S.playing = true; $('#bPlay').innerHTML = svg('pause');
+  if (S.src.kind === 'video') {
+    lockSource(async () => { await S.src.seek(S.frame, S.fileFps); vid.playbackRate = S.rate; try { await vid.play(); } catch { pause(); } });
+  }
+  lastTs = performance.now(); acc = 0; rafId = requestAnimationFrame(tick);
+}
+function tick(ts) {
+  if (!S.playing) return;
+  if (S.src.kind === 'video') {
+    if (!vid.paused) S.frame = clamp(Math.floor(vid.currentTime * S.fileFps + 1e-4), 0, S.nFrames - 1);
+    S.src.cur = S.frame;
+    if (vid.ended) { pause(); return; }
+  } else {
+    acc += (ts - lastTs) / 1000 * S.fileFps * S.rate;
+    const adv = Math.floor(acc); acc -= adv;
+    S.frame = Math.min(S.nFrames - 1, S.frame + adv); S.src.cur = S.frame;
+    if (S.frame >= S.nFrames - 1) { pause(); return; }
+  }
+  lastTs = ts; render(); updateTransport();
+  rafId = requestAnimationFrame(tick);
+}
+function pause() {
+  if (!S.playing) return;
+  S.playing = false; cancelAnimationFrame(rafId); $('#bPlay').innerHTML = svg('play');
+  if (S.src && S.src.kind === 'video') { vid.pause(); S.frame = clamp(Math.floor(vid.currentTime * S.fileFps + 1e-4), 0, S.nFrames - 1); S.src.cur = -1; }
+  updateTransport(); syncSource();
+}
+$('#bPlay').addEventListener('click', () => S.playing ? pause() : play());
+$('#bHome').addEventListener('click', () => goTo(0));
+$('#bM1').addEventListener('click', () => goTo(S.frame - 1));
+$('#bP1').addEventListener('click', () => goTo(S.frame + 1));
+$('#bM10').addEventListener('click', () => goTo(S.frame - 10));
+$('#bP10').addEventListener('click', () => goTo(S.frame + 10));
+$('#rate').addEventListener('change', e => { S.rate = +e.target.value; if (S.src && S.src.kind === 'video') vid.playbackRate = S.rate; });
+$('#scrub').addEventListener('input', e => goTo(+e.target.value));
+$('#zIn').addEventListener('click', () => { const r = stage.getBoundingClientRect(); zoomAt(1.25, r.width / 2, r.height / 2); });
+$('#zOut').addEventListener('click', () => { const r = stage.getBoundingClientRect(); zoomAt(0.8, r.width / 2, r.height / 2); });
+$('#zFit').addEventListener('click', fitView);
+
+function updateTransport() {
+  $('#scrub').max = S.nFrames - 1; $('#scrub').value = S.frame;
+  $('#tcFrame').textContent = 'F ' + S.frame + ' / ' + (S.nFrames - 1);
+  $('#tcTime').textContent = fmt(S.frame / S.capFps, 3) + ' s';
+  $('#tcChrono').textContent = S.chrono != null ? '⏱ ' + fmt((S.frame - S.chrono) / S.capFps, 3) + ' s' : '';
+  $('#zLbl').textContent = Math.round(S.view.z * 100) + '%';
+}
+function updateTicks() {
+  const n = Math.max(1, S.nFrames - 1), out = [];
+  const add = (f, c, h = 10) => out.push(`<i style="left:${f / n * 100}%;background:${c};height:${h}px"></i>`);
+  for (const a of S.annos) if (a.bound) add(a.frame, 'rgba(255,214,10,.7)', 6);
+  if (S.sprint.start != null) add(S.sprint.start, '#FF3B47');
+  for (const d of S.sprint.dists) { const s = S.sprint.splits[d]; if (s && s.frame != null) add(s.frame, '#FF3B47'); }
+  for (const s of S.kino.shots) add(s.frame, '#34C6E0');
+  $('#ticks').innerHTML = out.join('');
+}
+
+/* ---------- Laden von Quellen ---------- */
+async function loadSource(src, restore = true) {
+  pause();
+  if (S.src && S.src.url) URL.revokeObjectURL(S.src.url);
+  S.src = null;
+  try { await src.init(); } catch (err) { toast(err.message || 'Video konnte nicht geladen werden'); return; }
+  S.src = src;
+  S.annos = []; S.sel = null; S.chrono = null; trackId = null; undoStack = [];
+  S.sprint.start = null; S.sprint.splits = {};
+  Object.assign(S.kino, { shots: [], cropW: null, cropH: null, cur: null, active: null });
+  if (src.kind === 'demo') { S.fileFps = DEMO.fps; S.capFps = DEMO.fps; S.capManual = false; }
+  else { S.fileFps = 30; S.capFps = 30; S.capManual = false; }
+  S.nFrames = src.frameCount(S.fileFps);
+  S.frame = 0; src.cur = -1;
+  $('#drop').innerHTML = '';
+  $('#hudSrc').textContent = src.name;
+  let restored = false;
+  if (restore && src.kind === 'video') {
+    const saved = store.get(storeKey());
+    if (saved) { applyProject(saved, true); restored = true; toast('Gespeicherte Analyse zu diesem Video wiederhergestellt'); }
+  }
+  if (src.kind === 'demo') seedDemo();
+  fitView(); changed('all'); syncSource();
+  if (src.kind === 'video' && !restored) detectFps(true);
+}
+$('#fileIn').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadSource(new VideoSource(f)); e.target.value = ''; });
+$('#btnDemo').addEventListener('click', () => loadSource(new DemoSource()));
+stage.addEventListener('dragover', e => { e.preventDefault(); $('#drop').classList.add('over'); });
+stage.addEventListener('dragleave', () => $('#drop').classList.remove('over'));
+stage.addEventListener('drop', e => {
+  e.preventDefault(); $('#drop').classList.remove('over');
+  const f = [...e.dataTransfer.files].find(f => f.type.startsWith('video') || /\.(mov|mp4|m4v|webm)$/i.test(f.name));
+  if (f) loadSource(new VideoSource(f)); else toast('Bitte eine Videodatei ablegen');
+});
+
+function storeKey() { return S.src ? 'sprintlab:' + S.src.name + ':' + (S.src.size || 0) : null; }
+
+/* fps-Erkennung über requestVideoFrameCallback (Wiedergabe mit 0,25× damit jeder Frame präsentiert wird) */
+async function detectFps(auto) {
+  if (!S.src || S.src.kind !== 'video') { toast('fps-Erkennung nur für Videodateien'); return; }
+  if (!('requestVideoFrameCallback' in HTMLVideoElement.prototype)) { if (!auto) toast('Browser unterstützt keine fps-Erkennung – bitte manuell eintragen'); return; }
+  toast('fps werden ermittelt …');
+  const res = await lockSource(() => new Promise(resolve => {
+    const times = []; let stop = false;
+    const start = Math.min(0.3, S.src.duration * 0.2);
+    const finish = () => { if (stop) return; stop = true; vid.pause(); resolve(times); };
+    const cb = (now, md) => { times.push(md.mediaTime); if (times.length < 45 && !stop) vid.requestVideoFrameCallback(cb); else finish(); };
+    vid.currentTime = start; vid.playbackRate = 0.25;
+    vid.requestVideoFrameCallback(cb);
+    vid.play().catch(finish);
+    setTimeout(finish, 4000);
+  }));
+  S.src.cur = -1;
+  const d = []; for (let i = 1; i < res.length; i++) { const x = res[i] - res[i - 1]; if (x > 1e-4) d.push(x); }
+  if (d.length < 5) { if (!auto) toast('fps konnten nicht ermittelt werden'); syncSource(); return; }
+  d.sort((a, b) => a - b);
+  const base = d[Math.floor(d.length * 0.1)];
+  let fps = 1 / base;
+  const known = [23.976, 24, 25, 29.97, 30, 48, 50, 59.94, 60, 90, 100, 119.88, 120, 180, 239.76, 240, 480, 960];
+  const near = known.find(k => Math.abs(k - fps) / k < 0.04); if (near) fps = near;
+  setFps(Math.round(fps * 1000) / 1000);
+  toast('Erkannt: ' + fmt(fps, 2) + ' fps (Datei). Bei Zeitlupen-Export Aufnahme-fps anpassen.');
+}
+function setFps(fileFps, capFps) {
+  S.fileFps = fileFps;
+  if (capFps != null) { S.capFps = capFps; S.capManual = capFps !== fileFps; }
+  else if (!S.capManual) S.capFps = fileFps;
+  if (S.src) S.nFrames = S.src.frameCount(S.fileFps);
+  S.frame = clamp(S.frame, 0, S.nFrames - 1);
+  if (S.src) S.src.cur = -1;
+  changed('all'); syncSource();
+}
+$('#btnDetect').addEventListener('click', () => detectFps(false));
+$('#fileFps').addEventListener('change', e => { const v = +e.target.value; if (v > 0) setFps(v); });
+$('#capFps').addEventListener('change', e => { const v = +e.target.value; if (v > 0) { S.capFps = v; S.capManual = v !== S.fileFps; changed('all'); } });
+
+/* ---------- Demo-Daten (als Beispiel markiert) ---------- */
+function demoFrameAt(t) { return DEMO.start + Math.round(t * DEMO.fps); }
+function seedDemo() {
+  S.sprint.start = DEMO.start;
+  for (const d of S.sprint.dists) S.sprint.splits[d] = { frame: demoFrameAt(Engine.tOfX(d, DEMO.vmax, DEMO.tau)), time: null, manual: false };
+  // Kinogramm: 5 ALTIS-Positionen in einem Schrittzyklus bei ~4,2 s
+  const t0 = 4.2, ph0 = demoPhi(t0);
+  const targets = [4.71, 5.45, 6.25, 6.7, 7.4];
+  let base = Math.floor(ph0 / (2 * Math.PI)) * 2 * Math.PI; if (base + targets[0] < ph0) base += 2 * Math.PI;
+  let n = demoFrameAt(t0);
+  S.kino.cropW = 210; S.kino.cropH = 190;
+  S.kino.shots = targets.map((tg, i) => {
+    while (demoPhi((n - DEMO.start) / DEMO.fps) < base + tg) n++;
+    const p = demoPose((n - DEMO.start) / DEMO.fps);
+    return { id: uid(), frame: n, label: KINO_TPL.altis[i], cx: dX(p.hip.x + 0.15), cy: dY(0.85) };
+  });
+  S.kino.cur = { cx: S.kino.shots[0].cx, cy: S.kino.shots[0].cy };
+  // Beispiel-Winkel: Kniewinkel und Unterschenkel zur Vertikalen am Touch-Down
+  const td = S.kino.shots[3], tp = demoPose((td.frame - DEMO.start) / DEMO.fps);
+  const L = tp.farLeg, Pp = q => ({ x: dX(q.x), y: dY(q.y) });
+  S.annos.push({ id: uid(), type: 'angle3', pts: [Pp(tp.hip), Pp(L.knee), Pp(L.ank)], frame: td.frame, bound: true, color: '#FFD60A', width: 2 });
+  S.annos.push({ id: uid(), type: 'angleV', pts: [Pp(L.ank), Pp(L.knee)], frame: td.frame, bound: true, color: '#34C6E0', width: 2 });
+  S.annos.push({ id: uid(), type: 'calib', pts: [{ x: dX(0), y: 1062 }, { x: dX(10), y: 1062 }], frame: 0, bound: false, color: '#7CF06B', width: 2 });
+  S.calLen = 10;
+  S.frame = td.frame;
+}
+
+/* ---------- Modus ---------- */
+function setMode(m) {
+  S.mode = m;
+  $$('.mode').forEach(b => b.setAttribute('aria-selected', String(b.dataset.mode === m)));
+  $$('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== m);
+  if (m !== 'kino' && S.tool === 'crop') setTool('select');
+  if (m === 'sprint') renderSprint();
+  if (m === 'kino') { updateShotList(); schedulePreview(); }
+  render();
+}
+$$('.mode').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+/* ---------- Änderungen / Panels ---------- */
+let saveT = 0;
+function changed(what) {
+  if (what !== 'annoLive') { clearTimeout(saveT); saveT = setTimeout(autosave, 600); }
+  render(); updateTransport(); updateTicks();
+  if (what === 'annoLive') { updateSel(); return; }
+  updateAnalysePanel();
+  if (S.mode === 'sprint' || what === 'all') renderSprint();
+  if (what === 'all' || what === 'kino' || what === 'annos' || what === 'chrono') { updateShotList(); schedulePreview(); }
+}
+function updateAnalysePanel() {
+  $('#vName').textContent = S.src ? S.src.name : '–';
+  $('#vInfo').textContent = S.src ? `${S.src.w}×${S.src.h} · ${S.nFrames}` : '–';
+  if (document.activeElement !== $('#fileFps')) $('#fileFps').value = S.fileFps;
+  if (document.activeElement !== $('#capFps')) $('#capFps').value = S.capFps;
+  if (document.activeElement !== $('#calLen')) $('#calLen').value = S.calLen;
+  const k = pxPerM();
+  $('#calInfo').textContent = k ? fmt(k, 1) + ' px/m' : 'nicht kalibriert';
+  $('#chrInfo').textContent = S.chrono != null ? 'F ' + S.chrono : '–';
+  const L = $('#alist');
+  if (!S.annos.length) L.innerHTML = '<li class="empty" style="cursor:default;background:none">Noch keine Zeichnungen. Werkzeug links wählen.</li>';
+  else L.innerHTML = S.annos.map(a => `<li data-id="${a.id}" class="${a.id === S.sel ? 'sel' : ''}"><span class="dot" style="background:${a.color}"></span>${TYPE_NAME[a.type]}<span class="val">${escapeHtml(annoValue(a))}</span><span class="fr">${a.bound ? 'F ' + a.frame : 'alle'}</span></li>`).join('');
+  updateSel();
+}
+function updateSel() {
+  const a = S.annos.find(x => x.id === S.sel);
+  $('#selCard').hidden = !a;
+  if (!a) return;
+  $('#selType').textContent = TYPE_NAME[a.type];
+  $('#selVal').textContent = annoValue(a);
+  $('#selTextWrap').hidden = a.type !== 'text';
+  if (a.type === 'text' && document.activeElement !== $('#selText')) $('#selText').value = a.text;
+  $('#selBound').checked = !!a.bound; $('#selBound').disabled = a.type === 'track' || a.type === 'calib';
+  const li = $(`#alist li[data-id="${a.id}"] .val`); if (li) li.textContent = annoValue(a);
+}
+const escapeHtml = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+$('#alist').addEventListener('click', e => {
+  const li = e.target.closest('li[data-id]'); if (!li) return;
+  const a = S.annos.find(x => x.id === li.dataset.id); if (!a) return;
+  S.sel = a.id; if (a.bound && a.frame !== S.frame) goTo(a.frame); changed('sel');
+});
+$('#selText').addEventListener('input', e => { const a = S.annos.find(x => x.id === S.sel); if (a) { a.text = e.target.value; changed('annoLive'); } });
+$('#selText').addEventListener('change', () => changed('annos'));
+$('#selBound').addEventListener('change', e => { const a = S.annos.find(x => x.id === S.sel); if (a) { pushUndo(); a.bound = e.target.checked; a.frame = e.target.checked ? S.frame : a.frame; changed('annos'); } });
+$('#selJump').addEventListener('click', () => { const a = S.annos.find(x => x.id === S.sel); if (a) goTo(a.type === 'track' && a.pts.length ? a.pts[0].f : a.frame); });
+$('#selDel').addEventListener('click', delSel);
+$('#btnClearAnn').addEventListener('click', () => { if (!S.annos.length) return; pushUndo(); S.annos = []; S.sel = null; trackId = null; changed('annos'); toast('Alle Zeichnungen gelöscht · Strg+Z stellt sie wieder her'); });
+$('#calLen').addEventListener('input', e => { const v = +e.target.value; if (v > 0) { S.calLen = v; changed('annoLive'); render(); } });
+$('#calLen').addEventListener('change', () => changed('annos'));
+$('#trackStep').addEventListener('change', e => { S.trackStep = Math.max(1, Math.round(+e.target.value || 1)); });
+$('#chrSet').addEventListener('click', () => toggleChrono(true));
+$('#chrOff').addEventListener('click', () => toggleChrono(false));
+
+/* ---------- Sprint ---------- */
+function splitTime(d) {
+  const s = S.sprint.splits[d]; if (!s) return null;
+  if (s.manual && s.time != null) return s.time;
+  if (s.frame != null && S.sprint.start != null) return (s.frame - S.sprint.start) / S.capFps;
+  return null;
+}
+function readSprintInputs() {
+  const sp = S.sprint;
+  sp.ath = { name: $('#spName').value, m: +$('#spM').value || 75, h: +$('#spH').value || 1.8 };
+  sp.env = { T: +$('#spT').value, Pb: +$('#spP').value || 760, vw: +$('#spW').value || 0 };
+}
+function writeSprintInputs() {
+  const sp = S.sprint;
+  $('#spName').value = sp.ath.name || ''; $('#spM').value = sp.ath.m; $('#spH').value = sp.ath.h;
+  $('#spT').value = sp.env.T; $('#spP').value = sp.env.Pb; $('#spW').value = sp.env.vw;
+  $('#spDists').value = sp.dists.join(' ');
+}
+['#spName', '#spM', '#spH', '#spT', '#spP', '#spW'].forEach(s => $(s).addEventListener('input', () => { readSprintInputs(); renderSprint(); clearTimeout(saveT); saveT = setTimeout(autosave, 600); }));
+$('#spDists').addEventListener('change', e => {
+  const ds = e.target.value.split(/[\s;,]+/).map(x => parseFloat(x.replace(',', '.'))).filter(x => x > 0);
+  const uniq = [...new Set(ds)].sort((a, b) => a - b);
+  if (!uniq.length) { toast('Bitte mindestens eine Distanz eingeben'); return; }
+  S.sprint.dists = uniq; changed('sprint');
+});
+function nextMark() {
+  const sp = S.sprint;
+  if (sp.start == null) { sp.start = S.frame; toast('Start gesetzt: F ' + S.frame); changed('sprint'); return; }
+  const d = sp.dists.find(d => { const s = sp.splits[d]; return !s || (s.frame == null && !s.manual); });
+  if (d == null) { toast('Alle Marken gesetzt'); return; }
+  if (S.frame <= sp.start) { toast('Durchgang muss nach dem Start liegen'); return; }
+  sp.splits[d] = { frame: S.frame, time: null, manual: false };
+  toast(d + ' m gesetzt: F ' + S.frame); changed('sprint');
+}
+$('#spNext').addEventListener('click', nextMark);
+$('#spClear').addEventListener('click', () => { S.sprint.start = null; S.sprint.splits = {}; changed('sprint'); });
+$('#spTest').addEventListener('click', () => {
+  const tv = { 5: 1.350, 10: 2.071, 15: 2.707, 20: 3.307, 30: 4.460, 40: 5.586 };
+  Object.assign(S.sprint, { dists: [5, 10, 15, 20, 30, 40], ath: { name: 'Testvektor (Dossier 5.1)', m: 75, h: 1.8 }, env: { T: 20, Pb: 760, vw: 0 } });
+  S.sprint.splits = {}; for (const d in tv) S.sprint.splits[d] = { frame: null, time: tv[d], manual: true };
+  writeSprintInputs(); changed('sprint');
+  toast('Testvektor geladen · Soll: vmax 8,996 · F0 580,8 N · V0 9,35 · Pmax 1357 W');
+});
+$('#spBody').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const d = b.dataset.d, sp = S.sprint;
+  if (b.dataset.act === 'jump') { const f = d === 'start' ? sp.start : sp.splits[d]?.frame; if (f != null) goTo(f); }
+  if (b.dataset.act === 'set') {
+    if (d === 'start') sp.start = S.frame; else sp.splits[d] = { frame: S.frame, time: null, manual: false };
+    changed('sprint');
+  }
+  if (b.dataset.act === 'clr') { if (d === 'start') sp.start = null; else delete sp.splits[d]; changed('sprint'); }
+});
+$('#spBody').addEventListener('change', e => {
+  const inp = e.target.closest('input[data-d]'); if (!inp) return;
+  const d = inp.dataset.d, v = parseFloat(inp.value.replace(',', '.'));
+  const s = S.sprint.splits[d] || (S.sprint.splits[d] = { frame: null, time: null, manual: false });
+  if (inp.value.trim() === '' || !(v > 0)) { s.manual = false; s.time = null; } else { s.manual = true; s.time = v; }
+  changed('sprint');
+});
+function renderSprint() {
+  const sp = S.sprint;
+  const valid = sp.dists.map(d => ({ d, t: splitTime(d) })).filter(x => x.t != null && x.t > 0);
+  lastProfile = null;
+  if (valid.length >= 3) {
+    try { lastProfile = Engine.profile(valid.map(x => x.d), valid.map(x => x.t), { m: sp.ath.m, h: sp.ath.h, T: sp.env.T, Pb: sp.env.Pb, vw: sp.env.vw }); }
+    catch { lastProfile = null; }
+  }
+  const resid = {}; if (lastProfile) valid.forEach((x, i) => resid[x.d] = lastProfile.resid[i]);
+  const nextD = sp.start == null ? 'start' : sp.dists.find(d => { const s = sp.splits[d]; return !s || (s.frame == null && !s.manual); });
+  const row = (key, name, frame, time, manual, r) => `<tr class="${String(nextD) === String(key) ? 'next' : ''}"><td><b>${name}</b></td>
+    <td>${frame != null ? `<button class="fbtn" data-act="jump" data-d="${key}" title="Zum Frame">F ${frame}</button>` : '<span style="color:var(--muted)">–</span>'}</td>
+    <td>${key === 'start' ? '<span class="res">0,000</span>' : `<input data-d="${key}" class="${manual ? 'manual' : ''}" value="${time != null ? time.toFixed(3) : ''}" inputmode="decimal" aria-label="Zeit ${name}">`}</td>
+    <td class="res" style="color:${r == null ? 'var(--muted)' : Math.abs(r) > 0.02 ? 'var(--bad)' : Math.abs(r) > 0.01 ? 'var(--warn)' : 'var(--fg)'}">${r == null ? '–' : fmtS(r * 1000, 1) + ' ms'}</td>
+    <td style="white-space:nowrap"><button class="btn btn-sm" data-act="set" data-d="${key}" title="Aktuellen Frame setzen">Setzen</button> <button class="btn btn-sm" data-act="clr" data-d="${key}" title="Löschen" aria-label="Löschen">×</button></td></tr>`;
+  let html = row('start', 'Start', sp.start, 0, false, null);
+  for (const d of sp.dists) { const s = sp.splits[d] || {}; html += row(d, fmt(d, d % 1 ? 1 : 0) + ' m', s.frame ?? null, splitTime(d), !!s.manual, resid[d] ?? null); }
+  $('#spBody').innerHTML = html;
+  const P = lastProfile, q = $('#spQual');
+  if (!P) {
+    q.innerHTML = `<i style="background:var(--muted)"></i>${valid.length}/3 Zeiten`;
+    $('#spMetrics').innerHTML = `<div class="empty" style="grid-column:1/-1">Mindestens 3 Zwischenzeiten setzen (empfohlen 5–6). Start-Frame wählen, dann mit ⏎ jede Distanz markieren.</div>`;
+  } else {
+    const col = P.rmse < 0.01 ? 'var(--ok)' : P.rmse < 0.02 ? 'var(--warn)' : 'var(--bad)';
+    q.innerHTML = `<i style="background:${col}"></i>RMSE ${fmt(P.rmse * 1000, 1)} ms`;
+    const m = (lab, val, sub) => `<div class="metric"><span>${lab}</span><b>${val}</b><small>${sub || '&nbsp;'}</small></div>`;
+    $('#spMetrics').innerHTML =
+      m('F0', fmt(P.F0rel, 2), fmt(P.F0, 0) + ' N · N/kg') + m('V0', fmt(P.V0, 2), 'm/s') + m('Pmax', fmt(P.Pmaxrel, 1), fmt(P.Pmax, 0) + ' W · W/kg') +
+      m('vmax', fmt(P.vmax, 2), 'm/s') + m('τ', fmt(P.tau, 3), 's') + m('SFv', fmt(P.SFvRel, 3), 'N·s/m/kg') +
+      m('RFmax', fmt(P.RFmax * 100, 1), '%') + m('DRF', fmt(P.DRF * 100, 2), '%/(m/s)') + m('k (Luft)', fmt(P.k, 3), 'kg/m');
+  }
+  drawCharts(P, valid);
+  renderParallax(); renderSled();
+}
+function renderParallax() {
+  const D = +$('#pxD').value, L = +$('#pxL').value, xc = +$('#pxC').value;
+  if (!(D > 0)) { $('#pxOut').innerHTML = ''; return; }
+  $('#pxOut').innerHTML = S.sprint.dists.map(d => `<div class="kv"><span>${fmt(d, d % 1 ? 1 : 0)} m-Marke → Stange bei</span><b>${fmt(Engine.poleX(d, xc, D, L), 2)} m</b></div>`).join('');
+}
+['#pxD', '#pxL', '#pxC'].forEach(s => $(s).addEventListener('input', renderParallax));
+function renderSled() {
+  const P = lastProfile;
+  if (!P) { $('#slOut').innerHTML = '<div class="empty">Erst ein gültiges Profil erstellen.</div>'; return; }
+  const th = +$('#slTh').value || 0, r = Engine.sledOpt(P.F0, P.V0, P.k, th);
+  $('#slOut').innerHTML = `<div class="kv"><span>v<sub>opt</sub> = V0/2</span><b>${fmt(r.vopt, 2)} m/s</b></div><div class="kv"><span>μ<sub>k</sub>(v<sub>opt</sub>)</span><b>${fmt(r.mu, 3)}</b></div><div class="kv"><span>Luftwiderstand</span><b>${fmt(r.Faero, 1)} N</b></div><div class="kv"><span>Optimale Schlittenmasse</span><b style="color:var(--accent-hi)">${fmt(r.mass, 1)} kg · ${fmt(r.mass / P.m * 100, 0)} % KM</b></div>`;
+}
+$('#slTh').addEventListener('input', renderSled);
+$('#slCalc').addEventListener('click', () => { const h = +$('#slHip').value, l = +$('#slRope').value; if (l > h && h > 0) { $('#slTh').value = (Math.asin(h / l) / D2R).toFixed(1); renderSled(); } else toast('Seillänge muss größer als die Hüfthöhe sein'); });
+
+/* Diagramme */
+function setupChart(c) {
+  const r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  c.width = Math.max(1, Math.round(r.width * d)); c.height = Math.max(1, Math.round(r.height * d));
+  const g = c.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, r.width, r.height);
+  return { g, W: r.width, H: r.height };
+}
+function niceTicks(max, n = 5) { const raw = max / n, p = Math.pow(10, Math.floor(Math.log10(raw))), s = [1, 2, 2.5, 5, 10].find(s => s * p >= raw) * p; const out = []; for (let v = 0; v <= max + 1e-9; v += s) out.push(+v.toFixed(6)); return out; }
+function axes(g, W, H, pad, xmax, ymax, xl, yl, y2max, y2l) {
+  const fg = css('--muted'), line = css('--line');
+  g.font = '11px Inter, Arial, sans-serif'; g.fillStyle = fg; g.strokeStyle = line; g.lineWidth = 1;
+  const X = v => pad.l + v / xmax * (W - pad.l - pad.r), Y = v => H - pad.b - v / ymax * (H - pad.t - pad.b);
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (const t of niceTicks(ymax, 4)) { g.beginPath(); g.moveTo(pad.l, Y(t)); g.lineTo(W - pad.r, Y(t)); g.stroke(); g.fillText(String(t).replace('.', ','), pad.l - 5, Y(t)); }
+  g.textAlign = 'center'; g.textBaseline = 'top';
+  for (const t of niceTicks(xmax, 5)) g.fillText(String(t).replace('.', ','), X(t), H - pad.b + 4);
+  g.fillText(xl, (pad.l + W - pad.r) / 2, H - 14);
+  g.save(); g.translate(11, (pad.t + H - pad.b) / 2); g.rotate(-Math.PI / 2); g.fillText(yl, 0, -6); g.restore();
+  let Y2 = null;
+  if (y2max) {
+    Y2 = v => H - pad.b - v / y2max * (H - pad.t - pad.b);
+    g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = css('--accent-hi');
+    for (const t of niceTicks(y2max, 4)) g.fillText(String(t).replace('.', ','), W - pad.r + 5, Y2(t));
+    g.save(); g.translate(W - 8, (pad.t + H - pad.b) / 2); g.rotate(Math.PI / 2); g.textAlign = 'center'; g.fillText(y2l, 0, -2); g.restore();
+  }
+  return { X, Y, Y2 };
+}
+function drawCharts(P, valid) {
+  const c1 = $('#chVT'), c2 = $('#chFV');
+  if (!c1.offsetParent) return;
+  const A = setupChart(c1), B = setupChart(c2);
+  if (!P) {
+    for (const C of [A, B]) { C.g.fillStyle = css('--muted'); C.g.font = '12px Inter, Arial, sans-serif'; C.g.textAlign = 'center'; C.g.fillText('Diagramm erscheint nach ≥ 3 Zwischenzeiten', C.W / 2, C.H / 2); }
+    return;
+  }
+  const tmax = Math.max(6, (valid[valid.length - 1]?.t || 5) * 1.15), vmax = Math.ceil(P.vmax + 1);
+  const ax = axes(A.g, A.W, A.H, { l: 40, r: 12, t: 12, b: 34 }, tmax, vmax, 'Zeit (s)', 'v (m/s)');
+  const g = A.g; g.strokeStyle = css('--fg'); g.lineWidth = 2; g.beginPath();
+  for (let t = 0; t <= tmax; t += 0.02) { const x = ax.X(t), y = ax.Y(Engine.vOfT(t, P.vmax, P.tau)); t ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+  g.fillStyle = css('--accent-hi'); g.font = '10px Inter, Arial, sans-serif'; g.textAlign = 'center';
+  for (const v of valid) { const x = ax.X(v.t), y = ax.Y(Engine.vOfT(v.t, P.vmax, P.tau)); g.beginPath(); g.arc(x, y, 3.5, 0, 7); g.fill(); g.fillText(v.d + ' m', x, y + 13); }
+  g.fillStyle = css('--muted'); g.textAlign = 'right'; g.fillText('vmax ' + fmt(P.vmax, 2) + ' m/s', A.W - 14, ax.Y(P.vmax) - 8);
+  const fmaxR = Math.ceil(P.F0rel + 1), pmaxR = Math.ceil((P.Pmaxrel + 2) / 5) * 5, vx = Math.ceil(P.V0 + 0.5);
+  const bx = axes(B.g, B.W, B.H, { l: 40, r: 38, t: 12, b: 34 }, vx, fmaxR, 'Geschwindigkeit (m/s)', 'F (N/kg)', pmaxR, 'P (W/kg)');
+  const h = B.g; h.strokeStyle = css('--fg'); h.lineWidth = 2; h.beginPath(); h.moveTo(bx.X(0), bx.Y(P.F0rel)); h.lineTo(bx.X(P.V0), bx.Y(0)); h.stroke();
+  h.strokeStyle = css('--accent-hi'); h.beginPath();
+  for (let v = 0; v <= P.V0 + 1e-9; v += P.V0 / 80) { const p = P.F0rel * (1 - v / P.V0) * v, x = bx.X(v), y = bx.Y2(p); v ? h.lineTo(x, y) : h.moveTo(x, y); } h.stroke();
+  h.fillStyle = css('--accent-hi'); h.beginPath(); h.arc(bx.X(P.vopt), bx.Y2(P.Pmaxrel), 3.5, 0, 7); h.fill();
+  h.font = '10px Inter, Arial, sans-serif'; h.textAlign = 'center'; h.fillText('Pmax ' + fmt(P.Pmaxrel, 1), bx.X(P.vopt), bx.Y2(P.Pmaxrel) - 9);
+  h.fillStyle = css('--fg'); h.textAlign = 'left'; h.fillText('F0 ' + fmt(P.F0rel, 2), bx.X(0) + 6, bx.Y(P.F0rel) + 2);
+  h.textAlign = 'right'; h.fillText('V0 ' + fmt(P.V0, 2), bx.X(P.V0) - 4, bx.Y(0) - 8);
+}
+$('#spCsv').addEventListener('click', () => {
+  const sp = S.sprint, P = lastProfile, L = [];
+  L.push('SprintLab Export;' + new Date().toLocaleString('de-AT'));
+  L.push('Athlet;' + (sp.ath.name || '') + ';Masse kg;' + sp.ath.m + ';Größe m;' + sp.ath.h);
+  L.push('Temp °C;' + sp.env.T + ';Luftdruck mmHg;' + sp.env.Pb + ';Wind m/s;' + sp.env.vw);
+  L.push('Quelle;' + (S.src ? S.src.name : '') + ';Aufnahme-fps;' + S.capFps + ';Start-Frame;' + (sp.start ?? ''));
+  L.push(''); L.push('Distanz m;Frame;Zeit s;Modell s;Residuum ms;manuell');
+  for (const d of sp.dists) {
+    const s = sp.splits[d] || {}, t = splitTime(d), tm = P && t != null ? Engine.tOfX(d, P.vmax, P.tau) : null;
+    L.push([d, s.frame ?? '', t != null ? t.toFixed(3) : '', tm != null ? tm.toFixed(3) : '', tm != null ? ((tm - t) * 1000).toFixed(1) : '', s.manual ? 'ja' : ''].join(';').replace(/\./g, ','));
+  }
+  if (P) {
+    L.push(''); L.push('Kennwert;Wert;Einheit');
+    [['vmax', P.vmax, 'm/s'], ['tau', P.tau, 's'], ['F0', P.F0, 'N'], ['F0 rel', P.F0rel, 'N/kg'], ['V0', P.V0, 'm/s'], ['Pmax', P.Pmax, 'W'], ['Pmax rel', P.Pmaxrel, 'W/kg'], ['SFv rel', P.SFvRel, 'N·s/m/kg'], ['RFmax', P.RFmax * 100, '%'], ['DRF', P.DRF * 100, '%/(m/s)'], ['RMSE', P.rmse * 1000, 'ms']]
+      .forEach(([k, v, u]) => L.push(k + ';' + v.toFixed(4).replace('.', ',') + ';' + u));
+  }
+  saveText('﻿' + L.join('\r\n'), (sp.ath.name || 'sprint').replace(/\W+/g, '_') + '_profil.csv', 'text/csv');
+});
+
+/* ---------- Kinogramm ---------- */
+function shotTime(s) { const first = S.kino.shots[0]; return (S.kino.rel && first ? s.frame - first.frame : s.frame) / S.capFps; }
+function addShot(frame, label) {
+  const k = S.kino, tpl = KINO_TPL[k.tpl];
+  const c = cropCenterTarget();
+  const sh = { id: uid(), frame, label: label || tpl[k.shots.length] || 'Bild ' + (k.shots.length + 1), cx: c.cx, cy: c.cy };
+  k.shots.push(sh); k.shots.sort((a, b) => a.frame - b.frame);
+  return sh;
+}
+$('#kAdd').addEventListener('click', () => {
+  if (!S.src) return;
+  if (S.kino.shots.some(s => s.frame === S.frame)) { toast('Dieser Frame ist schon im Kinogramm'); return; }
+  pushUndo(); const sh = addShot(S.frame); S.kino.active = sh.id; changed('kino'); toast('Position aufgenommen: ' + sh.label);
+});
+$('#kSer').addEventListener('click', () => {
+  if (!S.src) return;
+  const n = clamp(+$('#kSerN').value || 6, 2, 40), k = Math.max(1, +$('#kSerK').value || 1);
+  pushUndo(); let added = 0;
+  for (let i = 0; i < n; i++) { const f = S.frame + i * k; if (f >= S.nFrames) break; if (!S.kino.shots.some(s => s.frame === f)) { addShot(f); added++; } }
+  changed('kino'); toast(added + ' Bilder als Serie hinzugefügt');
+});
+$('#kClear').addEventListener('click', () => { if (!S.kino.shots.length) return; pushUndo(); S.kino.shots = []; S.kino.active = null; changed('kino'); });
+$('#kFull').addEventListener('click', () => { pushUndo(); S.kino.cropW = null; S.kino.cropH = null; changed('kino'); });
+$('#kTpl').addEventListener('change', e => { S.kino.tpl = e.target.value; const tpl = KINO_TPL[S.kino.tpl]; if (tpl.length) { pushUndo(); S.kino.shots.forEach((s, i) => { if (tpl[i]) s.label = tpl[i]; }); changed('kino'); } });
+$('#shots').addEventListener('click', e => {
+  const li = e.target.closest('.shot'); if (!li) return;
+  const k = S.kino, i = k.shots.findIndex(s => s.id === li.dataset.id); if (i < 0) return;
+  const b = e.target.closest('button');
+  if (b) {
+    pushUndo();
+    if (b.dataset.a === 'del') { k.shots.splice(i, 1); if (k.active === li.dataset.id) k.active = null; }
+    if (b.dataset.a === 'up' && i > 0) [k.shots[i - 1], k.shots[i]] = [k.shots[i], k.shots[i - 1]];
+    if (b.dataset.a === 'dn' && i < k.shots.length - 1) [k.shots[i + 1], k.shots[i]] = [k.shots[i], k.shots[i + 1]];
+    changed('kino'); return;
+  }
+  if (e.target.tagName === 'INPUT') return;
+  const sh = k.shots[i]; goTo(sh.frame); k.active = sh.id; k.cur = { cx: sh.cx, cy: sh.cy }; updateShotList(); render();
+});
+$('#shots').addEventListener('input', e => { const li = e.target.closest('.shot'); const sh = li && S.kino.shots.find(s => s.id === li.dataset.id); if (sh) { sh.label = e.target.value; schedulePreview(); } });
+$('#shots').addEventListener('change', () => changed('kino'));
+function updateShotList() {
+  const k = S.kino, ul = $('#shots');
+  if (!k.shots.length) { ul.innerHTML = '<li class="empty">Noch keine Positionen. Frame wählen und mit ⏎ aufnehmen, oder eine Serie hinzufügen.</li>'; return; }
+  const cur = new Set($$('.shot', ul).map(li => li.dataset.id));
+  const same = k.shots.length === cur.size && k.shots.every((s, i) => ul.children[i] && ul.children[i].dataset.id === s.id);
+  if (!same) {
+    ul.innerHTML = k.shots.map((s, i) => `<li class="shot" data-id="${s.id}"><span class="no">${i + 1}</span><canvas width="116" height="116"></canvas><div class="meta"><input value="${escapeHtml(s.label)}" aria-label="Bezeichnung Bild ${i + 1}"><small></small></div><div class="sb"><button type="button" data-a="up" title="Nach oben" aria-label="Nach oben">▲</button><button type="button" data-a="dn" title="Nach unten" aria-label="Nach unten">▼</button><button type="button" data-a="del" title="Entfernen" aria-label="Entfernen">✕</button></div></li>`).join('');
+  }
+  k.shots.forEach((s, i) => {
+    const li = ul.children[i]; li.classList.toggle('act', s.id === k.active);
+    li.querySelector('.no').textContent = i + 1;
+    const inp = li.querySelector('input'); if (document.activeElement !== inp) inp.value = s.label;
+    li.querySelector('small').textContent = 'F ' + s.frame + ' · ' + fmt(shotTime(s), 3) + ' s';
+  });
+}
+// Layout-Optionen
+$$('#kLayout button').forEach(b => b.addEventListener('click', () => { S.kino.layout = b.dataset.v; syncKinoOpts(); changed('kino'); }));
+function syncKinoOpts() {
+  const k = S.kino;
+  $$('#kLayout button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === k.layout)));
+  $('#kColsW').hidden = k.layout !== 'grid'; $('#kThrW').hidden = k.layout !== 'overlay'; $('#kFadeW').hidden = k.layout !== 'overlay';
+  $('#kCols').value = k.cols; $('#kCellH').value = k.cellH; $('#kBg').value = k.bg; $('#kTitle').value = k.title;
+  $('#kAnn').checked = k.annos; $('#kLbl').checked = k.labels; $('#kRel').checked = k.rel; $('#kFade').checked = k.fade;
+  $('#kThr').value = k.thr; $('#kThrV').textContent = k.thr; $('#kTpl').value = k.tpl;
+}
+[['#kCols', 'cols', v => clamp(+v || 3, 1, 12)], ['#kCellH', 'cellH', v => clamp(+v || 520, 120, 2000)], ['#kBg', 'bg', v => v], ['#kTitle', 'title', v => v], ['#kThr', 'thr', v => +v]]
+  .forEach(([s, key, f]) => $(s).addEventListener('input', e => { S.kino[key] = f(e.target.value); if (key === 'thr') $('#kThrV').textContent = e.target.value; changed('kino'); }));
+[['#kAnn', 'annos'], ['#kLbl', 'labels'], ['#kRel', 'rel'], ['#kFade', 'fade']].forEach(([s, key]) => $(s).addEventListener('change', e => { S.kino[key] = e.target.checked; changed('kino'); }));
+
+async function renderCell(sh, rect, scale) {
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(rect.w * scale)); c.height = Math.max(1, Math.round(rect.h * scale));
+  const g = c.getContext('2d');
+  g.fillStyle = '#000'; g.fillRect(0, 0, c.width, c.height);
+  await S.src.seek(sh.frame, S.fileFps);
+  g.setTransform(scale, 0, 0, scale, -rect.x * scale, -rect.y * scale);
+  g.save(); g.beginPath(); g.rect(0, 0, S.src.w, S.src.h); g.clip(); S.src.draw(g); g.restore();
+  if (S.kino.annos) { const u = 1.3 / scale; for (const a of S.annos) if (a.type !== 'calib' && isVisible(a, sh.frame)) drawAnno(g, a, sh.frame, u); }
+  return c;
+}
+let composing = false;
+async function composeKino(cellHOverride) {
+  const k = S.kino, shots = k.shots;
+  if (!S.src || !shots.length) return null;
+  const light = k.bg === 'light', BG = light ? '#F4F5F7' : '#0E1114', FG = light ? '#12161B' : '#F2F4F6', MUT = light ? '#5A6570' : '#8C98A4', ACC = '#E0262E';
+  return lockSource(async () => {
+    let out;
+    if (k.layout === 'overlay') {
+      let reg;
+      if (k.cropW) { const rs = shots.map(s => cropRectOf(s)); const x0 = Math.min(...rs.map(r => r.x)), y0 = Math.min(...rs.map(r => r.y)), x1 = Math.max(...rs.map(r => r.x + r.w)), y1 = Math.max(...rs.map(r => r.y + r.h)); reg = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; }
+      else reg = { x: 0, y: 0, w: S.src.w, h: S.src.h };
+      const target = cellHOverride || k.cellH;
+      const scale = Math.min(target / reg.h, 2600 / reg.w, 6);
+      const cells = []; for (const s of shots) cells.push(await renderCell(s, reg, scale));
+      const W = cells[0].width, H = cells[0].height, n = cells.length;
+      const datas = cells.map(c => c.getContext('2d').getImageData(0, 0, W, H).data);
+      const N = W * H * 4, bg = new Uint8ClampedArray(N);
+      if (n >= 3) { const tmp = new Array(n); for (let i = 0; i < N; i++) { if ((i & 3) === 3) { bg[i] = 255; continue; } for (let j = 0; j < n; j++) tmp[j] = datas[j][i]; tmp.sort((a, b) => a - b); bg[i] = tmp[n >> 1]; } }
+      else bg.set(datas[0]);
+      const o = new Uint8ClampedArray(bg), thr = k.thr * 3;
+      for (let j = 0; j < n; j++) {
+        const d = datas[j], al = k.fade && n > 1 ? 0.35 + 0.65 * j / (n - 1) : 1;
+        for (let i = 0; i < N; i += 4) {
+          const df = Math.abs(d[i] - bg[i]) + Math.abs(d[i + 1] - bg[i + 1]) + Math.abs(d[i + 2] - bg[i + 2]);
+          if (df > thr) { o[i] = o[i] * (1 - al) + d[i] * al; o[i + 1] = o[i + 1] * (1 - al) + d[i + 1] * al; o[i + 2] = o[i + 2] * (1 - al) + d[i + 2] * al; }
+        }
+      }
+      const fs = Math.max(14, Math.round(H * 0.045)), titleH = k.title ? Math.round(fs * 2.2) : 0, legH = k.labels ? Math.round(fs * 2.4) : 0, pad = Math.round(fs * 0.8);
+      out = document.createElement('canvas'); out.width = W + 2 * pad; out.height = H + 2 * pad + titleH + legH;
+      const g = out.getContext('2d'); g.fillStyle = BG; g.fillRect(0, 0, out.width, out.height);
+      if (k.title) { g.fillStyle = FG; g.font = `700 ${Math.round(fs * 1.3)}px "Barlow Condensed", Arial, sans-serif`; g.textBaseline = 'middle'; g.fillText(k.title.toUpperCase(), pad, pad + titleH / 2 - fs * 0.2); }
+      g.putImageData(new ImageData(o, W, H), pad, pad + titleH);
+      if (k.labels) {
+        g.font = `700 ${fs}px Inter, Arial, sans-serif`; g.textBaseline = 'middle'; g.textAlign = 'center';
+        shots.forEach((s, i) => {
+          const r = k.cropW ? cropRectOf(s) : null; if (!r) return;
+          const x = pad + (s.cx - reg.x) * scale, y = pad + titleH + Math.max(fs, (r.y - reg.y) * scale + fs);
+          g.fillStyle = ACC; g.beginPath(); g.arc(x, y, fs * 0.75, 0, 7); g.fill(); g.fillStyle = '#fff'; g.fillText(i + 1, x, y + 1);
+        });
+        g.textAlign = 'left'; g.font = `500 ${Math.round(fs * 0.8)}px Inter, Arial, sans-serif`; g.fillStyle = MUT;
+        const leg = shots.map((s, i) => `${i + 1} ${s.label} (${fmt(shotTime(s), 3)} s)`).join('   ·   ');
+        g.fillText(leg, pad, pad + titleH + H + legH / 2 + 2, out.width - 2 * pad);
+      }
+      out._cells = cells;
+    } else {
+      const rects = shots.map(s => cropRectOf(k.cropW ? s : null));
+      const cols = k.layout === 'row' ? shots.length : Math.min(shots.length, k.cols), rows = Math.ceil(shots.length / cols);
+      let cellH = cellHOverride || k.cellH;
+      const asp = rects[0].w / rects[0].h;
+      cellH = Math.min(cellH, Math.floor(9000 / (cols * asp + 0.1)));
+      const scale = cellH / rects[0].h, cellW = Math.round(rects[0].w * scale);
+      const cells = []; for (let i = 0; i < shots.length; i++) cells.push(await renderCell(shots[i], rects[i], scale));
+      const fs = Math.max(13, Math.round(cellH * 0.055)), pad = Math.round(fs * 1.1), gap = Math.round(fs * 0.6);
+      const labH = k.labels ? Math.round(fs * 2.9) : 0, titleH = k.title ? Math.round(fs * 2.6) : 0;
+      out = document.createElement('canvas');
+      out.width = pad * 2 + cols * cellW + (cols - 1) * gap; out.height = pad * 2 + titleH + rows * (cellH + labH) + (rows - 1) * gap;
+      const g = out.getContext('2d'); g.fillStyle = BG; g.fillRect(0, 0, out.width, out.height);
+      if (k.title) { g.fillStyle = FG; g.font = `700 ${Math.round(fs * 1.5)}px "Barlow Condensed", Arial, sans-serif`; g.textBaseline = 'middle'; g.fillText(k.title.toUpperCase(), pad, pad + titleH / 2 - fs * 0.3); g.fillStyle = ACC; g.fillRect(pad, pad + titleH - fs * 0.7, Math.min(out.width - 2 * pad, fs * 4), Math.max(2, fs * 0.18)); }
+      cells.forEach((c, i) => {
+        const col = i % cols, row = Math.floor(i / cols), x = pad + col * (cellW + gap), y = pad + titleH + row * (cellH + labH + gap);
+        g.drawImage(c, x, y);
+        if (k.labels) {
+          const s = shots[i];
+          g.fillStyle = ACC; g.font = `700 ${fs}px "Barlow Condensed", Arial, sans-serif`; g.textBaseline = 'top';
+          g.fillText(String(i + 1), x, y + cellH + fs * 0.35);
+          const nw = g.measureText(String(i + 1)).width + fs * 0.45;
+          g.fillStyle = FG; g.font = `600 ${fs}px Inter, Arial, sans-serif`; g.fillText(s.label, x + nw, y + cellH + fs * 0.35, cellW - nw);
+          g.fillStyle = MUT; g.font = `500 ${Math.round(fs * 0.78)}px ui-monospace, Menlo, Consolas, monospace`;
+          g.fillText(`${fmt(shotTime(s), 3)} s · F ${s.frame}`, x, y + cellH + fs * 1.6, cellW);
+        }
+      });
+      out._cells = cells;
+    }
+    return out;
+  }).finally(() => { if (S.src) { S.src.cur = -1; syncSource(); } });
+}
+let prevT = 0;
+function schedulePreview() { if (S.mode !== 'kino') return; clearTimeout(prevT); prevT = setTimeout(updatePreview, 450); }
+async function updatePreview() {
+  if (composing) { schedulePreview(); return; }
+  const pc = $('#kinoPrev'), g = pc.getContext('2d');
+  if (!S.src || !S.kino.shots.length) { pc.width = 600; pc.height = 140; g.fillStyle = '#000'; g.fillRect(0, 0, 600, 140); g.fillStyle = '#8A96A2'; g.font = '16px Inter, Arial, sans-serif'; g.textAlign = 'center'; g.fillText('Vorschau erscheint nach der ersten Position', 300, 76); return; }
+  composing = true;
+  try {
+    const out = await composeKino(Math.min(S.kino.cellH, 260));
+    if (!out) return;
+    pc.width = out.width; pc.height = out.height; g.drawImage(out, 0, 0);
+    const lis = $$('#shots .shot');
+    if (S.kino.layout !== 'overlay' || out._cells) out._cells.forEach((c, i) => {
+      const cvT = lis[i]?.querySelector('canvas'); if (!cvT) return;
+      const t = cvT.getContext('2d'); t.fillStyle = '#000'; t.fillRect(0, 0, 116, 116);
+      let src = c, sx = 0, sy = 0, sw = c.width, sh = c.height;
+      if (S.kino.layout === 'overlay' && S.kino.cropW) { /* Ausschnitt aus der Überlagerungszelle */ }
+      const s = Math.min(116 / sw, 116 / sh); t.drawImage(src, sx, sy, sw, sh, (116 - sw * s) / 2, (116 - sh * s) / 2, sw * s, sh * s);
+    });
+  } finally { composing = false; }
+}
+$('#kPrev').addEventListener('click', updatePreview);
+async function exportKino(show) {
+  if (!S.kino.shots.length) { toast('Zuerst Positionen aufnehmen'); return; }
+  toast('Kinogramm wird erstellt …');
+  const out = await composeKino();
+  if (!out) return;
+  const name = (S.kino.title || S.sprint.ath.name || 'kinogramm').replace(/[^\wäöüÄÖÜß-]+/g, '_') + '_kinogramm.png';
+  out.toBlob(b => { if (show === 'view') showImage(b, 'Kinogramm', name, out); else saveBlob(b, name, out); }, 'image/png');
+}
+$('#kPng').addEventListener('click', () => exportKino('save'));
+$('#kBig').addEventListener('click', () => exportKino('view'));
+
+/* ---------- Export-Helfer ---------- */
+function tryDownload(blob, name) {
+  try { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); return true; } catch { return false; }
+}
+function showImage(blob, title, name, canvas) {
+  const url = URL.createObjectURL(blob);
+  openModal(title, `<img src="${url}" alt="${escapeHtml(title)}">`, `<span class="hint" style="margin:0">${canvas.width}×${canvas.height} px · Falls kein Download startet: Rechtsklick bzw. lange drücken → Bild speichern</span> <button class="btn btn-p btn-sm" id="mDl" type="button">PNG herunterladen</button>`);
+  $('#mDl').addEventListener('click', () => tryDownload(blob, name));
+}
+function saveBlob(blob, name, canvas) { tryDownload(blob, name); showImage(blob, 'Export: ' + name, name, canvas); }
+function saveText(text, name, type) {
+  tryDownload(new Blob([text], { type }), name);
+  openModal('Export: ' + name, `<textarea readonly id="mTxt">${escapeHtml(text)}</textarea>`, '<button class="btn btn-sm" id="mCopy" type="button">Kopieren</button>');
+  $('#mCopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(text); toast('In die Zwischenablage kopiert'); } catch { $('#mTxt').select(); toast('Text markiert – mit Strg+C kopieren'); } });
+}
+function openModal(title, body, extra = '') { $('#mTitle').textContent = title; $('#mBody').innerHTML = body; $('#mExtra').innerHTML = extra; $('#modal').hidden = false; $('#mClose').focus(); }
+function closeModal() { $('#modal').hidden = true; $('#mBody').innerHTML = ''; }
+$('#mClose').addEventListener('click', closeModal);
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+let toastT = 0;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
+
+$('#btnSnap').addEventListener('click', async () => {
+  if (!S.src) return;
+  const c = document.createElement('canvas'); c.width = S.src.w; c.height = S.src.h;
+  const g = c.getContext('2d');
+  await lockSource(async () => { await S.src.seek(S.frame, S.fileFps); S.src.draw(g); });
+  drawAnnos(g, S.frame, null, S.src.h / 720);
+  c.toBlob(b => saveBlob(b, `standbild_F${S.frame}.png`, c), 'image/png');
+});
+
+/* ---------- Projekt speichern / laden ---------- */
+function projectData() {
+  const k = S.kino;
+  return { app: 'SprintLab', version: 1, saved: new Date().toISOString(), source: S.src ? { name: S.src.name, size: S.src.size || 0, kind: S.src.kind } : null,
+    fileFps: S.fileFps, capFps: S.capFps, frame: S.frame, annos: S.annos.map(a => { const { _bbox, ...r } = a; return r; }), calLen: S.calLen, chrono: S.chrono,
+    sprint: S.sprint, kino: { tpl: k.tpl, shots: k.shots, cropW: k.cropW, cropH: k.cropH, layout: k.layout, cols: k.cols, cellH: k.cellH, bg: k.bg, title: k.title, annos: k.annos, labels: k.labels, rel: k.rel, thr: k.thr, fade: k.fade } };
+}
+function applyProject(p, quiet) {
+  if (!p || p.app !== 'SprintLab') { toast('Keine SprintLab-Projektdatei'); return; }
+  S.fileFps = p.fileFps || S.fileFps; S.capFps = p.capFps || S.fileFps; S.capManual = S.capFps !== S.fileFps;
+  if (S.src) S.nFrames = S.src.frameCount(S.fileFps);
+  S.annos = p.annos || []; S.calLen = p.calLen || 1; S.chrono = p.chrono ?? null;
+  if (p.sprint) S.sprint = Object.assign(S.sprint, p.sprint);
+  if (p.kino) Object.assign(S.kino, p.kino, { active: null, cur: null });
+  S.frame = clamp(p.frame || 0, 0, S.nFrames - 1);
+  writeSprintInputs(); syncKinoOpts();
+  $('#tChrono').setAttribute('aria-pressed', String(S.chrono != null));
+  if (!quiet && S.src && p.source && p.source.name !== S.src.name) toast('Hinweis: Projekt gehört zu „' + p.source.name + '“');
+}
+function autosave() { const k = storeKey(); if (k && S.src.kind === 'video') store.set(k, projectData()); }
+$('#btnSave').addEventListener('click', () => {
+  const name = (S.sprint.ath.name || (S.src ? S.src.name.replace(/\.[^.]+$/, '') : 'projekt')).replace(/[^\wäöüÄÖÜß-]+/g, '_') + '.sprintlab.json';
+  saveText(JSON.stringify(projectData(), null, 1), name, 'application/json');
+});
+$('#projIn').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { const p = JSON.parse(await f.text()); if (!S.src) { toast('Erst das passende Video öffnen, dann das Projekt laden'); return; } applyProject(p); if (S.src) S.src.cur = -1; changed('all'); syncSource(); toast('Projekt geladen'); }
+  catch { toast('Projektdatei konnte nicht gelesen werden'); }
+});
+
+/* ---------- Hilfe & Tastatur ---------- */
+$('#btnHelp').addEventListener('click', () => openModal('Tastenkürzel', `<div class="keys">
+<kbd>Leertaste</kbd><span>Abspielen / Pause</span><kbd>← →</kbd><span>1 Frame zurück / vor</span><kbd>Shift + ← →</kbd><span>10 Frames</span><kbd>Pos1 / Ende</kbd><span>Anfang / Ende</span>
+<kbd>⏎</kbd><span>Sprint: nächste Marke setzen · Kinogramm: Frame aufnehmen</span>
+<kbd>V L R A H J C F T</kbd><span>Auswahl, Linie, Pfeil, Winkel, ∠ Horizontale, ∠ Vertikale, Kreis, Freihand, Text</span>
+<kbd>K M B X</kbd><span>Kalibrieren, Distanz, Bahn, Kinogramm-Ausschnitt</span>
+<kbd>G</kbd><span>Raster</span><kbd>Z</kbd><span>Stoppuhr ab aktuellem Frame</span>
+<kbd>Entf</kbd><span>Auswahl löschen</span><kbd>Strg + Z</kbd><span>Rückgängig</span><kbd>Esc</kbd><span>Zeichnen abbrechen / Bahn beenden</span>
+<kbd>+ − 0</kbd><span>Zoom, Einpassen · Mausrad zoomt zur Maus, Ziehen auf leerer Fläche verschiebt</span>
+</div><p class="hint">Zeichnungen sind standardmäßig an ihren Frame gebunden und erscheinen nur dort (wie in Dartfish). Mit dem Häkchen im Panel „Zeichnungen“ lassen sie sich dauerhaft einblenden.</p>`));
+const KEYTOOL = { v: 'select', l: 'line', r: 'arrow', a: 'angle3', h: 'angleH', j: 'angleV', c: 'circle', f: 'free', t: 'text', k: 'calib', m: 'dist', b: 'track', x: 'crop' };
+document.addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (e.key === 'Escape') { if (!$('#modal').hidden) { closeModal(); return; } if (drawing) { drawing = null; render(); return; } if (trackId) { endTrack(); return; } if (S.sel) { S.sel = null; changed('sel'); } return; }
+  if (tag === 'input' || tag === 'textarea' || tag === 'select' || !$('#modal').hidden) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (k === ' ') { e.preventDefault(); S.playing ? pause() : play(); return; }
+  if (k === 'ArrowLeft') { e.preventDefault(); goTo(S.frame - (e.shiftKey ? 10 : 1)); return; }
+  if (k === 'ArrowRight') { e.preventDefault(); goTo(S.frame + (e.shiftKey ? 10 : 1)); return; }
+  if (k === 'Home') { goTo(0); return; }
+  if (k === 'End') { goTo(S.nFrames - 1); return; }
+  if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); delSel(); return; }
+  if (k === 'Enter') { if (S.mode === 'sprint') nextMark(); else if (S.mode === 'kino') $('#kAdd').click(); return; }
+  if (k === '+' || k === '=') { $('#zIn').click(); return; }
+  if (k === '-') { $('#zOut').click(); return; }
+  if (k === '0') { fitView(); return; }
+  if (k.toLowerCase() === 'g') { $('#tGrid').click(); return; }
+  if (k.toLowerCase() === 'z') { toggleChrono(); return; }
+  const t = KEYTOOL[k.toLowerCase()]; if (t) setTool(t);
+});
+
+/* ---------- Start ---------- */
+new ResizeObserver(() => { resizeCanvas(); if (S.mode === 'sprint') drawCharts(lastProfile, S.sprint.dists.map(d => ({ d, t: splitTime(d) })).filter(x => x.t > 0)); }).observe(stage);
+$('#drop').innerHTML = '<div><div style="font-family:var(--disp);font-size:22px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg)">Video hierher ziehen</div><div>oder oben „Video öffnen“ · 120–240 fps empfohlen</div></div>';
+writeSprintInputs(); syncKinoOpts(); setTool('select'); resizeCanvas(); updateTransport();
+loadSource(new DemoSource());
+</script>
+</body>
+</html>
